@@ -33,7 +33,7 @@ export function CategoryTabs({
     >
       <Tabs
         value={activeCategory}
-        onValueChange={onChange}
+        onValueChange={(value) => onChange(value as Category)}
         className="w-full max-w-2xl"
       >
         <TabsList className={cn(

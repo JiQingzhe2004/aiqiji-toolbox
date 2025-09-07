@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+
+# 网站地图位置
+Sitemap: https://tools.aiqji.com/sitemap.xml
+
+# 禁止爬取的目录
+Disallow: /admin/
+Disallow: /api/
+Disallow: /private/
+Disallow: /*.json$
+Disallow: /node_modules/
+Disallow: /src/
+Disallow: /dist/assets/
+
+# 允许爬取的重要页面
+Allow: /
+Allow: /tool/
+Allow: /?category=*
+Allow: /?featured=*
+
+# 爬取延迟（可选，单位：秒）
+Crawl-delay: 1

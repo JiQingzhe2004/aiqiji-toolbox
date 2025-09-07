@@ -88,11 +88,11 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
             className="rounded-2xl hover:bg-muted"
           >
             <a
-              href="https://github.com"
+              href="https://github.com/JiQingzhe2004"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="查看GitHub仓库"
-              title="GitHub"
+              aria-label="查看GitHub仓库 - JiQingzhe2004"
+              title="GitHub - JiQingzhe2004"
             >
               <Github className="w-5 h-5" />
             </a>
@@ -105,8 +105,8 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
               size="sm"
               className="text-xs"
               onClick={() => {
-                // 可以添加反馈功能
-                window.open('mailto:feedback@example.com', '_blank');
+                // 反馈功能 - 发送邮件到开发者邮箱
+                window.open('mailto:jqz1215@qq.com?subject=AiQiji工具箱反馈&body=感谢您的反馈！请在此处写下您的建议或问题：', '_blank');
               }}
             >
               反馈

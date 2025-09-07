@@ -1,7 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Github, Mail, Coffee } from 'lucide-react';
+import { 
+  Heart, 
+  Github, 
+  Mail, 
+  Coffee, 
+  Code,
+  Brain,
+  ExternalLink,
+  Shield,
+  FileText
+} from 'lucide-react';
+import {  AiOutlineX, AiOutlineZhihu } from "react-icons/ai";
+import { TbBrandWechat } from "react-icons/tb";
+import { SiCsdn } from "react-icons/si";
+import { RiQqLine } from "react-icons/ri";
+import { FaWordpress } from "react-icons/fa";
 import { Button } from '@/components/ui/button';
+import { SponsorModal } from './SponsorModal';
+import { QRCodeTooltip } from './QRCodeTooltip';
 
 /**
  * 页面底部组件
@@ -9,8 +26,10 @@ import { Button } from '@/components/ui/button';
  */
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const [isSponsorModalOpen, setIsSponsorModalOpen] = useState(false);
 
   return (
+    <>
     <motion.footer
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -22,9 +41,25 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
           {/* 关于项目 */}
           <div className="space-y-3">
-            <h3 className="text-lg font-semibold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
-              AiQiji工具箱
-            </h3>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/logo.png" 
+                alt="AiQiji工具箱"
+                className="w-8 h-8 object-contain"
+                onError={(e) => {
+                  // 如果图片加载失败，显示备用图标
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = document.createElement('div');
+                  fallback.className = 'w-8 h-8 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-lg flex items-center justify-center';
+                  fallback.innerHTML = '<svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/></svg>';
+                  target.parentElement!.appendChild(fallback);
+                }}
+              />
+              <h3 className="text-lg font-semibold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
+                AiQiji工具箱
+              </h3>
+            </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               为开发者、设计师和效率工具爱好者精心收集的工具导航站点。
               让工作更高效，让创作更便捷。
@@ -41,23 +76,27 @@ export function Footer() {
             <h3 className="text-lg font-semibold text-foreground">快速链接</h3>
             <div className="space-y-2">
               {[
-                { label: '所有工具', href: '#tools' },
-                { label: '开发工具', href: '#dev' },
-                { label: '设计工具', href: '#design' },
-                { label: 'AI工具', href: '#ai' },
-                { label: '使用帮助', href: '#help' },
+                { label: 'AiQiji博客', href: 'https://aiqji.com', icon: FileText },
+                { label: 'CS-Explorer', href: 'https://cs.aiqji.cn/', icon: Code },
+                { label: 'AiQiji智能博客插件', href: 'https://wpai.aiqji.com/', icon: Brain },
               ].map((link, index) => (
                 <motion.a
                   key={link.label}
                   href={link.href}
-                  className="block text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  {...(link.href.startsWith('http') ? {
+                    target: '_blank',
+                    rel: 'noopener noreferrer'
+                  } : {})}
+                  className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
                   whileHover={{ x: 4 }}
                   transition={{ duration: 0.2 }}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   style={{ transitionDelay: `${index * 0.1}s` }}
                 >
-                  {link.label}
+                  <link.icon className="w-4 h-4" />
+                  <span>{link.label}</span>
+                  <ExternalLink className="w-3 h-3 opacity-50" />
                 </motion.a>
               ))}
             </div>
@@ -75,10 +114,11 @@ export function Footer() {
                   className="rounded-xl hover:bg-muted"
                 >
                   <a
-                    href="https://github.com"
+                    href="https://github.com/JiQingzhe2004"
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="GitHub"
+                    aria-label="GitHub - JiQingzhe2004"
+                    title="查看GitHub仓库"
                   >
                     <Github className="w-5 h-5" />
                   </a>
@@ -91,8 +131,9 @@ export function Footer() {
                   className="rounded-xl hover:bg-muted"
                 >
                   <a
-                    href="mailto:contact@aiqiji.com"
+                    href="mailto:jqz1215@qq.com"
                     aria-label="发送邮件"
+                    title="发送邮件到 jqz1215@qq.com"
                   >
                     <Mail className="w-5 h-5" />
                   </a>
@@ -101,15 +142,119 @@ export function Footer() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  asChild
+                  className="rounded-xl hover:bg-muted"
+                >
+                  <a
+                    href="https://x.com/aiqiji"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="关注X (Twitter)"
+                    title="关注X (Twitter)"
+                  >
+                    <AiOutlineX className="w-5 h-5" />
+                  </a>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className="rounded-xl hover:bg-muted"
+                >
+                  <a
+                    href="https://www.zhihu.com/people/aiqji"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="关注知乎"
+                    title="关注知乎"
+                  >
+                    <AiOutlineZhihu className="w-5 h-5" />
+                  </a>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="rounded-xl hover:bg-muted"
                   title="请我们喝咖啡"
+                  onClick={() => setIsSponsorModalOpen(true)}
                 >
                   <Coffee className="w-5 h-5" />
                 </Button>
               </div>
               
+              {/* 第二行联系方式 */}
+              <div className="flex items-center space-x-3">
+                <QRCodeTooltip
+                  url="https://qm.qq.com/q/qgHLoJ6vke"
+                  title="添加QQ好友"
+                  position="top"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl hover:bg-muted"
+                    aria-label="添加QQ好友"
+                    title="悬停查看QQ二维码"
+                  >
+                    <RiQqLine className="w-5 h-5" />
+                  </Button>
+                </QRCodeTooltip>
+                
+                <QRCodeTooltip
+                  url="https://u.wechat.com/MB9BaFGvZO39R3MpoQ165dk?s=3"
+                  title="添加微信好友"
+                  position="top"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl hover:bg-muted"
+                    aria-label="添加微信好友"
+                    title="悬停查看微信二维码"
+                  >
+                    <TbBrandWechat className="w-5 h-5" />
+                  </Button>
+                </QRCodeTooltip>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className="rounded-xl hover:bg-muted"
+                >
+                  <a
+                    href="https://blog.csdn.net/j304028273"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="关注CSDN博客"
+                    title="关注CSDN博客"
+                  >
+                    <SiCsdn className="w-5 h-5" />
+                  </a>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className="rounded-xl hover:bg-muted"
+                >
+                  <a
+                    href="https://aiqji.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="访问AiQiji博客"
+                    title="访问AiQiji博客"
+                  >
+                    <FaWordpress className="w-5 h-5" />
+                  </a>
+                </Button>
+              </div>
+              
               <p className="text-xs text-muted-foreground">
-                有好的工具推荐？欢迎联系我们！
+                有好的工具推荐或技术交流？欢迎通过以上方式联系我们！
               </p>
             </div>
           </div>
@@ -125,16 +270,19 @@ export function Footer() {
           </div>
           
           <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-            <a href="#privacy" className="hover:text-foreground transition-colors">
-              隐私政策
+            <a href="#privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+              <Shield className="w-3 h-3" />
+              <span>隐私政策</span>
             </a>
             <span>•</span>
-            <a href="#terms" className="hover:text-foreground transition-colors">
-              使用条款
+            <a href="#terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+              <FileText className="w-3 h-3" />
+              <span>使用条款</span>
             </a>
             <span>•</span>
-            <span>
-              Built with React & TypeScript
+            <span className="flex items-center space-x-1">
+              <Code className="w-3 h-3" />
+              <span>Built with React & TypeScript</span>
             </span>
           </div>
         </div>
@@ -143,5 +291,12 @@ export function Footer() {
       {/* 底部装饰 */}
       <div className="h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-cyan-500" />
     </motion.footer>
+    
+    {/* 赞助弹窗 */}
+    <SponsorModal 
+      isOpen={isSponsorModalOpen} 
+      onClose={() => setIsSponsorModalOpen(false)} 
+    />
+  </>
   );
 }

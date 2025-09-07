@@ -1,0 +1,15 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# 核心规则1：文档简化
+description: 无需为每次代码修改重复编写文档
+globs: docs/**/*  # 示例：匹配所有文档文件，可根据实际路径调整
+alwaysApply: true
+
+# 核心规则2：热重载执行逻辑
+description: 当前开发环境启用热重载，代码修改后无需重复执行启动或构建命令
+globs: src/**/*  # 示例：匹配所有源码文件，可根据实际路径调整
+alwaysApply: true

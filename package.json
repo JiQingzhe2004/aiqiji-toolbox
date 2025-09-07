@@ -53,6 +53,7 @@
     "tailwindcss": "^3.4.16",
     "typescript": "^5.9.2",
     "vite": "^7.1.2",
-    "vite-plugin-rollup": "^2.0.0"
+    "vite-plugin-rollup": "^2.0.0",
+    "@rollup/rollup-linux-x64-gnu": "^4.21.0"
   }
 }

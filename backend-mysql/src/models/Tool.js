@@ -43,7 +43,25 @@ const Tool = sequelize.define('Tool', {
     type: DataTypes.STRING(500),
     allowNull: true,
     validate: {
-      isUrl: true
+      isValidUrl(value) {
+        if (!value) return; // 允许空值
+        
+        // 自定义URL验证，支持localhost和相对路径
+        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$|^(https?:\/\/)?localhost(:\d+)?(\/.*)?$|^\/.*$/;
+        const httpPattern = /^https?:\/\/.+/;
+        
+        // 如果是完整URL，必须以http或https开头
+        if (value.includes('://')) {
+          if (!httpPattern.test(value)) {
+            throw new Error('URL必须以http://或https://开头');
+          }
+        }
+        
+        // 验证URL格式
+        if (!urlPattern.test(value)) {
+          throw new Error('无效的URL格式');
+        }
+      }
     }
   },
   
@@ -94,21 +112,6 @@ const Tool = sequelize.define('Tool', {
     defaultValue: 'active'
   },
   
-  view_count: {
-    type: DataTypes.INTEGER.UNSIGNED,
-    defaultValue: 0,
-    validate: {
-      min: 0
-    }
-  },
-  
-  click_count: {
-    type: DataTypes.INTEGER.UNSIGNED,
-    defaultValue: 0,
-    validate: {
-      min: 0
-    }
-  },
   
   rating_sum: {
     type: DataTypes.INTEGER.UNSIGNED,
@@ -143,12 +146,6 @@ const Tool = sequelize.define('Tool', {
       fields: ['status']
     },
     {
-      fields: ['view_count']
-    },
-    {
-      fields: ['click_count']
-    },
-    {
       fields: ['sort_order']
     },
     {
@@ -162,17 +159,6 @@ Tool.prototype.getAverageRating = function() {
   return this.rating_count > 0 ? (this.rating_sum / this.rating_count).toFixed(1) : 0;
 };
 
-// 实例方法：增加浏览量
-Tool.prototype.incrementView = async function() {
-  this.view_count += 1;
-  return await this.save({ fields: ['view_count'] });
-};
-
-// 实例方法：增加点击量
-Tool.prototype.incrementClick = async function() {
-  this.click_count += 1;
-  return await this.save({ fields: ['click_count'] });
-};
 
 // 实例方法：添加评分
 Tool.prototype.addRating = async function(rating) {
@@ -241,8 +227,6 @@ Tool.getStats = async function() {
     attributes: [
       'category',
       [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
-      [sequelize.fn('SUM', sequelize.col('view_count')), 'total_views'],
-      [sequelize.fn('SUM', sequelize.col('click_count')), 'total_clicks'],
       [sequelize.fn('AVG', sequelize.literal('rating_sum / GREATEST(rating_count, 1)')), 'avg_rating']
     ],
     where: { status: 'active' },
@@ -256,8 +240,6 @@ Tool.getStats = async function() {
     categoryStats: categoryStats.map(stat => ({
       category: stat.category,
       count: parseInt(stat.dataValues.count),
-      totalViews: parseInt(stat.dataValues.total_views) || 0,
-      totalClicks: parseInt(stat.dataValues.total_clicks) || 0,
       avgRating: parseFloat(stat.dataValues.avg_rating) || 0
     }))
   };

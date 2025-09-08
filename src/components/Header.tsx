@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Github, Sparkles, Search } from 'lucide-react';
+import { Github, Sparkles, Search, LogIn, Settings, MailCheck } from 'lucide-react';
 import { SearchBar } from './SearchBar';
 import { AnimatedThemeToggler } from './magicui/animated-theme-toggler';
 import { Button } from '@/components/ui/button';
+import { LoginModal } from './LoginModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Header组件属性接口
@@ -19,7 +21,10 @@ interface HeaderProps {
  * 符合提示词要求的设计规范
  */
 export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
+  const { isAuthenticated, isAdmin } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
   return (
+    <>
     <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -77,6 +82,33 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           >
             <Search className="w-5 h-5" />
           </Button>
+          {/* 移动端登录/管理按钮 */}
+          {isAuthenticated && isAdmin ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden rounded-2xl hover:bg-muted"
+              onClick={() => {
+                window.location.href = '/admin';
+              }}
+              aria-label="管理"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden rounded-2xl hover:bg-muted"
+              onClick={() => {
+                setShowLoginModal(true);
+              }}
+              aria-label="登录"
+            >
+              <LogIn className="w-5 h-5" />
+            </Button>
+          )}
+
           {/* 动画主题切换器 */}
           <AnimatedThemeToggler />
           
@@ -100,6 +132,34 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           
           {/* 更多操作按钮（可扩展） */}
           <div className="hidden md:flex items-center space-x-2">
+            {/* 根据登录状态显示不同按钮 */}
+            {isAuthenticated && isAdmin ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => {
+                  // 在当前标签页跳转到管理页面，不新开标签页
+                  window.location.href = '/admin';
+                }}
+              >
+                <Settings className="w-3 h-3 mr-1" />
+                管理
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => {
+                  // 显示登录弹窗而不是跳转页面
+                  setShowLoginModal(true);
+                }}
+              >
+                <LogIn className="w-3 h-3 mr-1" />
+                登录
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -109,6 +169,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
                 window.open('mailto:jqz1215@qq.com?subject=AiQiji工具箱反馈&body=感谢您的反馈！请在此处写下您的建议或问题：', '_blank');
               }}
             >
+              <MailCheck className="w-3 h-3 mr-1" />
               反馈
             </Button>
           </div>
@@ -118,5 +179,12 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
       {/* 底部装饰线 */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
     </motion.header>
+
+    {/* 登录弹窗 */}
+    <LoginModal 
+      open={showLoginModal} 
+      onOpenChange={setShowLoginModal} 
+    />
+  </>
   );
 }

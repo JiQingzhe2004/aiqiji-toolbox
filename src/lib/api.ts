@@ -56,6 +56,14 @@ export class ApiError extends Error {
 }
 
 /**
+ * 获取认证头
+ */
+function getAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem('auth_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+/**
  * 创建带有默认配置的fetch请求
  */
 export async function apiFetch<T = any>(
@@ -67,6 +75,7 @@ export async function apiFetch<T = any>(
   const defaultOptions: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(), // 自动添加身份验证头
       ...options.headers,
     },
     // 添加超时控制
@@ -151,7 +160,10 @@ export async function apiPost<T = any>(
     if (data instanceof FormData) {
       // FormData不需要设置Content-Type，浏览器会自动设置
       options.body = data;
-      options.headers = {}; // 清除默认的Content-Type
+      // 保留身份验证头，但清除Content-Type
+      options.headers = {
+        ...getAuthHeaders(),
+      };
     } else {
       options.body = JSON.stringify(data);
     }

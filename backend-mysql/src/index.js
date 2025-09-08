@@ -13,7 +13,7 @@ import dotenv from 'dotenv';
 // 导入配置和模块
 import sequelize, { testConnection, syncDatabase, closeConnection } from './config/database.js';
 import toolRoutes from './routes/toolRoutes.js';
-import { executeSQLSeed } from './database/seedSQL.js';
+import authRoutes from './routes/authRoutes.js';
 
 // 加载环境变量
 dotenv.config();
@@ -105,6 +105,9 @@ class Server {
     const uploadDir = process.env.UPLOAD_DIR || 'uploads';
     const staticUrl = process.env.STATIC_URL || '/static';
     this.app.use(staticUrl, express.static(uploadDir));
+    
+    // 图标文件专用路径 (映射到 uploads/icons)
+    this.app.use('/icon', express.static(path.join(uploadDir, 'icons')));
 
     // 健康检查
     this.app.get('/health', (req, res) => {
@@ -150,6 +153,9 @@ class Server {
       });
     });
 
+    // 身份验证路由
+    this.app.use(`${this.apiPrefix}/auth`, authRoutes);
+    
     // 工具相关路由
     this.app.use(`${this.apiPrefix}/tools`, toolRoutes);
 
@@ -251,23 +257,8 @@ class Server {
       // 同步数据库模型
       await syncDatabase();
 
-      // 自动执行SQL种子数据（可通过环境变量控制）
-      const autoSeed = process.env.AUTO_SEED !== 'false'; // 默认启用
-      if (autoSeed) {
-        try {
-          console.log('🌱 执行SQL种子数据...');
-          const seedResult = await executeSQLSeed();
-          if (seedResult.affectedRows > 0) {
-            console.log(`✅ 成功插入 ${seedResult.affectedRows} 条新数据`);
-          } else {
-            console.log('ℹ️ 数据库已包含所有数据，无需插入');
-          }
-        } catch (error) {
-          console.warn('⚠️ SQL种子数据执行失败，继续启动服务:', error.message);
-        }
-      } else {
-        console.log('ℹ️ 已禁用自动种子数据导入 (AUTO_SEED=false)');
-      }
+      // 数据库初始化完成，无需种子数据
+      console.log('ℹ️ 数据库连接就绪，如需初始化数据请运行: npm run db:init');
 
       // 启动HTTP服务器
       this.server = this.app.listen(this.port, () => {
@@ -278,7 +269,7 @@ class Server {
 🔧 环境: ${process.env.NODE_ENV || 'development'}
 📊 数据库: MySQL (已连接)
 📁 静态文件: ${process.env.STATIC_URL || '/static'}
-🌱 自动种子数据: ${process.env.AUTO_SEED !== 'false' ? '启用' : '禁用'}
+🗂️ 初始化: 使用 npm run db:init
 ⏰ 启动时间: ${new Date().toISOString()}
         `);
       });

@@ -12,6 +12,7 @@ import * as AspectRatio from '@radix-ui/react-aspect-ratio';
 import toast from 'react-hot-toast';
 import type { Tool } from '@/types';
 import { cn, openExternalLinkWithWarning, formatDate } from '@/lib/utils';
+import { getToolIconUrl } from '@/utils/imageUtils';
 
 /**
  * MagicCard组件属性接口
@@ -175,9 +176,9 @@ export const MagicCard = memo(function MagicCard({
           {/* 主图标/Logo */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative p-4 rounded-2xl bg-background/70 backdrop-blur-md border border-border/50 shadow-lg group-hover:scale-105 group-hover:shadow-xl transition-all duration-300">
-              {(tool.icon_url || tool.logoUrl) ? (
+              {getToolIconUrl(tool) ? (
                 <img 
-                  src={tool.icon_url || tool.logoUrl} 
+                  src={getToolIconUrl(tool)} 
                   alt={`${tool.name} logo`}
                   className={cn(
                     "h-8 w-8 object-contain rounded-sm",
@@ -194,7 +195,7 @@ export const MagicCard = memo(function MagicCard({
                 />
               ) : null}
               <IconComponent 
-                className={`h-9 w-9 text-foreground ${(tool.icon_url || tool.logoUrl) ? 'hidden' : ''}`} 
+                className={`h-9 w-9 text-foreground ${getToolIconUrl(tool) ? 'hidden' : ''}`} 
               />
             </div>
           </div>

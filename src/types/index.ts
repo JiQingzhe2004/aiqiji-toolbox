@@ -27,10 +27,6 @@ export interface Tool {
   featured: boolean;
   /** 状态 */
   status: 'active' | 'inactive' | 'maintenance';
-  /** 浏览次数 */
-  view_count: number;
-  /** 点击次数 */
-  click_count: number;
   /** 评分总和 */
   rating_sum: number;
   /** 评分次数 */

@@ -2,13 +2,16 @@
 <html lang="zh-CN">
   <head>
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V3MT3HBL4N"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V3MT3HBL4N" onerror="console.log('Google Analytics blocked by ad blocker')"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-V3MT3HBL4N');
+      try {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-V3MT3HBL4N');
+      } catch (e) {
+        console.log('Google Analytics initialization failed:', e);
+      }
     </script>
     <meta charset="UTF-8" />
     <!-- Favicon 配置 -->

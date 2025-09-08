@@ -71,21 +71,13 @@ export const ToolGrid = memo(function ToolGrid({
       transition={{ duration: 0.4 }}
       className="col-span-full flex flex-col items-center justify-center py-16 text-center"
     >
-      <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-violet-500/10 to-cyan-500/10 flex items-center justify-center">
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            rotate: [0, 5, -5, 0],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-          className="text-4xl"
-        >
-          🔍
-        </motion.div>
+      {/* 无数据图标 */}
+      <div className="flex justify-center mb-8">
+        <img 
+          src="/无数据.svg" 
+          alt="暂无数据"
+          className="w-48 h-48 sm:w-56 sm:h-56 object-contain filter dark:brightness-90 dark:contrast-110"
+        />
       </div>
       
       <h3 className="text-xl font-semibold text-foreground mb-2">

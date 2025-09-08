@@ -47,7 +47,11 @@ export default function ExternalLinkPage() {
           <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
           <h1 className="text-xl font-bold mb-2">参数错误</h1>
           <p className="text-muted-foreground mb-4">缺少必要的跳转参数</p>
-          <Button onClick={() => window.close()} variant="outline">
+          <Button 
+            onClick={() => window.close()} 
+            variant="outline"
+            className="border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+          >
             关闭页面
           </Button>
         </Card>
@@ -116,8 +120,8 @@ export default function ExternalLinkPage() {
             <div className="flex gap-3">
               <Button
                 onClick={handleCancel}
-                variant="solidCancel"
-                className="flex-1"
+                variant="outline"
+                className="flex-1 border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
                 size="lg"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -126,8 +130,7 @@ export default function ExternalLinkPage() {
               
               <Button
                 onClick={handleConfirm}
-                variant="solid"
-                className="flex-1"
+                className="flex-1 bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
                 size="lg"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />

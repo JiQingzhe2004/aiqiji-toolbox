@@ -107,3 +107,54 @@ export function highlightMatch(text: string, searchTerm: string): string {
     return text;
   }
 }
+
+/**
+ * 根据工具名称生成唯一ID
+ * @param name 工具名称
+ * @returns 生成的工具ID
+ */
+export function generateToolId(name: string): string {
+  if (!name.trim()) {
+    return `tool-${Date.now()}`;
+  }
+
+  // 清理和转换名称
+  const cleanName = name
+    .trim()
+    .toLowerCase()
+    // 移除特殊字符，保留字母数字和空格
+    .replace(/[^\w\s\u4e00-\u9fa5]/g, '')
+    // 将空格和连续空白字符替换为连字符
+    .replace(/\s+/g, '-')
+    // 移除开头和结尾的连字符
+    .replace(/^-+|-+$/g, '');
+
+  // 如果清理后为空，使用时间戳
+  if (!cleanName) {
+    return `tool-${Date.now()}`;
+  }
+
+  // 添加时间戳确保唯一性
+  const timestamp = Date.now().toString().slice(-6); // 取后6位
+  
+  // 限制长度并添加时间戳
+  const maxLength = 50 - timestamp.length - 1; // 减去时间戳和连字符的长度
+  const truncatedName = cleanName.length > maxLength 
+    ? cleanName.substring(0, maxLength) 
+    : cleanName;
+
+  return `${truncatedName}-${timestamp}`;
+}
+
+/**
+ * 简单哈希函数（用于生成更短的ID）
+ */
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // 转换为32位整数
+  }
+  return Math.abs(hash).toString(36);
+}

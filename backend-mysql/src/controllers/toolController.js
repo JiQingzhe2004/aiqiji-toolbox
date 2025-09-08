@@ -26,12 +26,6 @@ export const getAllTools = async (req, res) => {
       case 'name':
         order = [['name', 'ASC']];
         break;
-      case 'views':
-        order = [['view_count', 'DESC']];
-        break;
-      case 'clicks':
-        order = [['click_count', 'DESC']];
-        break;
       case 'rating':
         order = [['rating_sum', 'DESC'], ['rating_count', 'DESC']];
         break;
@@ -101,8 +95,6 @@ export const getToolById = async (req, res) => {
       });
     }
 
-    // 增加浏览量
-    await tool.incrementView();
 
     // 处理图标URL
     const toolData = tool.toJSON();
@@ -301,36 +293,6 @@ export const deleteTool = async (req, res) => {
   }
 };
 
-// 记录工具点击
-export const recordClick = async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const tool = await Tool.findOne({
-      where: { id, status: 'active' }
-    });
-    
-    if (!tool) {
-      return res.status(404).json({
-        success: false,
-        message: '工具不存在'
-      });
-    }
-
-    await tool.incrementClick();
-
-    res.json({
-      success: true,
-      message: '点击记录成功'
-    });
-  } catch (error) {
-    console.error('记录点击失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '记录点击失败'
-    });
-  }
-};
 
 // 工具评分
 export const rateTool = async (req, res) => {

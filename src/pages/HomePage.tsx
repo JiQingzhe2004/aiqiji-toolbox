@@ -2,8 +2,10 @@ import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HeroBanner } from '@/components/HeroBanner';
 import { CategoryTabs } from '@/components/CategoryTabs';
+import { SidebarCategoryTabs } from '@/components/SidebarCategoryTabs';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { ToolGrid } from '@/components/ToolGrid';
+import { EmptyState } from '@/components/EmptyState';
 import { useTools } from '@/hooks/useTools';
 import { Loader2, AlertCircle } from 'lucide-react';
 
@@ -73,6 +75,13 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
       {/* 首页全屏壁纸横幅 */}
       <HeroBanner />
 
+      {/* 侧边栏分类 - 桌面端滚动显示 */}
+      <SidebarCategoryTabs
+        categories={categories}
+        activeCategory={activeCategory}
+        onChange={(category: string) => setActiveCategory(category as any)}
+      />
+
       {/* 工具区域 */}
       <motion.div
         id="tools-section"
@@ -82,19 +91,6 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
         className="relative z-10 bg-background min-h-screen pt-8 md:pt-12 pb-24 md:pb-24"
       >
         <div className="container mx-auto px-4 max-w-7xl">
-          {/* 分类标签 - 桌面版显示 */}
-          <motion.section
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="hidden md:flex justify-center mb-8 lg:mb-12"
-          >
-            <CategoryTabs
-              categories={categories}
-              activeCategory={activeCategory}
-              onChange={setActiveCategory}
-            />
-          </motion.section>
 
           {/* 工具网格 */}
           <motion.section

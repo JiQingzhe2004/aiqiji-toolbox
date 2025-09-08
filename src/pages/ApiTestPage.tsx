@@ -48,17 +48,6 @@ export function ApiTestPage() {
     }
   };
 
-  // 测试记录点击
-  const testRecordClick = async (toolId: string) => {
-    try {
-      const response = await toolsApi.recordClick(toolId);
-      if (response.success) {
-        console.log('Click recorded for:', toolId);
-      }
-    } catch (err) {
-      console.error('Click Error:', err);
-    }
-  };
 
   useEffect(() => {
     testGetTools();
@@ -120,8 +109,6 @@ export function ApiTestPage() {
                       </p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                         <span>分类: {tool.category}</span>
-                        <span>浏览: {tool.view_count}</span>
-                        <span>点击: {tool.click_count}</span>
                         {tool.featured && <span className="text-yellow-600">⭐ 精选</span>}
                       </div>
                       {tool.tags && tool.tags.length > 0 && (
@@ -144,13 +131,6 @@ export function ApiTestPage() {
                         onClick={() => window.open(tool.url, '_blank')}
                       >
                         访问
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => testRecordClick(tool.id)}
-                      >
-                        测试点击
                       </Button>
                     </div>
                   </div>

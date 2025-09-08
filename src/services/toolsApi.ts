@@ -6,6 +6,14 @@ import { apiGet, apiPost, apiPut, apiDelete, ApiResponse, PaginatedResponse, api
 import type { Tool } from '@/types';
 
 /**
+ * 获取认证头
+ */
+const getAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem('auth_token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
+
+/**
  * 工具查询参数
  */
 export interface ToolsQueryParams {
@@ -112,7 +120,7 @@ export class ToolsApiService {
   /**
    * 创建工具
    */
-  static async createTool(data: ToolFormData, iconFile?: File): Promise<ApiResponse<Tool>> {
+  static async createTool(data: any, iconFile?: File): Promise<ApiResponse<Tool>> {
     const formData = new FormData();
     
     // 添加基础数据
@@ -131,7 +139,15 @@ export class ToolsApiService {
       formData.append('iconFile', iconFile);
     }
 
-    return apiPost<Tool>('/tools', formData);
+    // 使用fetch直接调用以支持认证头
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/tools`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: formData
+    });
+    
+    const result = await response.json();
+    return result;
   }
 
   /**
@@ -156,22 +172,31 @@ export class ToolsApiService {
       formData.append('iconFile', iconFile);
     }
 
-    return apiPut<Tool>(`/tools/${id}`, formData);
+    // 使用fetch直接调用以支持认证头
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/tools/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: formData
+    });
+    
+    const result = await response.json();
+    return result;
   }
 
   /**
    * 删除工具
    */
   static async deleteTool(id: string): Promise<ApiResponse<void>> {
-    return apiDelete(`/tools/${id}`);
+    // 使用fetch直接调用以支持认证头
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/tools/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    
+    const result = await response.json();
+    return result;
   }
 
-  /**
-   * 记录工具点击
-   */
-  static async recordClick(id: string): Promise<ApiResponse<void>> {
-    return apiPost(`/tools/${id}/click`);
-  }
 
   /**
    * 工具评分

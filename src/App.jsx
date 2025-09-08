@@ -6,10 +6,14 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { useTheme } from './hooks/useTheme';
 import { cn } from './lib/utils';
+import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 // 懒加载页面组件以提高性能
 const HomePage = lazy(() => import('./pages/HomePage'));
 const ExternalLinkPage = lazy(() => import('./pages/ExternalLinkPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 /**
  * 加载组件
@@ -70,13 +74,21 @@ function App() {
 
   return (
     <MantineProvider>
-      <ErrorBoundary>
-        <Router>
-          <Suspense fallback={<LoadingSpinner />}>
-            <Routes>
+      <AuthProvider>
+        <ErrorBoundary>
+          <Router>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
               {/* 外链提醒页面 - 独立布局，无Header和Footer */}
               <Route path="/external-link" element={
                 <ExternalLinkPage />
+              } />
+              
+              {/* 管理页面 - 需要管理员权限 */}
+              <Route path="/admin" element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AdminPage />
+                </ProtectedRoute>
               } />
               
               {/* 主站页面 - 带Header和Footer */}
@@ -92,15 +104,7 @@ function App() {
                       <Route path="/" element={
                         <HomePage searchQuery={globalSearchQuery} />
                       } />
-                      <Route path="*" element={
-                        <div className="text-center py-16">
-                          <div className="text-6xl mb-4">🔍</div>
-                          <h2 className="text-2xl font-semibold mb-2">页面未找到</h2>
-                          <p className="text-muted-foreground">
-                            抱歉，您访问的页面不存在
-                          </p>
-                        </div>
-                      } />
+                      <Route path="*" element={<NotFoundPage />} />
                     </Routes>
                   </main>
                   
@@ -125,6 +129,7 @@ function App() {
         />
         </Router>
       </ErrorBoundary>
+      </AuthProvider>
     </MantineProvider>
   );
 }

@@ -11,6 +11,7 @@ import {
   Shield,
   FileText
 } from 'lucide-react';
+import { ComicText } from "./magicui/comic-text";
 import {  AiOutlineX, AiOutlineZhihu } from "react-icons/ai";
 import { TbBrandWechat } from "react-icons/tb";
 import { SiCsdn } from "react-icons/si";
@@ -34,9 +35,19 @@ export function Footer() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.2 }}
-      className="mt-auto border-t border-muted-foreground/10 bg-background/50 backdrop-blur-sm"
+      className="mt-auto border-t border-muted-foreground/10 bg-background/50 backdrop-blur-sm pb-20 md:pb-0"
     >
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-12">
+        {/* 顶部大标题 */}
+        <div className="text-center mb-12">
+          <div className="mb-4">
+            <ComicText fontSize={5}>AiQiji·Tools</ComicText>
+          </div>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            为开发者、设计师和效率工具爱好者精心收集的工具导航站点
+          </p>
+        </div>
+        
         {/* 主要内容区 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
           {/* 关于项目 */}
@@ -106,7 +117,7 @@ export function Footer() {
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-foreground">联系我们</h3>
             <div className="space-y-3">
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -182,41 +193,6 @@ export function Footer() {
                 >
                   <Coffee className="w-5 h-5" />
                 </Button>
-              </div>
-              
-              {/* 第二行联系方式 */}
-              <div className="flex items-center space-x-3">
-                <QRCodeTooltip
-                  url="https://qm.qq.com/q/qgHLoJ6vke"
-                  title="添加QQ好友"
-                  position="top"
-                >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-xl hover:bg-muted"
-                    aria-label="添加QQ好友"
-                    title="悬停查看QQ二维码"
-                  >
-                    <RiQqLine className="w-5 h-5" />
-                  </Button>
-                </QRCodeTooltip>
-                
-                <QRCodeTooltip
-                  url="https://u.wechat.com/MB9BaFGvZO39R3MpoQ165dk?s=3"
-                  title="添加微信好友"
-                  position="top"
-                >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-xl hover:bg-muted"
-                    aria-label="添加微信好友"
-                    title="悬停查看微信二维码"
-                  >
-                    <TbBrandWechat className="w-5 h-5" />
-                  </Button>
-                </QRCodeTooltip>
                 
                 <Button
                   variant="ghost"
@@ -251,6 +227,38 @@ export function Footer() {
                     <FaWordpress className="w-5 h-5" />
                   </a>
                 </Button>
+                
+                <QRCodeTooltip
+                  url="https://qm.qq.com/q/qgHLoJ6vke"
+                  title="添加QQ好友"
+                  position="top"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl hover:bg-muted"
+                    aria-label="添加QQ好友"
+                    title="悬停查看QQ二维码"
+                  >
+                    <RiQqLine className="w-5 h-5" />
+                  </Button>
+                </QRCodeTooltip>
+                
+                <QRCodeTooltip
+                  url="https://u.wechat.com/MB9BaFGvZO39R3MpoQ165dk?s=3"
+                  title="添加微信好友"
+                  position="top"
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl hover:bg-muted"
+                    aria-label="添加微信好友"
+                    title="悬停查看微信二维码"
+                  >
+                    <TbBrandWechat className="w-5 h-5" />
+                  </Button>
+                </QRCodeTooltip>
               </div>
               
               <p className="text-xs text-muted-foreground">
@@ -269,21 +277,22 @@ export function Footer() {
             © {currentYear} AiQiji工具箱. All rights reserved.
           </div>
           
-          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-            <a href="#privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
-              <Shield className="w-3 h-3" />
-              <span>隐私政策</span>
-            </a>
-            <span>•</span>
-            <a href="#terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">
-              <FileText className="w-3 h-3" />
-              <span>使用条款</span>
-            </a>
-            <span>•</span>
-            <span className="flex items-center space-x-1">
+          <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-xs text-muted-foreground">
+            <div className="flex items-center space-x-4">
+              <a href="#privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                <Shield className="w-3 h-3" />
+                <span>隐私政策</span>
+              </a>
+              <span>•</span>
+              <a href="#terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                <FileText className="w-3 h-3" />
+                <span>使用条款</span>
+              </a>
+            </div>
+            <div className="flex items-center space-x-1">
               <Code className="w-3 h-3" />
-              <span>Built with React & TypeScript</span>
-            </span>
+              <span>React + TypeScript</span>
+            </div>
           </div>
         </div>
       </div>

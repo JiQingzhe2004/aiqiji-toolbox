@@ -1,7 +1,7 @@
 {
   "name": "aiqiji-toolbox",
   "private": true,
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -26,6 +26,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.462.0",
+    "mini-svg-data-uri": "^1.4.4",
     "motion": "^12.23.12",
     "qrcode": "^1.5.4",
     "react": "^19.1.1",
@@ -36,6 +37,7 @@
     "react-router-dom": "^6.28.1",
     "react-window": "^2.1.0",
     "react-window-infinite-loader": "^1.0.10",
+    "rough-notation": "^0.5.1",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7"
   },

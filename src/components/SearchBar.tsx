@@ -119,7 +119,7 @@ export function SearchBar({
         {!isFocused && !value && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
             <kbd className="hidden sm:inline-flex items-center px-2 py-1 text-xs font-mono bg-muted text-muted-foreground rounded border">
-              ⌘K
+              ⌘+K或Ctrl+K
             </kbd>
           </div>
         )}

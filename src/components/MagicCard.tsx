@@ -2,14 +2,15 @@ import React, { memo, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, Copy, Star, Calendar, CheckCircle } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
-import { Button, ActionIcon } from '@mantine/core';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-button';
 import { DotPattern } from '@/components/magicui/dot-pattern';
 import { Confetti, type ConfettiRef } from '@/components/magicui/confetti';
 import * as AspectRatio from '@radix-ui/react-aspect-ratio';
 import toast from 'react-hot-toast';
 import type { Tool } from '@/types';
-import { cn, openExternalLink, formatDate } from '@/lib/utils';
+import { cn, openExternalLinkWithWarning, formatDate } from '@/lib/utils';
 
 /**
  * MagicCard组件属性接口
@@ -115,9 +116,10 @@ export const MagicCard = memo(function MagicCard({
 
   // 打开工具链接
   const openTool = useCallback((e: React.MouseEvent) => {
-    const newTab = e.ctrlKey || e.metaKey || e.button === 1;
-    openExternalLink(tool.url, newTab);
-  }, [tool.url]);
+    e.preventDefault();
+    e.stopPropagation();
+    openExternalLinkWithWarning(tool.url, tool.name);
+  }, [tool.url, tool.name]);
 
   // 高亮匹配文本
   const highlightedName = useMemo(() => {
@@ -168,10 +170,30 @@ export const MagicCard = memo(function MagicCard({
           {/* 径向渐变遮罩 - 创建中心亮、周围暗的效果 */}
           <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-background/40" />
           
-          {/* 主图标 */}
+          {/* 主图标/Logo */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative p-3 rounded-xl bg-background/90 backdrop-blur-md border border-border/50 shadow-lg group-hover:scale-105 group-hover:shadow-xl transition-all duration-300">
-              <IconComponent className="h-6 w-6 text-foreground" />
+            <div className="relative p-4 rounded-2xl bg-background/70 backdrop-blur-md border border-border/50 shadow-lg group-hover:scale-105 group-hover:shadow-xl transition-all duration-300">
+              {tool.logoUrl ? (
+                <img 
+                  src={tool.logoUrl} 
+                  alt={`${tool.name} logo`}
+                  className={cn(
+                    "h-8 w-8 object-contain rounded-sm",
+                    // 主题适配逻辑
+                    tool.logoTheme === 'invert' && "invert",
+                    tool.logoTheme === 'auto' && "dark:invert",
+                    (!tool.logoTheme || tool.logoTheme === 'auto') && "dark:invert"
+                  )}
+                  onError={(e) => {
+                    // 如果logo加载失败，显示备用图标
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              <IconComponent 
+                className={`h-9 w-9 text-foreground ${tool.logoUrl ? 'hidden' : ''}`} 
+              />
             </div>
           </div>
           
@@ -230,33 +252,50 @@ export const MagicCard = memo(function MagicCard({
 
         {/* 操作按钮 */}
         <div className="flex gap-2 pt-2">
-          <Button 
-            size="sm"
-            radius="xl"
-            variant="filled"
-            color="dark"
-            leftSection={<ExternalLink size={16} />}
-            onClick={(e) => {
-              e.stopPropagation();
-              openTool(e);
+          <div className="flex-1 group/button">
+            <InteractiveHoverButton 
+              className="w-full"
+              hoverText={`打开${tool.name}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                openTool(e);
+              }}
+            >
+              打开工具
+            </InteractiveHoverButton>
+          </div>
+          <motion.div
+            whileHover={{ 
+              scale: 1.1,
+              rotate: 15,
+              transition: { duration: 0.2, ease: "easeOut" }
             }}
-            className="flex-1 bg-foreground text-background hover:bg-foreground/90 hover:text-gray-800 border-0"
-            aria-label={`打开 ${tool.name}`}
-          >
-            打开工具
-          </Button>
-          <ActionIcon
-            size="lg"
-            radius="xl"
-            variant="default"
-            onClick={(e) => {
-              e.stopPropagation();
-              copyLink(e);
+            whileTap={{ 
+              scale: 0.95,
+              transition: { duration: 0.1 }
             }}
-            aria-label={`复制 ${tool.name} 的链接`}
           >
-            <Copy size={16} />
-          </ActionIcon>
+            <Button
+              size="icon"
+              variant="outline"
+              className="rounded-full aspect-square w-10 h-10 transition-colors duration-200 hover:bg-primary hover:text-primary-foreground hover:border-primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                copyLink(e);
+              }}
+              aria-label={`复制 ${tool.name} 的链接`}
+              title="复制链接"
+            >
+              <motion.div
+                whileHover={{ 
+                  rotate: -15,
+                  transition: { duration: 0.2, ease: "easeOut" }
+                }}
+              >
+                <Copy size={16} />
+              </motion.div>
+            </Button>
+          </motion.div>
         </div>
       </div>
     </Card>

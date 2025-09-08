@@ -13,6 +13,10 @@ export interface Tool {
   desc: string;
   /** lucide-react 图标名或 SVG 字符串 */
   icon: string;
+  /** 网站logo链接 (可选，优先于icon显示) */
+  logoUrl?: string;
+  /** logo主题适配方式: 'auto' | 'invert' | 'none' */
+  logoTheme?: 'auto' | 'invert' | 'none';
   /** 分类：开发/设计/效率/AI/其它 */
   category: string;
   /** 标签数组，如 ["在线","免费"] */

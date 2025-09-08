@@ -26,6 +26,30 @@ export function openExternalLink(url: string, newTab: boolean = true): void {
 }
 
 /**
+ * 通过提醒页面打开外部链接
+ * @param url 外部链接地址
+ * @param toolName 工具名称
+ */
+export function openExternalLinkWithWarning(url: string, toolName: string): void {
+  try {
+    const validUrl = new URL(url);
+    // 只允许 http 和 https 协议
+    if (validUrl.protocol === 'http:' || validUrl.protocol === 'https:') {
+      const currentOrigin = window.location.origin;
+      const warningUrl = `${currentOrigin}/external-link?url=${encodeURIComponent(url)}&name=${encodeURIComponent(toolName)}`;
+      
+      const newWindow = window.open(warningUrl, '_blank', 'noopener,noreferrer');
+      if (!newWindow) {
+        // 如果弹窗被阻止，回退到直接打开
+        openExternalLink(url, true);
+      }
+    }
+  } catch (error) {
+    console.error('Invalid URL:', url);
+  }
+}
+
+/**
  * 格式化日期为可读格式
  */
 export function formatDate(date: string | Date): string {

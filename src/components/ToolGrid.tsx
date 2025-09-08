@@ -1,7 +1,6 @@
 import React, { memo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { ToolCard } from './ToolCard';
 import { LazyMagicCard } from './LazyMagicCard';
 import { useVirtualizedGrid } from '@/hooks/useVirtualizedGrid';
 import type { Tool } from '@/types';

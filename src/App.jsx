@@ -9,6 +9,7 @@ import { cn } from './lib/utils';
 
 // 懒加载页面组件以提高性能
 const HomePage = lazy(() => import('./pages/HomePage'));
+const ExternalLinkPage = lazy(() => import('./pages/ExternalLinkPage'));
 
 /**
  * 加载组件
@@ -71,33 +72,43 @@ function App() {
     <MantineProvider>
       <ErrorBoundary>
         <Router>
-        <div className="min-h-screen flex flex-col">
-          <Header 
-            searchValue={globalSearchQuery}
-            onSearchChange={setGlobalSearchQuery}
-          />
-          
-          <main className="flex-1">
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
-                <Route path="/" element={
-                  <HomePage searchQuery={globalSearchQuery} />
-                } />
-                <Route path="*" element={
-                  <div className="text-center py-16">
-                    <div className="text-6xl mb-4">🔍</div>
-                    <h2 className="text-2xl font-semibold mb-2">页面未找到</h2>
-                    <p className="text-muted-foreground">
-                      抱歉，您访问的页面不存在
-                    </p>
-                  </div>
-                } />
-              </Routes>
-            </Suspense>
-          </main>
-          
-          <Footer />
-        </div>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              {/* 外链提醒页面 - 独立布局，无Header和Footer */}
+              <Route path="/external-link" element={
+                <ExternalLinkPage />
+              } />
+              
+              {/* 主站页面 - 带Header和Footer */}
+              <Route path="/*" element={
+                <div className="min-h-screen flex flex-col">
+                  <Header 
+                    searchValue={globalSearchQuery}
+                    onSearchChange={setGlobalSearchQuery}
+                  />
+                  
+                  <main className="flex-1">
+                    <Routes>
+                      <Route path="/" element={
+                        <HomePage searchQuery={globalSearchQuery} />
+                      } />
+                      <Route path="*" element={
+                        <div className="text-center py-16">
+                          <div className="text-6xl mb-4">🔍</div>
+                          <h2 className="text-2xl font-semibold mb-2">页面未找到</h2>
+                          <p className="text-muted-foreground">
+                            抱歉，您访问的页面不存在
+                          </p>
+                        </div>
+                      } />
+                    </Routes>
+                  </main>
+                  
+                  <Footer />
+                </div>
+              } />
+            </Routes>
+          </Suspense>
         
         {/* Toast 提示组件 */}
         <Toaster

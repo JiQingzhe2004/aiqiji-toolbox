@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
  * 支持多种样式和尺寸，符合提示词中的设计要求
  */
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-2xl text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center rounded-full text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -21,11 +21,13 @@ const buttonVariants = cva(
           'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
+        solid: 'bg-blue-600 text-white hover:bg-blue-700 focus:bg-blue-700 border-0',
+        solidCancel: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
       },
       size: {
         default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-xl px-3',
-        lg: 'h-11 rounded-2xl px-8',
+        sm: 'h-9 px-3',
+        lg: 'h-11 px-8',
         icon: 'h-10 w-10',
       },
     },

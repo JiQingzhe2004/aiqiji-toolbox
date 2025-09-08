@@ -1,3 +1,6 @@
+// Node.js 16 兼容性: 导入polyfills (必须在所有其他导入之前)
+import './polyfills.js';
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';

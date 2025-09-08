@@ -139,6 +139,22 @@ CREATE TABLE tools (
 );
 ```
 
+## 📋 系统要求
+
+- **Node.js**: >= 16.20.2 (推荐使用 16.20.2 - 17.x 版本)
+- **MySQL**: >= 5.7 或 MySQL 8.0
+- **npm**: >= 7.0 (建议使用最新版本)
+- **操作系统**: Windows, macOS, Linux
+
+> **重要**: 当前版本专门针对Node.js 16.20.2优化，所有依赖包版本都已降级以确保兼容性。如果使用Node.js 18+版本，可能需要升级相关依赖包版本。
+
+### Node.js 16兼容性优化
+- ✅ 添加了fetch polyfill支持
+- ✅ 降级Sharp到0.32.6版本
+- ✅ 降级Sequelize到6.32.1版本
+- ✅ 降级nodemon到2.0.22版本
+- ✅ 使用兼容的mysql2版本
+
 ## 🚀 部署指南
 
 ### 本地开发
@@ -177,11 +193,8 @@ npm run dev
 
 **手动执行种子数据**（可选）:
 ```bash
-# 执行SQL种子数据
-npm run db:seed-sql
-
-# 重新生成SQL文件
-npm run generate-sql
+# 执行种子数据
+npm run db:seed
 ```
 
 6. **启动生产服务器**
@@ -232,7 +245,7 @@ pm2 startup
 
 1. **创建Dockerfile**
 ```dockerfile
-FROM node:18-alpine
+FROM node:16-alpine
 
 WORKDIR /app
 
@@ -398,6 +411,25 @@ mysql -u root -p aiqiji_tools < backup.sql
    - 检查静态文件路径配置
    - 确认Nginx代理设置
    - 验证文件是否存在
+
+4. **Node.js版本兼容问题**
+   - `ReferenceError: fetch is not defined`: 已添加fetch polyfill支持
+   - `Could not load the "sharp" module`: 降级Sharp到0.32.6版本
+   - `Module not found`: 检查Node.js版本是否为16.20.2+
+   - 所有依赖包已降级至兼容Node.js 16的版本
+   
+   **解决方案**: 
+   ```bash
+   cd backend-mysql
+   rm -rf node_modules package-lock.json
+   npm install
+   npm run dev
+   ```
+   
+   **依赖版本说明**:
+   - `sharp`: 0.32.6 (兼容Node.js 16)
+   - `sequelize`: 6.32.1 (兼容Node.js 16)
+   - `nodemon`: 2.0.22 (兼容Node.js 16)
 
 ## 📞 技术支持
 

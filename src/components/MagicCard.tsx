@@ -139,10 +139,11 @@ export const MagicCard = memo(function MagicCard({
   }, [tool.name, searchQuery]);
 
   const highlightedDesc = useMemo(() => {
-    if (!searchQuery.trim()) return tool.desc;
+    const description = tool.description || tool.desc || '';
+    if (!searchQuery.trim()) return description;
     
     const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = tool.desc.split(regex);
+    const parts = description.split(regex);
     
     return parts.map((part, index) => 
       regex.test(part) ? (
@@ -151,7 +152,7 @@ export const MagicCard = memo(function MagicCard({
         </mark>
       ) : part
     );
-  }, [tool.desc, searchQuery]);
+  }, [tool.description, tool.desc, searchQuery]);
 
   return (
     <>
@@ -174,16 +175,16 @@ export const MagicCard = memo(function MagicCard({
           {/* 主图标/Logo */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative p-4 rounded-2xl bg-background/70 backdrop-blur-md border border-border/50 shadow-lg group-hover:scale-105 group-hover:shadow-xl transition-all duration-300">
-              {tool.logoUrl ? (
+              {(tool.icon_url || tool.logoUrl) ? (
                 <img 
-                  src={tool.logoUrl} 
+                  src={tool.icon_url || tool.logoUrl} 
                   alt={`${tool.name} logo`}
                   className={cn(
                     "h-8 w-8 object-contain rounded-sm",
                     // 主题适配逻辑
-                    tool.logoTheme === 'invert' && "invert",
-                    tool.logoTheme === 'auto' && "dark:invert",
-                    (!tool.logoTheme || tool.logoTheme === 'auto') && "dark:invert"
+                    (tool.icon_theme === 'invert' || tool.logoTheme === 'invert') && "invert",
+                    (tool.icon_theme === 'auto' || tool.logoTheme === 'auto') && "dark:invert",
+                    (!tool.icon_theme && !tool.logoTheme || tool.icon_theme === 'auto' || tool.logoTheme === 'auto') && "dark:invert"
                   )}
                   onError={(e) => {
                     // 如果logo加载失败，显示备用图标
@@ -193,7 +194,7 @@ export const MagicCard = memo(function MagicCard({
                 />
               ) : null}
               <IconComponent 
-                className={`h-9 w-9 text-foreground ${tool.logoUrl ? 'hidden' : ''}`} 
+                className={`h-9 w-9 text-foreground ${(tool.icon_url || tool.logoUrl) ? 'hidden' : ''}`} 
               />
             </div>
           </div>
@@ -230,7 +231,7 @@ export const MagicCard = memo(function MagicCard({
                 side="bottom" 
                 className="max-w-xs p-3 bg-popover text-popover-foreground border border-border shadow-md"
               >
-                <p className="text-sm">{tool.desc}</p>
+                <p className="text-sm">{tool.description || tool.desc}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -256,10 +257,10 @@ export const MagicCard = memo(function MagicCard({
         )}
 
         {/* 时间信息 */}
-        {tool.createdAt && (
+        {(tool.created_at || tool.createdAt) && (
           <div className="flex items-center text-xs text-muted-foreground">
             <Calendar className="w-3 h-3 mr-1.5" />
-            {formatDate(tool.createdAt)}
+            {formatDate(tool.created_at || tool.createdAt)}
           </div>
         )}
 

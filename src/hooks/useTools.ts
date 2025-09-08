@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Tool, Category, UseToolsReturn } from '@/types';
 import { highlightMatch, debounce } from '@/lib/utils';
+import { toolsApi } from '@/services/toolsApi';
 
 /**
  * 工具数据管理Hook
@@ -16,11 +17,10 @@ export function useTools(externalSearchQuery?: string): UseToolsReturn {
   
   // 使用ref缓存数据，避免重复请求
   const cacheRef = useRef<Map<string, Tool[]>>(new Map());
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 分类列表 - 使用常量避免重新创建
   const categories = useMemo<Category[]>(() => 
-    ['全部', '开发', '设计', '效率', 'AI', '其它'], []
+    ['全部', '开发', '设计', '效率', 'AI', '其他'], []
   );
 
   // 加载工具数据 - 优化版本，支持缓存和取消请求
@@ -38,37 +38,37 @@ export function useTools(externalSearchQuery?: string): UseToolsReturn {
           return;
         }
 
-        // 取消之前的请求
-        if (abortControllerRef.current) {
-          abortControllerRef.current.abort();
-        }
-        
-        abortControllerRef.current = new AbortController();
-        
-        // 从public/tools.json加载数据
-        const response = await fetch('/tools.json', {
-          signal: abortControllerRef.current.signal,
+        // 从API加载数据
+        const response = await toolsApi.getTools({ 
+          limit: 1000, // 获取所有数据
+          status: 'active' // 只获取活跃的工具
         });
         
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: Failed to load tools data`);
+        if (!response.success || !response.data) {
+          throw new Error(response.message || 'Failed to load tools data');
         }
         
-        const toolsData: Tool[] = await response.json();
+        const toolsData = response.data.tools || response.data;
         
         // 数据验证
         if (!Array.isArray(toolsData)) {
           throw new Error('Invalid tools data format');
         }
         
-        // 缓存数据
-        cacheRef.current.set('tools', toolsData);
-        setTools(toolsData);
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
-          return; // 请求被取消，不处理
-        }
+        // 数据转换 - 添加兼容性字段
+        const transformedTools: Tool[] = toolsData.map(tool => ({
+          ...tool,
+          // 添加兼容性字段
+          desc: tool.description,
+          logoUrl: tool.icon_url,
+          logoTheme: tool.icon_theme,
+          createdAt: tool.created_at,
+        }));
         
+        // 缓存数据
+        cacheRef.current.set('tools', transformedTools);
+        setTools(transformedTools);
+      } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
         setError(errorMessage);
         console.error('Failed to load tools:', err);
@@ -78,13 +78,6 @@ export function useTools(externalSearchQuery?: string): UseToolsReturn {
     };
 
     loadTools();
-    
-    // 清理函数
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
   }, []);
 
   // 使用外部搜索查询或内部搜索查询
@@ -112,7 +105,7 @@ export function useTools(externalSearchQuery?: string): UseToolsReturn {
       filtered = filtered.filter(tool => {
         const searchText = [
           tool.name,
-          tool.desc,
+          tool.description || tool.desc || '',
           ...(tool.tags || [])
         ].join(' ').toLowerCase();
         

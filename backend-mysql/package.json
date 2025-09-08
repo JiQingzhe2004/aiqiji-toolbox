@@ -1,0 +1,53 @@
+{
+  "name": "aiqiji-tools-backend-mysql",
+  "version": "1.0.0",
+  "description": "AiQiji工具箱后端API服务 - MySQL版本",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "build": "echo 'Build completed'",
+    "test": "echo 'No tests specified'",
+    "db:migrate": "node src/database/migrate.js",
+    "db:seed-sql": "node src/database/seedSQL.js",
+    "db:reset": "node src/database/reset.js",
+    "generate-sql": "node scripts/generate-sql.js"
+  },
+  "keywords": [
+    "nodejs",
+    "mysql",
+    "express",
+    "api",
+    "tools",
+    "file-upload"
+  ],
+  "author": "AiQiji",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.5",
+    "sequelize": "^6.35.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0",
+    "express-rate-limit": "^7.1.5",
+    "joi": "^17.11.0",
+    "dotenv": "^16.3.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "sharp": "^0.33.1",
+    "express-fileupload": "^1.4.3",
+    "uuid": "^9.0.1",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "sequelize-cli": "^6.6.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

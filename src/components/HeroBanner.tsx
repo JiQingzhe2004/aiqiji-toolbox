@@ -174,7 +174,7 @@ export function HeroBanner() {
             {[
               { label: '精选工具', value: '20+' },
               { label: '工具分类', value: '5+' },
-              { label: '持续更新', value: '每周' }
+              { label: '持续更新', value: '持续中' }
             ].map((stat, index) => (
               <div key={stat.label} className="text-center">
                 <motion.div

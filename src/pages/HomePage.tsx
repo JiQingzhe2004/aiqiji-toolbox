@@ -138,10 +138,10 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
               </div>
               <div className="space-y-2">
                 <div className="text-2xl font-bold text-gradient">
-                  100%
+                  约80%
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  免费开源
+                  免费
                 </div>
               </div>
             </div>

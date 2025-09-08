@@ -186,14 +186,11 @@ export function SponsorModal({ isOpen, onClose }: SponsorModalProps) {
           {/* 头部 */}
           <div className="p-6 pb-4">
             <div className="flex items-center space-x-3 mb-4">
-              <div className={`w-10 h-10 bg-gradient-to-br ${selectedOptionData.color} rounded-xl flex items-center justify-center`}>
-                <SelectedIcon className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 bg-[#1677FF] rounded-xl flex items-center justify-center">
+                <AiOutlineAlipay size={30} className="text-white" />
               </div>
               <div>
-                <div className="flex items-center space-x-2">
-                  <AiOutlineAlipay className="w-6 h-6 text-[#1677FF]" />
-                  <h2 className="text-xl font-bold text-foreground">支持我的工作</h2>
-                </div>
+                <h2 className="text-xl font-bold text-foreground">支持我的工作</h2>
                 <p className="text-sm text-muted-foreground">感谢您的支持和鼓励！</p>
               </div>
             </div>
@@ -235,10 +232,7 @@ export function SponsorModal({ isOpen, onClose }: SponsorModalProps) {
                     className="w-48 h-48 mx-auto rounded-lg border border-muted-foreground/20"
                   />
                   <div>
-                    <p className="text-lg font-semibold text-foreground mb-1">
-                      {selectedOptionData.description}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-lg font-semibold text-foreground">
                       使用支付宝扫描二维码赞助 {selectedOptionData.amount}
                     </p>
                   </div>

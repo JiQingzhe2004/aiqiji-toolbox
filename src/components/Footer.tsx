@@ -41,7 +41,13 @@ export function Footer() {
         {/* 顶部大标题 */}
         <div className="text-center mb-12">
           <div className="mb-4">
-            <ComicText fontSize={5}>AiQiji·Tools</ComicText>
+            {/* 手机端使用较小字体，桌面端使用大字体 */}
+            <div className="block md:hidden">
+              <ComicText fontSize={3}>AiQiji·Tools</ComicText>
+            </div>
+            <div className="hidden md:block">
+              <ComicText fontSize={5}>AiQiji·Tools</ComicText>
+            </div>
           </div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             为开发者、设计师和效率工具爱好者精心收集的工具导航站点
@@ -296,9 +302,6 @@ export function Footer() {
           </div>
         </div>
       </div>
-      
-      {/* 底部装饰 */}
-      <div className="h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-cyan-500" />
     </motion.footer>
     
     {/* 赞助弹窗 */}

@@ -98,7 +98,10 @@ export function useTools(externalSearchQuery?: string): UseToolsReturn {
     if (filtered.length === 0) return filtered;
     
     if (activeCategory !== '全部') {
-      filtered = filtered.filter(tool => tool.category === activeCategory);
+      filtered = filtered.filter(tool => {
+        const categories = Array.isArray(tool.category) ? tool.category : [tool.category];
+        return categories.includes(activeCategory);
+      });
     }
 
     // 搜索过滤 - 支持名称、描述、标签搜索，优化搜索算法

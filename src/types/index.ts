@@ -18,7 +18,7 @@ export interface Tool {
   /** logo主题适配方式: 'auto' | 'invert' | 'none' */
   logoTheme?: 'auto' | 'invert' | 'none';
   /** 分类：开发/设计/效率/AI/其它 */
-  category: string;
+  category: string | string[];
   /** 标签数组，如 ["在线","免费"] */
   tags?: string[];
   /** 外部链接 */

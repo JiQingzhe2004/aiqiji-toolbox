@@ -34,7 +34,7 @@ export function useVirtualizedGrid({
     const query = searchQuery.toLowerCase();
     return tools.filter(tool => 
       tool.name.toLowerCase().includes(query) ||
-      tool.desc.toLowerCase().includes(query) ||
+      (tool.desc || tool.description || '').toLowerCase().includes(query) ||
       tool.tags?.some(tag => tag.toLowerCase().includes(query)) ||
       tool.category.toLowerCase().includes(query)
     );

@@ -22,7 +22,7 @@ export function ApiTestPage() {
     try {
       const response = await toolsApi.getTools({ limit: 10 });
       if (response.success && response.data) {
-        setTools(response.data.items);
+        setTools(response.data.tools);
         console.log('API Response:', response);
       } else {
         setError(response.message || '获取工具列表失败');

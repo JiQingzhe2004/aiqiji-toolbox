@@ -11,7 +11,8 @@ import {
   Wand, 
   Pickaxe, 
   Sparkles, 
-  Boxes 
+  Boxes,
+  MoreHorizontal 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

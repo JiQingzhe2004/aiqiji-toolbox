@@ -34,7 +34,7 @@ export const MagicCard = memo(function MagicCard({
   const confettiRef = React.useRef<ConfettiRef>(null);
   // 动态获取图标组件
   const IconComponent = useMemo(() => 
-    tool.icon in LucideIcons 
+    tool.icon && tool.icon in LucideIcons 
       ? (LucideIcons as any)[tool.icon] 
       : LucideIcons.Wrench,
     [tool.icon]
@@ -182,9 +182,9 @@ export const MagicCard = memo(function MagicCard({
                   className={cn(
                     "h-8 w-8 object-contain rounded-sm",
                     // 主题适配逻辑
-                    (tool.icon_theme === 'invert' || tool.logoTheme === 'invert') && "invert",
-                    (tool.icon_theme === 'auto' || tool.logoTheme === 'auto') && "dark:invert",
-                    (!tool.icon_theme && !tool.logoTheme || tool.icon_theme === 'auto' || tool.logoTheme === 'auto') && "dark:invert"
+                    (tool.logoTheme === 'invert') && "invert",
+                    (tool.logoTheme === 'auto') && "dark:invert",
+                    (!tool.logoTheme || tool.logoTheme === 'auto') && "dark:invert"
                   )}
                   onError={(e) => {
                     // 如果logo加载失败，显示备用图标
@@ -260,7 +260,7 @@ export const MagicCard = memo(function MagicCard({
         {(tool.created_at || tool.createdAt) && (
           <div className="flex items-center text-xs text-muted-foreground">
             <Calendar className="w-3 h-3 mr-1.5" />
-            {formatDate(tool.created_at || tool.createdAt)}
+            {formatDate((tool.created_at || tool.createdAt)!)}
           </div>
         )}
 

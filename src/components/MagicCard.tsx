@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ExternalLink, Copy, Star, Calendar, CheckCircle } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-button';
 import { DotPattern } from '@/components/magicui/dot-pattern';
@@ -218,9 +219,21 @@ export const MagicCard = memo(function MagicCard({
           <CardTitle className="text-base font-semibold line-clamp-1 group-hover:text-primary transition-colors">
             {highlightedName}
           </CardTitle>
-          <CardDescription className="text-sm line-clamp-2 mt-1">
-            {highlightedDesc}
-          </CardDescription>
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <CardDescription className="text-sm mt-1 h-12 leading-6 line-clamp-2 cursor-help">
+                  {highlightedDesc}
+                </CardDescription>
+              </TooltipTrigger>
+              <TooltipContent 
+                side="bottom" 
+                className="max-w-xs p-3 bg-popover text-popover-foreground border border-border shadow-md"
+              >
+                <p className="text-sm">{tool.desc}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         {/* 标签 */}

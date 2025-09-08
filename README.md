@@ -119,6 +119,8 @@ pnpm test:ui
 - `featured`: 是否为推荐工具（可选，默认false）
 - `createdAt`: 创建时间 ISO 格式（可选）
 
+#### 图标使用SVG的时候，会有颜色的问题，可参考[控制SVG颜色字段参考](/docs/logo-support.md)
+
 ## 🚀 部署
 
 ### Vercel 部署
@@ -222,9 +224,9 @@ A: 编辑 `src/index.css` 文件中的 CSS 自定义属性，或修改 `tailwind
 
 ## 📧 联系我们
 
-- 邮箱: contact@aiqiji.com
-- GitHub: [AiQiji Team](https://github.com/aiqiji)
-- 网站: [https://tools.aiqiji.com](https://tools.aiqiji.com)
+- 邮箱: jqz1215@qq.com
+- GitHub: [JiQingzhe2004](https://github.com/JiQingzhe2004)
+- 网站: [AiQiji·工具箱](https://tools.aiqiji.com)
 
 ---
 

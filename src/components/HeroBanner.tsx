@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, Sparkles } from 'lucide-react';
+import { ChevronDown, Sparkles, Dot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TextAnimate } from '@/components/magicui/text-animate';
 import { TypingAnimation } from '@/components/magicui/typing-animation';
@@ -108,7 +108,22 @@ export function HeroBanner() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-5xl md:text-7xl font-bold tracking-tighter"
           >
-            Ai <AuroraText>Qiji工具箱</AuroraText>
+            Ai
+            <motion.span
+              animate={{ 
+                opacity: [0.3, 1, 0.3],
+                scale: [0.8, 1.1, 0.8]
+              }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="inline-block mx-0.5"
+            >
+              <Dot size={48} className="md:size-16 text-primary inline" />
+            </motion.span>
+            <AuroraText>Qiji工具箱</AuroraText>
           </motion.h1>
 
           {/* 副标题 - 带文字动画效果 */}
@@ -157,7 +172,7 @@ export function HeroBanner() {
             className="flex flex-wrap justify-center gap-8 mt-8"
           >
             {[
-              { label: '精选工具', value: '100+' },
+              { label: '精选工具', value: '20+' },
               { label: '工具分类', value: '5+' },
               { label: '持续更新', value: '每周' }
             ].map((stat, index) => (

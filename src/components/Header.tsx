@@ -51,7 +51,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           {/* 站点名称 */}
           <div className="flex flex-col">
             <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              AiQiji工具箱
+              AiQiji·工具箱
             </h1>
             <span className="text-xs text-muted-foreground hidden sm:block">
               效率工具导航站

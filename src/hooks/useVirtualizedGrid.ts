@@ -36,7 +36,10 @@ export function useVirtualizedGrid({
       tool.name.toLowerCase().includes(query) ||
       (tool.desc || tool.description || '').toLowerCase().includes(query) ||
       tool.tags?.some(tag => typeof tag === 'string' && tag.toLowerCase().includes(query)) ||
-      tool.category.toLowerCase().includes(query)
+      (typeof tool.category === 'string' 
+        ? tool.category.toLowerCase().includes(query)
+        : tool.category.some(cat => cat.toLowerCase().includes(query))
+      )
     );
   }, [tools, searchQuery]);
 

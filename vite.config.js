@@ -16,6 +16,10 @@ export default defineConfig({
     // 确保 JSX 正确转换
     jsx: 'automatic',
     jsxDev: false,
+    // 保留函数名，避免 React hooks 问题
+    keepNames: true,
+    // 目标环境
+    target: 'es2020',
   },
   build: {
     // 代码分割优化
@@ -42,8 +46,11 @@ export default defineConfig({
         
         // 更激进的代码分割策略
         manualChunks: (id) => {
-          // React 核心库
-          if (id.includes('react/') || id.includes('react-dom/')) {
+          // React 核心库 - 确保完整包含
+          if (id.includes('node_modules/react/') || 
+              id.includes('node_modules/react-dom/') ||
+              id.includes('react/jsx-runtime') ||
+              id.includes('react/jsx-dev-runtime')) {
             return 'react-vendor';
           }
           
@@ -107,44 +114,8 @@ export default defineConfig({
       // 外部化依赖 - 对于大型库考虑CDN
       external: [],
     },
-    // 压缩配置
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        // 移除console (生产环境)
-        drop_console: true,
-        drop_debugger: true,
-        // 移除未使用的代码
-        dead_code: true,
-        // 压缩条件表达式
-        conditionals: true,
-        // 移除未使用的函数 - 保守设置避免 React 19 问题
-        unused: false,
-        // 压缩布尔值
-        booleans: true,
-        // 优化if语句
-        if_return: true,
-        // 合并变量 - 保守设置
-        join_vars: false,
-        // 保留副作用以确保 React hooks 正常工作
-        side_effects: true,
-        // 避免过度优化导致 React 问题
-        pure_funcs: [],
-        // 保留函数名以便调试
-        keep_fnames: true,
-      },
-      mangle: {
-        // 混淆变量名 - 保守设置
-        toplevel: false,
-        safari10: true,
-        // 保留 React 相关的函数名
-        reserved: ['React', 'ReactDOM', 'useState', 'useEffect', 'useLayoutEffect', 'useContext']
-      },
-      format: {
-        // 保留注释中的重要信息
-        comments: /^!/,
-      }
-    },
+    // 使用更安全的压缩配置避免 React 19 问题
+    minify: 'esbuild',
     // 设置chunk大小警告限制
     chunkSizeWarningLimit: 500,
     // 启用CSS代码分割
@@ -182,8 +153,10 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-    // React 19 兼容性
+    // React 19 兼容性 - 确保正确解析
     dedupe: ['react', 'react-dom'],
     conditions: ['import', 'module', 'browser', 'default'],
+    // 确保正确的扩展名解析
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
   },
 })

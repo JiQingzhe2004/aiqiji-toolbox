@@ -29,13 +29,13 @@ export function useVirtualizedGrid({
 
   // 过滤后的工具列表
   const filteredTools = useMemo(() => {
-    if (!searchQuery.trim()) return tools;
+    if (!searchQuery || !searchQuery.trim()) return tools;
     
-    const query = searchQuery.toLowerCase();
+    const query = typeof searchQuery === 'string' ? searchQuery.toLowerCase() : '';
     return tools.filter(tool => 
       tool.name.toLowerCase().includes(query) ||
       (tool.desc || tool.description || '').toLowerCase().includes(query) ||
-      tool.tags?.some(tag => tag.toLowerCase().includes(query)) ||
+      tool.tags?.some(tag => typeof tag === 'string' && tag.toLowerCase().includes(query)) ||
       tool.category.toLowerCase().includes(query)
     );
   }, [tools, searchQuery]);

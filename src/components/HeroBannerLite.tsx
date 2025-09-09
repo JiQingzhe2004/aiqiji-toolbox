@@ -2,7 +2,6 @@ import React from 'react';
 import { ChevronDown, Sparkles, Dot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TypingAnimation } from '@/components/magicui/typing-animation';
-import { Ripple } from '@/components/magicui/ripple';
 import { AuroraText } from '@/components/magicui/aurora-text';
 
 /**
@@ -35,13 +34,11 @@ export function HeroBannerLite() {
       {/* 背景装饰 */}
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-grid-black/[0.02]" />
       
-      {/* 涟漪效果 */}
-      <Ripple
-        mainCircleSize={210}
-        mainCircleOpacity={0.24}
-        numCircles={8}
-        className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,white_50%,transparent_80%)]"
-      />
+      {/* 背景装饰圆圈 */}
+      <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,white_50%,transparent_80%)]">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[210px] h-[210px] rounded-full bg-primary/10 animate-pulse" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150px] h-[150px] rounded-full bg-primary/5 animate-ping" />
+      </div>
 
       {/* 主要内容 */}
       <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">

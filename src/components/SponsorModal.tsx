@@ -3,6 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Coffee, Heart, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AiOutlineAlipay } from "react-icons/ai";
+
+// 类型安全的图标组件包装器
+const IconWrapper = ({ Icon, ...props }: { Icon: any; [key: string]: any }) => {
+  const Component = Icon as React.ComponentType<any>;
+  return <Component {...props} />;
+};
 import QRCode from 'qrcode';
 
 interface SponsorModalProps {
@@ -187,7 +193,7 @@ export function SponsorModal({ isOpen, onClose }: SponsorModalProps) {
           <div className="p-6 pb-4">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-[#1677FF] rounded-xl flex items-center justify-center">
-                <AiOutlineAlipay size={30} className="text-white" />
+                <IconWrapper Icon={AiOutlineAlipay} size={30} className="text-white" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-foreground">支持我的工作</h2>

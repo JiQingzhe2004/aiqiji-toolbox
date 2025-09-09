@@ -21,6 +21,12 @@ import { TbBrandWechat } from "react-icons/tb";
 import { SiCsdn } from "react-icons/si";
 import { RiQqLine } from "react-icons/ri";
 import { FaWordpress } from "react-icons/fa";
+
+// 类型安全的图标组件包装器
+const IconWrapper = ({ Icon, ...props }: { Icon: any; [key: string]: any }) => {
+  const Component = Icon as React.ComponentType<any>;
+  return <Component {...props} />;
+};
 import { Button } from '@/components/ui/button';
 import { SponsorModal } from './SponsorModal';
 import { QRCodeTooltip } from './QRCodeTooltip';
@@ -214,7 +220,7 @@ export function Footer() {
                     aria-label="关注X (Twitter)"
                     title="关注X (Twitter)"
                   >
-                    <AiOutlineX className="w-5 h-5" />
+                    <IconWrapper Icon={AiOutlineX} className="w-5 h-5" />
                   </a>
                 </Button>
                 
@@ -231,7 +237,7 @@ export function Footer() {
                     aria-label="关注知乎"
                     title="关注知乎"
                   >
-                    <AiOutlineZhihu className="w-5 h-5" />
+                    <IconWrapper Icon={AiOutlineZhihu} className="w-5 h-5" />
                   </a>
                 </Button>
                 
@@ -258,7 +264,7 @@ export function Footer() {
                     aria-label="关注CSDN博客"
                     title="关注CSDN博客"
                   >
-                    <SiCsdn className="w-5 h-5" />
+                    <IconWrapper Icon={SiCsdn} className="w-5 h-5" />
                   </a>
                 </Button>
                 
@@ -275,7 +281,7 @@ export function Footer() {
                     aria-label="访问AiQiji博客"
                     title="访问AiQiji博客"
                   >
-                    <FaWordpress className="w-5 h-5" />
+                    <IconWrapper Icon={FaWordpress} className="w-5 h-5" />
                   </a>
                 </Button>
                 
@@ -293,7 +299,7 @@ export function Footer() {
                       aria-label="添加QQ好友"
                       title="悬停查看QQ二维码"
                     >
-                      <RiQqLine className="w-5 h-5" />
+                      <IconWrapper Icon={RiQqLine} className="w-5 h-5" />
                     </Button>
                   </QRCodeTooltip>
                 </div>
@@ -306,7 +312,7 @@ export function Footer() {
                     aria-label="添加QQ好友"
                     title="点击添加QQ好友"
                   >
-                    <RiQqLine className="w-5 h-5" />
+                    <IconWrapper Icon={RiQqLine} className="w-5 h-5" />
                   </Button>
                 </div>
                 
@@ -324,7 +330,7 @@ export function Footer() {
                       aria-label="添加微信好友"
                       title="悬停查看微信二维码"
                     >
-                      <TbBrandWechat className="w-5 h-5" />
+                      <IconWrapper Icon={TbBrandWechat} className="w-5 h-5" />
                     </Button>
                   </QRCodeTooltip>
                 </div>
@@ -337,7 +343,7 @@ export function Footer() {
                     aria-label="添加微信好友"
                     title="点击添加微信好友"
                   >
-                    <TbBrandWechat className="w-5 h-5" />
+                    <IconWrapper Icon={TbBrandWechat} className="w-5 h-5" />
                   </Button>
                 </div>
               </div>

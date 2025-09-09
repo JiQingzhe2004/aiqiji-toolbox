@@ -10,15 +10,9 @@ export default defineConfig({
     // 确保 React 全局变量可用
     global: 'globalThis',
   },
-  // React 19 兼容性配置
+  // React 18 配置
   esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'silent' },
-    // 确保 JSX 正确转换
     jsx: 'automatic',
-    jsxDev: false,
-    // 保留函数名，避免 React hooks 问题
-    keepNames: true,
-    // 目标环境
     target: 'es2020',
   },
   build: {
@@ -44,71 +38,39 @@ export default defineConfig({
         },
         assetFileNames: 'assets/[name]-[hash].[ext]',
         
-        // 更激进的代码分割策略
-        manualChunks: (id) => {
-          // React 核心库 - 确保完整包含
-          if (id.includes('node_modules/react/') || 
-              id.includes('node_modules/react-dom/') ||
-              id.includes('react/jsx-runtime') ||
-              id.includes('react/jsx-dev-runtime')) {
-            return 'react-vendor';
-          }
+        // 简化的代码分割策略
+        manualChunks: {
+          // React 核心库
+          'react-vendor': ['react', 'react-dom'],
           
-          // 路由相关
-          if (id.includes('react-router')) {
-            return 'router';
-          }
+          // 路由
+          'router': ['react-router-dom'],
           
-          // Radix UI 组件 - 按使用频率分组
-          if (id.includes('@radix-ui/react-dialog') || 
-              id.includes('@radix-ui/react-tooltip') || 
-              id.includes('@radix-ui/react-alert-dialog')) {
-            return 'radix-core';
-          }
-          if (id.includes('@radix-ui')) {
-            return 'radix-other';
-          }
+          // UI 组件库
+          'ui-components': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-select',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-label',
+            '@radix-ui/react-separator',
+            '@radix-ui/react-progress',
+            '@radix-ui/react-aspect-ratio'
+          ],
           
           // 动画库
-          if (id.includes('framer-motion')) {
-            return 'animation';
-          }
+          'animation': ['framer-motion'],
           
-          // 图标库 - 分离大小不同的图标库
-          if (id.includes('lucide-react')) {
-            return 'lucide-icons';
-          }
-          if (id.includes('react-icons')) {
-            return 'social-icons';
-          }
-          
-          // QR码相关
-          if (id.includes('qrcode')) {
-            return 'qr-utils';
-          }
+          // 图标库
+          'icons': ['lucide-react', 'react-icons'],
           
           // 工具库
-          if (id.includes('clsx') || id.includes('tailwind-merge') || id.includes('class-variance-authority')) {
-            return 'utils';
-          }
+          'utils': ['clsx', 'tailwind-merge', 'class-variance-authority'],
           
-          // 大型第三方库单独分包
-          if (id.includes('react-hot-toast')) {
-            return 'toast';
-          }
-          if (id.includes('react-intersection-observer')) {
-            return 'intersection-observer';
-          }
-          
-          // 其他小型库
-          if (id.includes('mini-svg-data-uri')) {
-            return 'svg-utils';
-          }
-          
-          // 其他 node_modules
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
+          // 其他库
+          'vendor': ['react-hot-toast', 'react-intersection-observer', 'qrcode', 'mini-svg-data-uri']
         }
       },
       // 外部化依赖 - 对于大型库考虑CDN
@@ -148,15 +110,9 @@ export default defineConfig({
     }
   },
   
-  // 确保正确的模块解析
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-    // React 19 兼容性 - 确保正确解析
-    dedupe: ['react', 'react-dom'],
-    conditions: ['import', 'module', 'browser', 'default'],
-    // 确保正确的扩展名解析
-    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
   },
 })

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+// 移除 framer-motion，使用 CSS 动画替代
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -66,11 +66,20 @@ export function SearchBar({
   };
 
   return (
+<<<<<<< HEAD
     <motion.div
       className={cn('relative', className)}
       initial={{ width: className?.includes('flex-1') ? '100%' : 220 }}
       animate={{ width: className?.includes('flex-1') ? '100%' : (isFocused ? 360 : 220) }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
+=======
+    <div
+      className={cn(
+        'relative transition-all duration-180 ease-out',
+        isFocused ? 'w-[360px]' : 'w-[220px]',
+        className
+      )}
+>>>>>>> 79ce046bf5cc80a86f044c6d4dc6ef0ab034430c
     >
       <div className="relative">
         {/* 搜索图标 */}
@@ -147,6 +156,6 @@ export function SearchBar({
       <div id="search-help" className="sr-only">
         使用此搜索框可以按名称、描述或标签查找工具。按下Ctrl+K或Cmd+K可快速聚焦。
       </div>
-    </motion.div>
+    </div>
   );
 }

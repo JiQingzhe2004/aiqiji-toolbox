@@ -4,9 +4,14 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-button';
+<<<<<<< HEAD
 import { Confetti, type ConfettiRef } from '@/components/magicui/confetti';
+=======
+import { DotPattern } from '@/components/magicui/dot-pattern';
+import { ConfettiLite, type ConfettiRef } from '@/components/magicui/confetti-lite';
+>>>>>>> 79ce046bf5cc80a86f044c6d4dc6ef0ab034430c
 import { QRCodeModal } from './QRCodeModal';
-import * as AspectRatio from '@radix-ui/react-aspect-ratio';
+import { Root as AspectRatio } from '@radix-ui/react-aspect-ratio';
 import toast from 'react-hot-toast';
 import type { Tool } from '@/types';
 import { cn, openExternalLinkWithWarning, formatDate } from '@/lib/utils';
@@ -153,19 +158,7 @@ export const MagicCard = memo(function MagicCard({
       await navigator.clipboard.writeText(tool.url);
       
       // 触发彩带效果
-      confettiRef.current?.fire({
-        particleCount: 30,
-        spread: 60,
-        origin: { 
-          x: (e.clientX) / window.innerWidth, 
-          y: (e.clientY) / window.innerHeight 
-        },
-        colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42'],
-        shapes: ['circle', 'square'],
-        startVelocity: 25,
-        decay: 0.95,
-        ticks: 150
-      });
+      confettiRef.current?.fire();
       
       // 显示成功提示
       toast.success('链接已复制到剪贴板！', {
@@ -192,16 +185,7 @@ export const MagicCard = memo(function MagicCard({
       document.body.removeChild(textArea);
       
       // 即使降级方案也触发彩带效果
-      confettiRef.current?.fire({
-        particleCount: 20,
-        spread: 45,
-        origin: { 
-          x: (e.clientX) / window.innerWidth, 
-          y: (e.clientY) / window.innerHeight 
-        },
-        colors: ['#26ccff', '#a25afd'],
-        startVelocity: 20
-      });
+      confettiRef.current?.fire();
       
       // 显示成功提示
       toast.success('链接已复制到剪贴板！', {
@@ -260,10 +244,10 @@ export const MagicCard = memo(function MagicCard({
 
   return (
     <>
-      <Confetti ref={confettiRef} />
+      <ConfettiLite ref={confettiRef} />
       <Card className="overflow-hidden group">
       {/* Radix AspectRatio 确保图片区域完美比例 */}
-      <AspectRatio.Root ratio={16 / 9}>
+      <AspectRatio ratio={16 / 9}>
         <div className="relative w-full h-full bg-gradient-to-br from-background/5 via-muted/30 to-muted/60 overflow-hidden">
           
           {/* 主图标/Logo */}
@@ -324,7 +308,7 @@ export const MagicCard = memo(function MagicCard({
           {/* Hover 效果 */}
           <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
         </div>
-      </AspectRatio.Root>
+      </AspectRatio>
 
       {/* 内容区域 */}
       <div className="p-4 space-y-3">

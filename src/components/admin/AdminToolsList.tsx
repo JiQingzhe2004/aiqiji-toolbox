@@ -128,10 +128,10 @@ export function AdminToolsList({
                       alt={tool.name}
                       className={cn(
                         "w-8 h-8 rounded object-contain",
-                        // 主题适配逻辑 - 与主页保持一致
-                        (tool.logoTheme === 'invert') && "invert",
-                        (tool.logoTheme === 'auto') && "dark:invert",
-                        (!tool.logoTheme || tool.logoTheme === 'auto') && "dark:invert"
+                        // 主题适配逻辑：根据图标原始颜色类型进行适配
+                        (tool.logoTheme === 'auto-dark' || tool.logoTheme === 'auto' || tool.logoTheme === 'dark' || !tool.logoTheme) && "dark:invert", // 深色图标
+                        (tool.logoTheme === 'auto-light' || tool.logoTheme === 'light') && "invert dark:invert-0", // 浅色图标
+                        // none: 不添加任何样式，保持原色
                       )}
                     />
                   ) : (

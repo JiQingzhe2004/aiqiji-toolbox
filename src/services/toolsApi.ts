@@ -56,7 +56,7 @@ export interface ToolFormData {
   description: string;
   icon?: string;
   icon_url?: string;
-  icon_theme?: 'auto' | 'light' | 'dark' | 'none';
+  icon_theme?: 'auto' | 'auto-light' | 'auto-dark' | 'light' | 'dark' | 'none';
   category: string;
   tags?: string[];
   url: string;

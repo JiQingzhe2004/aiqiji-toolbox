@@ -12,24 +12,8 @@ import bcrypt from 'bcryptjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 数据库配置
-const config = {
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 3306,
-  database: process.env.DB_NAME || 'tools_navigation',
-  username: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '',
-  dialect: 'mysql',
-  logging: console.log,
-  timezone: '+08:00',
-  define: {
-    charset: 'utf8mb4',
-    collate: 'utf8mb4_unicode_ci',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
-  }
-};
+// 导入主应用的数据库配置
+import sequelizeInstance from '../config/database.js';
 
 async function initializeDatabase() {
   let sequelize;
@@ -37,8 +21,8 @@ async function initializeDatabase() {
   try {
     console.log('🚀 开始初始化数据库...\n');
     
-    // 连接数据库
-    sequelize = new Sequelize(config);
+    // 使用主应用的数据库配置
+    sequelize = sequelizeInstance;
     await sequelize.authenticate();
     console.log('✅ 数据库连接成功');
     
@@ -48,16 +32,21 @@ async function initializeDatabase() {
     // 初始化管理员账户
     await initializeAdminUser(sequelize);
     
+    // 初始化系统设置
+    await initializeSystemSettings(sequelize);
+    
     console.log('\n🎉 数据库初始化完成!');
     console.log(`
 📊 初始化完成:
 - ✅ 创建 users 表
 - ✅ 创建 tools 表
+- ✅ 创建 system_settings 表
 - ✅ 创建管理员账户
+- ✅ 初始化系统设置
 
 🔧 数据库信息:
-- 数据库: ${config.database}
-- 主机: ${config.host}:${config.port}
+- 数据库: ${sequelize.config.database}
+- 主机: ${sequelize.config.host}:${sequelize.config.port}
 - 字符集: utf8mb4
 
 👤 管理员账户:
@@ -131,6 +120,26 @@ async function createTables(sequelize) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
   console.log('  ✅ tools 表创建完成');
+  
+  // 创建 system_settings 表
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS \`system_settings\` (
+      \`id\` varchar(36) NOT NULL,
+      \`setting_key\` varchar(100) NOT NULL,
+      \`setting_value\` text,
+      \`setting_type\` enum('string','number','boolean','json') DEFAULT 'string',
+      \`description\` varchar(255) DEFAULT NULL,
+      \`category\` varchar(50) DEFAULT 'general',
+      \`is_public\` tinyint(1) DEFAULT '1',
+      \`created_at\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updated_at\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`),
+      UNIQUE KEY \`system_settings_key_unique\` (\`setting_key\`),
+      KEY \`idx_settings_category\` (\`category\`),
+      KEY \`idx_settings_public\` (\`is_public\`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+  console.log('  ✅ system_settings 表创建完成');
 }
 
 async function initializeAdminUser(sequelize) {
@@ -174,8 +183,79 @@ async function initializeAdminUser(sequelize) {
   console.log(`     - 邮箱: ${email}`);
 }
 
+async function initializeSystemSettings(sequelize) {
+  console.log('⚙️ 初始化系统设置...');
+  
+  // 检查是否已存在系统设置
+  const [existingSettings] = await sequelize.query(
+    "SELECT COUNT(*) as count FROM system_settings"
+  );
+  
+  if (existingSettings[0].count > 0) {
+    console.log('  ⚠️  系统设置已存在，跳过初始化');
+    return;
+  }
+  
+  // 初始化默认系统设置
+  const defaultSettings = [
+    {
+      id: 'icp-number-' + Date.now(),
+      setting_key: 'icp_number',
+      setting_value: '',
+      setting_type: 'string',
+      description: '网站备案号',
+      category: 'website',
+      is_public: 1
+    },
+    {
+      id: 'show-icp-' + Date.now(),
+      setting_key: 'show_icp',
+      setting_value: 'false',
+      setting_type: 'boolean',
+      description: '是否显示备案号',
+      category: 'website',
+      is_public: 1
+    },
+    {
+      id: 'site-name-' + Date.now(),
+      setting_key: 'site_name',
+      setting_value: 'AiQiji工具箱',
+      setting_type: 'string',
+      description: '网站名称',
+      category: 'website',
+      is_public: 1
+    },
+    {
+      id: 'site-desc-' + Date.now(),
+      setting_key: 'site_description',
+      setting_value: '为开发者、设计师和效率工具爱好者精心收集的工具导航站点',
+      setting_type: 'string',
+      description: '网站描述',
+      category: 'website',
+      is_public: 1
+    }
+  ];
+  
+  for (const setting of defaultSettings) {
+    await sequelize.query(`
+      INSERT INTO system_settings (
+        id, setting_key, setting_value, setting_type, description, category, is_public, created_at, updated_at
+      ) VALUES (
+        :id, :setting_key, :setting_value, :setting_type, :description, :category, :is_public, NOW(), NOW()
+      )
+    `, {
+      replacements: setting
+    });
+  }
+  
+  console.log('  ✅ 系统设置初始化完成');
+  console.log('     - 备案号设置');
+  console.log('     - 显示控制开关');
+  console.log('     - 网站基本信息');
+}
+
 // 运行初始化
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === `file://${process.argv[1]}` || import.meta.url.endsWith('init.js')) {
   initializeDatabase();
 }
 

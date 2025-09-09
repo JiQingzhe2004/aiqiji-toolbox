@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Github, Sparkles, Search, LogIn, Settings, MailCheck } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { SearchBar } from './SearchBar';
 import { AnimatedThemeToggler } from './magicui/animated-theme-toggler';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,19 @@ interface HeaderProps {
 export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
   const { isAuthenticated, isAdmin } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // 处理标题点击事件
+  const handleTitleClick = () => {
+    if (location.pathname === '/') {
+      // 如果已经在首页，滚动到顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // 如果不在首页，导航到首页
+      navigate('/');
+    }
+  };
   return (
     <>
     <motion.header
@@ -34,9 +48,11 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* Logo区域 */}
         <motion.div
-          className="flex items-center space-x-3"
+          className="flex items-center space-x-3 cursor-pointer"
           whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           transition={{ duration: 0.2 }}
+          onClick={handleTitleClick}
         >
           {/* Logo图标 */}
           <div className="relative">
@@ -53,12 +69,12 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
             />
           </div>
           
-          {/* 站点名称 */}
-          <div className="flex flex-col">
+          {/* 站点名称 - 移动端隐藏 */}
+          <div className="flex-col hidden sm:flex">
             <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
               AiQiji·工具箱
             </h1>
-            <span className="text-xs text-muted-foreground hidden sm:block">
+            <span className="text-xs text-muted-foreground">
               效率工具导航站
             </span>
           </div>

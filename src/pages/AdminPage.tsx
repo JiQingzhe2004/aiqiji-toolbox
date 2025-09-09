@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut } from 'lucide-react';
+import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminToolsList } from '@/components/admin/AdminToolsList';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminToolForm } from '@/components/admin/AdminToolForm';
+import { AdminSystemSettings } from '@/components/admin/AdminSystemSettings';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { toolsApi } from '@/services/toolsApi';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +21,7 @@ import type { Tool } from '@/types';
 
 function AdminPage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -146,9 +149,21 @@ function AdminPage() {
       <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">工具箱管理</h1>
-              <p className="text-muted-foreground">管理工具、查看统计数据</p>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/')}
+                className="rounded-xl hover:bg-muted"
+                aria-label="返回首页"
+                title="返回首页"
+              >
+                <Home className="w-5 h-5" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">工具箱管理</h1>
+                <p className="text-muted-foreground">管理工具、查看统计数据</p>
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -342,14 +357,7 @@ function AdminPage() {
 
           {/* 系统设置 */}
           <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>系统设置</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">系统设置功能开发中...</p>
-              </CardContent>
-            </Card>
+            <AdminSystemSettings />
           </TabsContent>
         </Tabs>
       </main>

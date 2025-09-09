@@ -16,7 +16,7 @@ export interface Tool {
   /** 上传的图标文件名 */
   icon_file?: string;
   /** 图标主题适配方式 */
-  icon_theme?: 'auto' | 'light' | 'dark' | 'none';
+  icon_theme?: 'auto' | 'auto-light' | 'auto-dark' | 'light' | 'dark' | 'none';
   /** 分类：AI/效率/设计/开发/其他 */
   category: string;
   /** 标签数组 */

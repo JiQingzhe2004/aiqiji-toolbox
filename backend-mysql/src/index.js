@@ -14,6 +14,7 @@ import dotenv from 'dotenv';
 import sequelize, { testConnection, syncDatabase, closeConnection } from './config/database.js';
 import toolRoutes from './routes/toolRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
 
 // 加载环境变量
 dotenv.config();
@@ -158,6 +159,9 @@ class Server {
     
     // 工具相关路由
     this.app.use(`${this.apiPrefix}/tools`, toolRoutes);
+    
+    // 系统设置路由
+    this.app.use(`${this.apiPrefix}/settings`, settingsRoutes);
 
 
     // 根路径

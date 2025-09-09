@@ -3,8 +3,9 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload, Star, Palette, Search } from 'lucide-react';
+import { X, Upload, Star, Palette, Search, Trash2 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { preprocessFormData } from '@/utils/dataValidator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +27,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { LucideIconPicker } from './LucideIconPicker';
+import toast from 'react-hot-toast';
 import { toolsApi } from '@/services/toolsApi';
 import type { Tool } from '@/types';
 import { cn, generateToolId } from '@/lib/utils';
@@ -52,7 +54,41 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
     tags: tool?.tags || [],
   });
 
+  // 解析icon_theme为模式和类型
+  const getAdaptationSettings = (iconTheme: string) => {
+    if (iconTheme === 'none') return { mode: 'none', type: 'dark' };
+    if (iconTheme === 'auto-light') return { mode: 'auto', type: 'light' };
+    if (iconTheme === 'auto-dark' || iconTheme === 'auto') return { mode: 'auto', type: 'dark' };
+    if (iconTheme === 'light') return { mode: 'auto', type: 'light' }; // 兼容旧数据
+    if (iconTheme === 'dark') return { mode: 'auto', type: 'dark' }; // 兼容旧数据
+    return { mode: 'auto', type: 'dark' }; // 默认值
+  };
+
+  const [adaptationSettings, setAdaptationSettings] = useState(() => 
+    getAdaptationSettings(formData.icon_theme)
+  );
+
+  // 更新适配设置并同步到formData
+  const updateAdaptationSettings = (newSettings: { mode: string; type: string }) => {
+    setAdaptationSettings(newSettings);
+    
+    // 组合成icon_theme值
+    let iconTheme: 'auto' | 'auto-light' | 'auto-dark' | 'light' | 'dark' | 'none' = 'auto-dark';
+    if (newSettings.mode === 'none') {
+      iconTheme = 'none';
+    } else if (newSettings.mode === 'auto') {
+      iconTheme = newSettings.type === 'light' ? 'auto-light' : 'auto-dark';
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      icon_theme: iconTheme
+    }));
+  };
+
   const [newTag, setNewTag] = useState('');
+  const [recentlyDeletedTag, setRecentlyDeletedTag] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -60,10 +96,14 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = ['AI', '效率', '设计', '开发', '其他'];
-  const iconThemes = [
-    { value: 'auto', label: '纯色' },
-    { value: 'light', label: '彩色' },
-    { value: 'dark', label: '其他' },
+  const adaptationModes = [
+    { value: 'auto', label: '自动适配' },
+    { value: 'none', label: '保持原色' },
+  ];
+
+  const iconTypes = [
+    { value: 'light', label: '浅色图标 (白色/浅色系)' },
+    { value: 'dark', label: '深色图标 (黑色/深色系)' },
   ];
 
   // 自动生成ID当名称改变时
@@ -112,20 +152,166 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
   }, [previewUrl]);
 
   const handleAddTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, newTag.trim()]
-      }));
-      setNewTag('');
+    const trimmedTag = newTag.trim();
+    
+    if (!trimmedTag) {
+      toast.error('标签不能为空');
+      return;
+    }
+    
+    // 检查标签长度
+    if (trimmedTag.length > 20) {
+      toast.error('标签长度不能超过20个字符');
+      return;
+    }
+    
+    // 检查是否重复
+    if (formData.tags.includes(trimmedTag)) {
+      toast.error('标签已存在');
+      return;
+    }
+    
+    // 检查标签数量限制
+    if (formData.tags.length >= 10) {
+      toast.error('最多只能添加10个标签');
+      return;
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      tags: [...prev.tags, trimmedTag]
+    }));
+    
+    setNewTag('');
+    toast.success(`已添加标签: ${trimmedTag}`, {
+      duration: 1500,
+      position: 'top-center'
+    });
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
+    } else if (e.key === ',' || e.key === '；' || e.key === ';') {
+      e.preventDefault();
+      handleAddTag();
     }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
+    try {
+      // 验证标签是否存在
+      if (!formData.tags.includes(tagToRemove)) {
+        toast.error('标签不存在');
+        return;
+      }
+      
+      // 对于重要标签或最后一个标签，添加确认
+      const isLastTag = formData.tags.length === 1;
+      const isImportantTag = ['AI', '热门', '推荐', '免费'].includes(tagToRemove);
+      
+      if (isLastTag || isImportantTag) {
+        const message = isLastTag 
+          ? '确定要删除最后一个标签吗？这可能影响工具的分类。' 
+          : `确定要删除"${tagToRemove}"标签吗？`;
+          
+        if (!confirm(message)) {
+          return;
+        }
+      }
+      
+      // 更新状态
+      setFormData(prev => ({
+        ...prev,
+        tags: prev.tags.filter(tag => tag !== tagToRemove)
+      }));
+      
+      // 保存最近删除的标签，用于撤销
+      setRecentlyDeletedTag(tagToRemove);
+      
+      // 提供用户反馈，包含撤销选项
+      toast.success(
+        <div className="flex items-center justify-between gap-2">
+          <span>已删除标签: {tagToRemove}</span>
+          <button
+            onClick={() => handleUndoDelete(tagToRemove)}
+            className="text-xs underline hover:no-underline"
+          >
+            撤销
+          </button>
+        </div>,
+        {
+          duration: 4000,
+          position: 'top-center'
+        }
+      );
+      
+    } catch (error) {
+      console.error('删除标签时出错:', error);
+      toast.error('删除标签失败，请重试');
+    }
+  };
+
+  const handleUndoDelete = (tagToRestore: string) => {
+    try {
+      // 检查标签是否已经存在（避免重复添加）
+      if (formData.tags.includes(tagToRestore)) {
+        toast.error('标签已存在');
+        return;
+      }
+      
+      // 恢复标签
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, tagToRestore]
+      }));
+      
+      // 清除最近删除的标签记录
+      setRecentlyDeletedTag(null);
+      
+      // 提供反馈
+      toast.success(`已恢复标签: ${tagToRestore}`, {
+        duration: 2000,
+        position: 'top-center'
+      });
+      
+    } catch (error) {
+      console.error('恢复标签时出错:', error);
+      toast.error('恢复标签失败');
+    }
+  };
+
+  const handleClearAllTags = () => {
+    try {
+      if (formData.tags.length === 0) {
+        toast.error('没有标签可以清空');
+        return;
+      }
+      
+      const tagCount = formData.tags.length;
+      if (!confirm(`确定要清空所有 ${tagCount} 个标签吗？此操作不可撤销。`)) {
+        return;
+      }
+      
+      // 清空所有标签
+      setFormData(prev => ({
+        ...prev,
+        tags: []
+      }));
+      
+      // 清除选中状态
+      setSelectedTags([]);
+      
+      toast.success(`已清空 ${tagCount} 个标签`, {
+        duration: 2000,
+        position: 'top-center'
+      });
+      
+    } catch (error) {
+      console.error('清空标签时出错:', error);
+      toast.error('清空标签失败');
+    }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,27 +360,6 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 前端验证
-    if (formData.description.length < 10) {
-      alert('描述至少需要10个字符');
-      return;
-    }
-    
-    if (formData.description.length > 1000) {
-      alert('描述不能超过1000个字符');
-      return;
-    }
-    
-    if (!formData.url) {
-      alert('请填写工具链接');
-      return;
-    }
-    
-    if (formData.categories.length === 0) {
-      alert('请至少选择一个分类');
-      return;
-    }
-    
     setUploading(true);
     
     try {
@@ -216,12 +381,21 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
       }
       
       // 转换多分类为单分类（取第一个，兼容后端）
-      const submitData: any = {
+      const rawSubmitData: any = {
         ...finalFormData,
         category: finalFormData.categories[0] || '其他', // 后端期望单个分类
         // 保留原始多分类信息在tags中
         tags: [...finalFormData.tags, ...finalFormData.categories.slice(1)] // 额外分类作为标签
       };
+      
+      // 预处理和验证数据
+      const { data: submitData, validation } = preprocessFormData(rawSubmitData);
+      
+      if (!validation.isValid) {
+        alert('数据验证失败:\n' + validation.errors.join('\n'));
+        setUploading(false);
+        return;
+      }
       
       // 如果icon_url为空，则不发送该字段，避免后端验证失败
       if (!finalFormData.icon_url || finalFormData.icon_url.trim() === '') {
@@ -363,23 +537,55 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="icon_theme">图标为</Label>
-              <div className="flex gap-4">
-                {iconThemes.map((theme) => (
-                  <label key={theme.value} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="icon_theme"
-                      value={theme.value}
-                      checked={formData.icon_theme === theme.value}
-                      onChange={(e) => handleInputChange('icon_theme', e.target.value)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm">{theme.label}</span>
-                  </label>
-                ))}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>图标主题适配</Label>
+                <div className="flex gap-4">
+                  {adaptationModes.map((mode) => (
+                    <label key={mode.value} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="adaptation_mode"
+                        value={mode.value}
+                        checked={adaptationSettings.mode === mode.value}
+                        onChange={(e) => updateAdaptationSettings({
+                          ...adaptationSettings,
+                          mode: e.target.value
+                        })}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">{mode.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
+
+              {adaptationSettings.mode === 'auto' && (
+                <div className="space-y-2 pl-4 border-l-2 border-muted">
+                  <Label>图标原始颜色类型</Label>
+                  <div className="flex gap-4">
+                    {iconTypes.map((type) => (
+                      <label key={type.value} className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="icon_type"
+                          value={type.value}
+                          checked={adaptationSettings.type === type.value}
+                          onChange={(e) => updateAdaptationSettings({
+                            ...adaptationSettings,
+                            type: e.target.value
+                          })}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm">{type.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    请根据图标的实际颜色选择：白色logo选"浅色图标"，黑色logo选"深色图标"
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -410,9 +616,10 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
                       alt="图标预览"
                       className={cn(
                         "w-8 h-8 object-contain rounded border",
-                        // 主题适配逻辑 - 与主页保持一致
-                        (formData.icon_theme === 'auto') && "dark:invert",
-                        (!formData.icon_theme || formData.icon_theme === 'auto') && "dark:invert"
+                        // 主题适配逻辑：根据图标原始颜色类型进行适配
+                        (formData.icon_theme === 'auto-dark' || formData.icon_theme === 'auto' || formData.icon_theme === 'dark') && "dark:invert", // 深色图标
+                        (formData.icon_theme === 'auto-light' || formData.icon_theme === 'light') && "invert dark:invert-0", // 浅色图标
+                        // none: 不添加任何样式，保持原色
                       )}
                     />
                     {previewUrl && (
@@ -522,9 +729,10 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
               <Input
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
-                placeholder="输入标签"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                onKeyDown={handleTagInputKeyDown}
+                placeholder="输入标签名称 (按 Enter 或逗号添加)"
                 className="flex-1"
+                maxLength={20}
               />
               <Button 
                 type="button" 
@@ -536,16 +744,51 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
               </Button>
             </div>
             {formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                    {tag}
-                    <X
-                      className="w-3 h-3 cursor-pointer hover:text-destructive"
-                      onClick={() => handleRemoveTag(tag)}
-                    />
-                  </Badge>
-                ))}
+              <div className="space-y-2 mt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    当前标签 ({formData.tags.length})
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearAllTags}
+                    className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    清空所有
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.tags.map((tag) => (
+                    <Badge 
+                      key={tag} 
+                      variant="secondary" 
+                      className="flex items-center gap-1 group transition-all duration-200 hover:bg-destructive/10"
+                    >
+                      <span className="select-none">{tag}</span>
+                      <X
+                        className="w-3 h-3 cursor-pointer hover:text-destructive transition-colors duration-200 opacity-70 group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleRemoveTag(tag);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleRemoveTag(tag);
+                          }
+                        }}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`删除标签: ${tag} (按 Enter 或空格键删除)`}
+                      />
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
           </div>

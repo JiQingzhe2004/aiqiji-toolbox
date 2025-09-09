@@ -8,15 +8,19 @@ import { useTheme } from './hooks/useTheme';
 import { cn } from './lib/utils';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import CookieConsent from './components/CookieConsent';
 
 // 懒加载页面组件以提高性能
-const HomePage = lazy(() => import('./pages/HomePage'));
+import HomePage from './pages/HomePage'; // 首页不懒加载，立即可用
 const ExternalLinkPage = lazy(() => import('./pages/ExternalLinkPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
+
 /**
- * 加载组件
+ * 简单加载组件 - 用于其他场景
  */
 function LoadingSpinner() {
   return (
@@ -77,18 +81,21 @@ function App() {
       <AuthProvider>
         <ErrorBoundary>
           <Router>
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
+            <Routes>
               {/* 外链提醒页面 - 独立布局，无Header和Footer */}
               <Route path="/external-link" element={
-                <ExternalLinkPage />
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ExternalLinkPage />
+                </Suspense>
               } />
               
               {/* 管理页面 - 需要管理员权限 */}
               <Route path="/admin" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <AdminPage />
-                </ProtectedRoute>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ProtectedRoute requireAdmin={true}>
+                    <AdminPage />
+                  </ProtectedRoute>
+                </Suspense>
               } />
               
               {/* 主站页面 - 带Header和Footer */}
@@ -104,7 +111,21 @@ function App() {
                       <Route path="/" element={
                         <HomePage searchQuery={globalSearchQuery} />
                       } />
-                      <Route path="*" element={<NotFoundPage />} />
+                      <Route path="/privacy" element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <PrivacyPage />
+                        </Suspense>
+                      } />
+                      <Route path="/terms" element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <TermsPage />
+                        </Suspense>
+                      } />
+                      <Route path="*" element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <NotFoundPage />
+                        </Suspense>
+                      } />
                     </Routes>
                   </main>
                   
@@ -112,7 +133,6 @@ function App() {
                 </div>
               } />
             </Routes>
-          </Suspense>
         
         {/* Toast 提示组件 */}
         <Toaster
@@ -127,10 +147,13 @@ function App() {
             },
           }}
         />
+        
+        {/* Cookie同意横幅 */}
+        <CookieConsent />
         </Router>
       </ErrorBoundary>
-      </AuthProvider>
-    </MantineProvider>
+    </AuthProvider>
+  </MantineProvider>
   );
 }
 

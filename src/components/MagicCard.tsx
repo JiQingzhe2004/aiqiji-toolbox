@@ -1,6 +1,6 @@
-import React, { memo, useMemo, useCallback } from 'react';
+import React, { memo, useMemo, useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ExternalLink, Copy, Star, Calendar, CheckCircle } from 'lucide-react';
+import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-button';
 import { DotPattern } from '@/components/magicui/dot-pattern';
 import { Confetti, type ConfettiRef } from '@/components/magicui/confetti';
+import { QRCodeModal } from './QRCodeModal';
 import * as AspectRatio from '@radix-ui/react-aspect-ratio';
 import toast from 'react-hot-toast';
 import type { Tool } from '@/types';
@@ -33,6 +34,7 @@ export const MagicCard = memo(function MagicCard({
   className 
 }: MagicCardProps) {
   const confettiRef = React.useRef<ConfettiRef>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
   // 动态获取图标组件
   const IconComponent = useMemo(() => 
     tool.icon && tool.icon in LucideIcons 
@@ -164,10 +166,12 @@ export const MagicCard = memo(function MagicCard({
         <div className="relative w-full h-full bg-gradient-to-br from-background/5 via-muted/30 to-muted/60 overflow-hidden">
           {/* 背景图案 */}
           <DotPattern 
-            className="text-muted-foreground/25" 
-            width={12} 
-            height={12} 
-            cr={0.5}
+            glow={true}
+            cr={2}
+            className={cn(
+              "[mask-image:radial-gradient(200px_circle_at_center,white,transparent)]",
+              "text-muted-foreground/30"
+            )}
           />
           
           {/* 径向渐变遮罩 - 创建中心亮、周围暗的效果 */}
@@ -182,10 +186,10 @@ export const MagicCard = memo(function MagicCard({
                   alt={`${tool.name} logo`}
                   className={cn(
                     "h-8 w-8 object-contain rounded-sm",
-                    // 主题适配逻辑
-                    (tool.logoTheme === 'invert') && "invert",
-                    (tool.logoTheme === 'auto') && "dark:invert",
-                    (!tool.logoTheme || tool.logoTheme === 'auto') && "dark:invert"
+                    // 主题适配逻辑：根据图标原始颜色类型进行适配
+                    (tool.logoTheme === 'auto-dark' || tool.logoTheme === 'auto' || tool.logoTheme === 'dark' || !tool.logoTheme) && "dark:invert", // 深色图标
+                    (tool.logoTheme === 'auto-light' || tool.logoTheme === 'light') && "invert dark:invert-0", // 浅色图标
+                    // none: 不添加任何样式，保持原色
                   )}
                   onError={(e) => {
                     // 如果logo加载失败，显示备用图标
@@ -229,7 +233,7 @@ export const MagicCard = memo(function MagicCard({
                 </CardDescription>
               </TooltipTrigger>
               <TooltipContent 
-                side="bottom" 
+                side="top" 
                 className="max-w-xs p-3 bg-popover text-popover-foreground border border-border shadow-md"
               >
                 <p className="text-sm">{tool.description || tool.desc}</p>
@@ -241,7 +245,7 @@ export const MagicCard = memo(function MagicCard({
         {/* 标签 */}
         {tool.tags && tool.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {tool.tags.slice(0, 3).map((tag, index) => (
+            {tool.tags.slice(0, 5).map((tag, index) => (
               <span
                 key={index}
                 className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-secondary/60 text-secondary-foreground hover:bg-secondary transition-colors"
@@ -249,10 +253,28 @@ export const MagicCard = memo(function MagicCard({
                 {tag}
               </span>
             ))}
-            {tool.tags.length > 3 && (
-              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-muted text-muted-foreground">
-                +{tool.tags.length - 3}
-              </span>
+            {tool.tags.length > 5 && (
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors cursor-help">
+                      +{tool.tags.length - 5}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md max-w-xs">
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {tool.tags.slice(5).map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center justify-center px-2 py-0.5 text-xs rounded bg-secondary/80 text-secondary-foreground"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         )}
@@ -279,41 +301,102 @@ export const MagicCard = memo(function MagicCard({
               打开工具
             </InteractiveHoverButton>
           </div>
-          <motion.div
-            whileHover={{ 
-              scale: 1.1,
-              rotate: 15,
-              transition: { duration: 0.2, ease: "easeOut" }
-            }}
-            whileTap={{ 
-              scale: 0.95,
-              transition: { duration: 0.1 }
-            }}
-          >
-            <Button
-              size="icon"
-              variant="outline"
-              className="rounded-full aspect-square w-10 h-10 transition-colors duration-200 hover:bg-primary hover:text-primary-foreground hover:border-primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                copyLink(e);
-              }}
-              aria-label={`复制 ${tool.name} 的链接`}
-              title="复制链接"
-            >
-              <motion.div
-                whileHover={{ 
-                  rotate: -15,
-                  transition: { duration: 0.2, ease: "easeOut" }
-                }}
-              >
-                <Copy size={16} />
-              </motion.div>
-            </Button>
-          </motion.div>
+          
+          {/* 二维码按钮 */}
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <motion.div
+                  whileHover={{ 
+                    scale: 1.1,
+                    rotate: 5,
+                    transition: { duration: 0.2, ease: "easeOut" }
+                  }}
+                  whileTap={{ 
+                    scale: 0.95,
+                    transition: { duration: 0.1 }
+                  }}
+                >
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="rounded-full aspect-square w-10 h-10 transition-colors duration-200 hover:bg-blue-500 hover:text-white hover:border-blue-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowQRModal(true);
+                    }}
+                    aria-label={`查看 ${tool.name} 的二维码`}
+                  >
+                    <motion.div
+                      whileHover={{ 
+                        rotate: -5,
+                        transition: { duration: 0.2, ease: "easeOut" }
+                      }}
+                    >
+                      <TabletSmartphone size={16} />
+                    </motion.div>
+                  </Button>
+                </motion.div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md">
+                <p className="text-sm">显示二维码</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          {/* 复制链接按钮 */}
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <motion.div
+                  whileHover={{ 
+                    scale: 1.1,
+                    rotate: 15,
+                    transition: { duration: 0.2, ease: "easeOut" }
+                  }}
+                  whileTap={{ 
+                    scale: 0.95,
+                    transition: { duration: 0.1 }
+                  }}
+                >
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="rounded-full aspect-square w-10 h-10 transition-colors duration-200 hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyLink(e);
+                    }}
+                    aria-label={`复制 ${tool.name} 的链接`}
+                  >
+                    <motion.div
+                      whileHover={{ 
+                        rotate: -15,
+                        transition: { duration: 0.2, ease: "easeOut" }
+                      }}
+                    >
+                      <Copy size={16} />
+                    </motion.div>
+                  </Button>
+                </motion.div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md">
+                <p className="text-sm">复制链接</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </Card>
+    
+    {/* 二维码弹框 */}
+    <QRCodeModal
+      isOpen={showQRModal}
+      onClose={() => setShowQRModal(false)}
+      toolName={tool.name}
+      toolUrl={tool.url}
+      toolDescription={tool.description || tool.desc}
+    />
     </>
   );
 });

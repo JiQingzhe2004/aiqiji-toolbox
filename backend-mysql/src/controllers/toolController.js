@@ -1,5 +1,6 @@
 import Tool from '../models/Tool.js';
 import { deleteFile, getFileUrl } from '../middleware/upload.js';
+import { cleanToolData, validateToolData, cleanTagsData } from '../utils/dataValidator.js';
 
 /**
  * 工具控制器
@@ -141,7 +142,8 @@ export const createTool = async (req, res) => {
       });
     }
 
-    const toolData = {
+    // 清理和验证数据
+    const rawData = {
       id,
       name,
       description,
@@ -149,16 +151,35 @@ export const createTool = async (req, res) => {
       icon_url,
       icon_theme,
       category,
-      tags: Array.isArray(tags) ? tags : (typeof tags === 'string' ? (() => {
-        try {
-          return JSON.parse(tags);
-        } catch {
-          return tags.split(',').map(t => t.trim()).filter(t => t);
-        }
-      })() : []),
+      tags,
       url,
-      featured: featured === true || featured === 'true',
-      sort_order: sort_order || 0
+      featured,
+      sort_order
+    };
+    
+    const cleanedData = cleanToolData(rawData);
+    const validation = validateToolData(cleanedData);
+    
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: '数据验证失败',
+        errors: validation.errors
+      });
+    }
+
+    const toolData = {
+      id: cleanedData.id,
+      name: cleanedData.name,
+      description: cleanedData.description,
+      icon: cleanedData.icon,
+      icon_url: cleanedData.icon_url,
+      icon_theme: cleanedData.icon_theme,
+      category: cleanedData.category,
+      tags: cleanTagsData(cleanedData.tags),
+      url: cleanedData.url,
+      featured: cleanedData.featured === true || cleanedData.featured === 'true',
+      sort_order: cleanedData.sort_order || 0
     };
 
     // 如果有上传的图标文件
@@ -199,7 +220,7 @@ export const createTool = async (req, res) => {
 export const updateTool = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = { ...req.body };
+    let updateData = { ...req.body };
 
     const tool = await Tool.findByPk(id);
     if (!tool) {
@@ -209,12 +230,13 @@ export const updateTool = async (req, res) => {
       });
     }
 
-    // 处理tags
-    if (updateData.tags) {
-      updateData.tags = Array.isArray(updateData.tags) 
-        ? updateData.tags 
-        : (typeof updateData.tags === 'string' ? updateData.tags.split(',') : []);
+    // 清理和处理tags
+    if (updateData.tags !== undefined) {
+      updateData.tags = cleanTagsData(updateData.tags);
     }
+    
+    // 清理其他数据
+    updateData = cleanToolData(updateData);
 
     // 处理featured
     if (updateData.featured !== undefined) {

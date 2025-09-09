@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { 
   Heart, 
   Github, 
   Mail, 
   Coffee, 
-  Code,
+  FileTerminal,
   Brain,
   ExternalLink,
   Shield,
-  FileText
+  FileText,
+  Cookie
 } from 'lucide-react';
 import { ComicText } from "./magicui/comic-text";
+import { AnimatedShinyText } from "./magicui/animated-shiny-text";
 import {  AiOutlineX, AiOutlineZhihu } from "react-icons/ai";
 import { TbBrandWechat } from "react-icons/tb";
 import { SiCsdn } from "react-icons/si";
@@ -20,6 +23,9 @@ import { FaWordpress } from "react-icons/fa";
 import { Button } from '@/components/ui/button';
 import { SponsorModal } from './SponsorModal';
 import { QRCodeTooltip } from './QRCodeTooltip';
+import { settingsApi } from '@/services/settingsApi';
+import type { WebsiteInfo } from '@/services/settingsApi';
+import packageJson from '../../package.json';
 
 /**
  * 页面底部组件
@@ -28,6 +34,30 @@ import { QRCodeTooltip } from './QRCodeTooltip';
 export function Footer() {
   const currentYear = new Date().getFullYear();
   const [isSponsorModalOpen, setIsSponsorModalOpen] = useState(false);
+  const [websiteInfo, setWebsiteInfo] = useState<WebsiteInfo | null>(null);
+
+  // 获取网站信息
+  useEffect(() => {
+    const fetchWebsiteInfo = async () => {
+      try {
+        const response = await settingsApi.getWebsiteInfo();
+        if (response.success && response.data) {
+          setWebsiteInfo(response.data);
+        }
+      } catch (error) {
+        console.error('获取网站信息失败:', error);
+        // 设置默认值
+        setWebsiteInfo({
+          site_name: 'AiQiji工具箱',
+          site_description: '为开发者、设计师和效率工具爱好者精心收集的工具导航站点',
+          icp_number: '',
+          show_icp: false
+        });
+      }
+    };
+
+    fetchWebsiteInfo();
+  }, []);
 
   return (
     <>
@@ -50,7 +80,7 @@ export function Footer() {
             </div>
           </div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            为开发者、设计师和效率工具爱好者精心收集的工具导航站点
+            {websiteInfo?.site_description || '为开发者、设计师和效率工具爱好者精心收集的工具导航站点'}
           </p>
         </div>
         
@@ -74,7 +104,7 @@ export function Footer() {
                 }}
               />
               <h3 className="text-lg font-semibold bg-gradient-to-r from-violet-600 to-cyan-600 bg-clip-text text-transparent">
-                AiQiji工具箱
+                {websiteInfo?.site_name || 'AiQiji工具箱'}
               </h3>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -94,7 +124,7 @@ export function Footer() {
             <div className="space-y-2">
               {[
                 { label: 'AiQiji博客', href: 'https://aiqji.com', icon: FileText },
-                { label: 'CS-Explorer', href: 'https://cs.aiqji.cn/', icon: Code },
+                { label: 'CS-Explorer', href: 'https://cs.aiqji.cn/', icon: FileTerminal },
                 { label: 'AiQiji智能博客插件', href: 'https://wpai.aiqji.com/', icon: Brain },
               ].map((link, index) => (
                 <motion.a
@@ -279,25 +309,58 @@ export function Footer() {
 
         {/* 版权信息 */}
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
-          <div className="text-sm text-muted-foreground">
-            © {currentYear} AiQiji工具箱. All rights reserved.
+          {/* 左侧：版权信息 */}
+          <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-3">
+            <div className="text-sm text-muted-foreground">
+              © {currentYear} {websiteInfo?.site_name || 'AiQiji工具箱'}. All rights reserved.
+            </div>
+            <div className="flex items-center">
+              <AnimatedShinyText className="text-xs font-medium">
+                ✨ v{packageJson.version}
+              </AnimatedShinyText>
+            </div>
           </div>
           
+          {/* 中间：备案号显示 */}
+          {websiteInfo?.show_icp && websiteInfo?.icp_number && (
+            <motion.a
+              href="https://beian.miit.gov.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 underline-offset-4 hover:underline"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              {websiteInfo.icp_number}
+            </motion.a>
+          )}
+          
+          {/* 右侧：政策链接和技术信息 */}
           <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-xs text-muted-foreground">
             <div className="flex items-center space-x-4">
-              <a href="#privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+              <Link to="/privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
                 <Shield className="w-3 h-3" />
                 <span>隐私政策</span>
-              </a>
+              </Link>
               <span>•</span>
-              <a href="#terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+              <Link to="/terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">
                 <FileText className="w-3 h-3" />
                 <span>使用条款</span>
-              </a>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Code className="w-3 h-3" />
-              <span>React + TypeScript</span>
+              </Link>
+              <span>•</span>
+              <button 
+                onClick={() => {
+                  // 移除现有的Cookie同意记录，重新显示设置
+                  localStorage.removeItem('cookie-consent');
+                  localStorage.removeItem('cookie-consent-date');
+                  window.location.reload();
+                }}
+                className="flex items-center space-x-1 hover:text-foreground transition-colors text-xs"
+              >
+                <Cookie className="w-3 h-3" />
+                <span>Cookie设置</span>
+              </button>
             </div>
           </div>
         </div>

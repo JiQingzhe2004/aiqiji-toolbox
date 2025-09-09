@@ -33,54 +33,19 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
   // 使用全局搜索查询，如果存在的话
   const effectiveSearchQuery = globalSearchQuery;
 
-  // 加载状态
-  if (isLoading) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center min-h-[400px] space-y-4"
-      >
-        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-        <p className="text-muted-foreground">正在加载工具数据...</p>
-      </motion.div>
-    );
-  }
-
-  // 错误状态
-  if (error) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center min-h-[400px] space-y-4 text-center"
-      >
-        <AlertCircle className="w-12 h-12 text-red-500" />
-        <h2 className="text-xl font-semibold">加载失败</h2>
-        <p className="text-muted-foreground max-w-md">
-          无法加载工具数据：{error}
-        </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors"
-        >
-          重新加载
-        </button>
-      </motion.div>
-    );
-  }
-
   return (
     <div className="relative">
       {/* 首页全屏壁纸横幅 */}
       <HeroBanner />
 
       {/* 侧边栏分类 - 桌面端滚动显示 */}
-      <SidebarCategoryTabs
-        categories={categories}
-        activeCategory={activeCategory}
-        onChange={(category: string) => setActiveCategory(category as any)}
-      />
+      {!isLoading && (
+        <SidebarCategoryTabs
+          categories={categories}
+          activeCategory={activeCategory}
+          onChange={(category: string) => setActiveCategory(category as any)}
+        />
+      )}
 
       {/* 工具区域 */}
       <motion.div
@@ -100,58 +65,95 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
             className="min-h-[400px] w-full"
           >
             <AnimatePresence mode="wait">
-              <ToolGrid
-                key={`${activeCategory}-${effectiveSearchQuery}`}
-                tools={filteredTools}
-                searchQuery={effectiveSearchQuery}
-              />
+              {isLoading ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col items-center justify-center min-h-[400px] space-y-4"
+                >
+                  <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+                  <p className="text-muted-foreground">正在加载工具数据...</p>
+                </motion.div>
+              ) : error ? (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="flex flex-col items-center justify-center min-h-[400px] space-y-4 text-center"
+                >
+                  <AlertCircle className="w-12 h-12 text-red-500" />
+                  <h2 className="text-xl font-semibold">加载失败</h2>
+                  <p className="text-muted-foreground max-w-md">
+                    无法加载工具数据：{error}
+                  </p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-4 py-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors"
+                  >
+                    重新加载
+                  </button>
+                </motion.div>
+              ) : (
+                <ToolGrid
+                  key={`${activeCategory}-${effectiveSearchQuery}`}
+                  tools={filteredTools}
+                  searchQuery={effectiveSearchQuery}
+                />
+              )}
             </AnimatePresence>
           </motion.section>
 
           {/* 统计信息 */}
-          <motion.section
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="text-center py-8 md:py-12 mt-8"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-gradient">
-                  {filteredTools.length}
+          {!isLoading && !error && (
+            <motion.section
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-center py-8 md:py-12 mt-8"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold text-gradient">
+                    {filteredTools.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    当前显示工具
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  当前显示工具
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold text-gradient">
+                    {categories.length - 1}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    工具分类
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold text-gradient">
+                    约80%
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    免费
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-gradient">
-                  {categories.length - 1}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  工具分类
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-gradient">
-                  约80%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  免费
-                </div>
-              </div>
-            </div>
-          </motion.section>
+            </motion.section>
+          )}
         </div>
       </motion.div>
 
       {/* 底部固定分类导航 - 移动端显示 */}
-      <BottomNavigation
-        categories={categories}
-        activeCategory={activeCategory}
-        onChange={setActiveCategory}
-        className="md:hidden"
-      />
+      {!isLoading && (
+        <BottomNavigation
+          categories={categories}
+          activeCategory={activeCategory}
+          onChange={setActiveCategory}
+          className="md:hidden"
+        />
+      )}
     </div>
   );
 });

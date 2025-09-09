@@ -9,3 +9,9 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+// 支持 JSON 模块导入
+declare module "*.json" {
+  const value: any;
+  export default value;
+}

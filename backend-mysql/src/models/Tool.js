@@ -46,19 +46,26 @@ const Tool = sequelize.define('Tool', {
       isValidUrl(value) {
         if (!value) return; // 允许空值
         
-        // 自定义URL验证，支持localhost和相对路径
-        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$|^(https?:\/\/)?localhost(:\d+)?(\/.*)?$|^\/.*$/;
-        const httpPattern = /^https?:\/\/.+/;
-        
-        // 如果是完整URL，必须以http或https开头
-        if (value.includes('://')) {
-          if (!httpPattern.test(value)) {
-            throw new Error('URL必须以http://或https://开头');
+        // 使用JavaScript内置URL构造函数进行验证，更加准确
+        try {
+          // 如果是相对路径，直接通过
+          if (value.startsWith('/')) {
+            return;
           }
-        }
-        
-        // 验证URL格式
-        if (!urlPattern.test(value)) {
+          
+          // 如果没有协议，自动添加https://
+          const urlToValidate = value.includes('://') ? value : `https://${value}`;
+          
+          // 使用URL构造函数验证
+          new URL(urlToValidate);
+          
+          // 确保协议是http或https
+          const url = new URL(urlToValidate);
+          if (!['http:', 'https:'].includes(url.protocol)) {
+            throw new Error('URL必须使用http或https协议');
+          }
+          
+        } catch (error) {
           throw new Error('无效的URL格式');
         }
       }
@@ -72,8 +79,8 @@ const Tool = sequelize.define('Tool', {
   },
   
   icon_theme: {
-    type: DataTypes.ENUM('auto', 'light', 'dark', 'none'),
-    defaultValue: 'auto'
+    type: DataTypes.ENUM('auto', 'auto-light', 'auto-dark', 'light', 'dark', 'none'),
+    defaultValue: 'auto-dark'
   },
   
   category: {
@@ -98,7 +105,28 @@ const Tool = sequelize.define('Tool', {
     allowNull: false,
     validate: {
       notEmpty: true,
-      isUrl: true
+      isValidUrl(value) {
+        if (!value) {
+          throw new Error('URL不能为空');
+        }
+        
+        try {
+          // 如果没有协议，自动添加https://
+          const urlToValidate = value.includes('://') ? value : `https://${value}`;
+          
+          // 使用URL构造函数验证
+          new URL(urlToValidate);
+          
+          // 确保协议是http或https
+          const url = new URL(urlToValidate);
+          if (!['http:', 'https:'].includes(url.protocol)) {
+            throw new Error('URL必须使用http或https协议');
+          }
+          
+        } catch (error) {
+          throw new Error('无效的URL格式');
+        }
+      }
     }
   },
   

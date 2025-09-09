@@ -365,7 +365,7 @@ function AdminPage() {
       {/* 工具表单弹窗 */}
       {showForm && (
         <AdminToolForm
-          tool={selectedTool}
+          tool={selectedTool || undefined}
           onSave={handleToolSave}
           onClose={() => {
             setShowForm(false);

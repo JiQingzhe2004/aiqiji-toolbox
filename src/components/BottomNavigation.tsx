@@ -1,6 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Code, Palette, Zap, Bot, Grid3X3 } from 'lucide-react';
+import { 
+  Layers, 
+  Code2, 
+  Wand, 
+  Pickaxe, 
+  Sparkles, 
+  Boxes
+} from 'lucide-react';
 import type { Category } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -24,14 +31,14 @@ export function BottomNavigation({
   onChange, 
   className 
 }: BottomNavigationProps) {
-  // 分类图标映射
+  // 分类图标映射 - 与桌面端保持一致
   const categoryIcons: Record<string, React.ComponentType<any>> = {
-    '全部': Grid3X3,
-    '开发': Code,
-    '设计': Palette,
-    '效率': Zap,
-    'AI': Bot,
-    '其它': Grid3X3,
+    '全部': Layers,
+    '开发': Code2,
+    '设计': Wand,
+    '效率': Pickaxe,
+    'AI': Sparkles,
+    '其他': Boxes,
   };
 
   return (
@@ -41,15 +48,15 @@ export function BottomNavigation({
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className={cn(
         'fixed bottom-0 left-0 right-0 z-40',
-        'bg-background/80 backdrop-blur-md border-t border-muted-foreground/10',
-        'safe-area-pb', // 兼容iOS安全区域
+        'bg-background/95 backdrop-blur-xl border-t border-border/50',
+        'pb-safe-area-inset-bottom', // 兼容iOS安全区域
         className
       )}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-around py-2 max-w-md mx-auto">
+      <div className="px-2">
+        <div className="flex items-center justify-around h-16 max-w-sm mx-auto">
           {categories.map((category, index) => {
-            const IconComponent = categoryIcons[category] || Grid3X3;
+            const IconComponent = categoryIcons[category] || Boxes;
             const isActive = activeCategory === category;
             
             return (
@@ -57,11 +64,10 @@ export function BottomNavigation({
                 key={category}
                 onClick={() => onChange(category)}
                 className={cn(
-                  'flex flex-col items-center space-y-1 p-2 rounded-xl transition-all duration-200',
-                  'hover:bg-muted/50 active:scale-95',
-                  isActive && 'bg-muted'
+                  'flex flex-col items-center justify-center min-w-0 px-1 py-2 transition-all duration-200',
+                  'active:scale-95 relative'
                 )}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.95 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -72,55 +78,25 @@ export function BottomNavigation({
                 }}
                 aria-label={`切换到${category}分类`}
               >
-                {/* 图标容器 */}
-                <div className={cn(
-                  'relative p-2 rounded-lg transition-all duration-200',
-                  isActive ? [
-                    // 激活状态 - 渐变背景
-                    'dark:bg-gradient-to-br dark:from-slate-600/20 dark:to-slate-700/20',
-                    'bg-gradient-to-br from-orange-400/20 to-yellow-400/20',
-                    'dark:border dark:border-slate-500/30',
-                    'border border-orange-400/30'
-                  ] : [
-                    // 非激活状态
-                    'bg-transparent'
-                  ]
-                )}>
+                {/* 图标 */}
+                <div className="relative">
                   <IconComponent 
                     className={cn(
-                      'w-5 h-5 transition-colors duration-200',
+                      'w-6 h-6 transition-all duration-200',
                       isActive ? [
-                        // 激活状态颜色
-                        'dark:text-slate-300 text-orange-600'
+                        'text-primary scale-110'
                       ] : [
-                        // 非激活状态颜色
-                        'text-muted-foreground hover:text-foreground'
+                        'text-muted-foreground'
                       ]
                     )}
                   />
-                  
-                  {/* 激活状态的发光效果 */}
-                  {isActive && (
-                    <motion.div
-                      className={cn(
-                        "absolute inset-0 rounded-lg",
-                        // 暗色主题：石板色发光
-                        "dark:bg-gradient-to-br dark:from-slate-500/10 dark:to-slate-600/10",
-                        // 浅色主题：橙黄色发光
-                        "bg-gradient-to-br from-orange-400/10 to-yellow-400/10"
-                      )}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.2 }}
-                    />
-                  )}
                 </div>
                 
                 {/* 分类名称 */}
                 <span className={cn(
-                  'text-xs font-medium transition-colors duration-200',
+                  'text-xs font-medium transition-colors duration-200 mt-1 truncate',
                   isActive ? [
-                    'dark:text-slate-300 text-orange-600'
+                    'text-primary'
                   ] : [
                     'text-muted-foreground'
                   ]
@@ -128,16 +104,10 @@ export function BottomNavigation({
                   {category}
                 </span>
                 
-                {/* 激活指示器 */}
+                {/* 激活指示器 - 底部小点 */}
                 {isActive && (
                   <motion.div
-                    className={cn(
-                      "absolute -top-1 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full",
-                      // 暗色主题：石板色指示器
-                      "dark:bg-slate-300",
-                      // 浅色主题：橙色指示器
-                      "bg-orange-500"
-                    )}
+                    className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full"
                     layoutId="bottom-nav-indicator"
                     transition={{ duration: 0.2, ease: 'easeInOut' }}
                   />
@@ -148,14 +118,8 @@ export function BottomNavigation({
         </div>
       </div>
       
-      {/* 底部装饰线 */}
-      <div className={cn(
-        "absolute top-0 left-0 right-0 h-px",
-        // 暗色主题：石板色装饰线
-        "dark:bg-gradient-to-r dark:from-transparent dark:via-slate-500/50 dark:to-transparent",
-        // 浅色主题：橙色装饰线
-        "bg-gradient-to-r from-transparent via-orange-500/50 to-transparent"
-      )} />
+      {/* 顶部分割线 */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-border/50" />
     </motion.nav>
   );
 }

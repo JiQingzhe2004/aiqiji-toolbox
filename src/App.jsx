@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { MantineProvider } from '@mantine/core';
+// MantineProvider已移除，减少打包体积
 import { Toaster } from 'react-hot-toast';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -77,8 +77,7 @@ function App() {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
 
   return (
-    <MantineProvider>
-      <AuthProvider>
+    <AuthProvider>
         <ErrorBoundary>
           <Router>
             <Routes>
@@ -153,7 +152,6 @@ function App() {
         </Router>
       </ErrorBoundary>
     </AuthProvider>
-  </MantineProvider>
   );
 }
 

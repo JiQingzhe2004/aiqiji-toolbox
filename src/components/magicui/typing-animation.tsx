@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { Text, Box } from "@mantine/core";
+// Mantine依赖已移除，使用原生HTML元素
 import { TextCursor } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -112,13 +112,20 @@ export function TypingAnimation({
   }, [children, duration, delay, isVisible, loop, pauseDuration, deleteDuration]);
 
   return (
-    <Text
+    <div
       ref={elementRef}
-      component={component as any}
-      size={size as any}
-      fw={weight}
-      className={className}
-      style={{ display: "inline-block" }}
+      className={cn(
+        "inline-block",
+        size === "xl" && "text-xl",
+        size === "lg" && "text-lg", 
+        size === "md" && "text-base",
+        size === "sm" && "text-sm",
+        className
+      )}
+      style={{ 
+        display: "inline-block",
+        fontWeight: weight 
+      }}
     >
       {displayedText}
       <TextCursor 
@@ -136,6 +143,6 @@ export function TypingAnimation({
           100% { opacity: 0; }
         }
       `}</style>
-    </Text>
+    </div>
   );
 }

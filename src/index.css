@@ -1,6 +1,6 @@
 /* 使用系统字体，移除远程字体依赖 */
 
-@import '@mantine/core/styles.css';
+/* Mantine样式已移除，减少打包体积 */
 
 @tailwind base;
 @tailwind components;

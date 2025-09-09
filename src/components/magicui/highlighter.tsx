@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useInView } from "motion/react";
-import { annotate } from "rough-notation";
+import { useInView } from "framer-motion";
 import type React from "react";
 
 type AnnotationAction =
@@ -52,21 +51,42 @@ export function Highlighter({
     const element = elementRef.current;
     if (!element) return;
 
-    const annotation = annotate(element, {
-      type: action,
-      color,
-      strokeWidth,
-      animationDuration,
-      iterations,
-      padding,
-      multiline,
-    });
-
-    annotation.show();
+    // 简化的高亮效果，不依赖rough-notation
+    element.style.transition = `all ${animationDuration}ms ease-in-out`;
+    
+    switch (action) {
+      case 'highlight':
+        element.style.backgroundColor = color;
+        element.style.padding = `${padding}px`;
+        element.style.borderRadius = '4px';
+        break;
+      case 'underline':
+        element.style.borderBottom = `${strokeWidth}px solid ${color}`;
+        break;
+      case 'box':
+        element.style.border = `${strokeWidth}px solid ${color}`;
+        element.style.padding = `${padding}px`;
+        element.style.borderRadius = '4px';
+        break;
+      case 'strike-through':
+        element.style.textDecoration = 'line-through';
+        element.style.textDecorationColor = color;
+        element.style.textDecorationThickness = `${strokeWidth}px`;
+        break;
+      default:
+        element.style.backgroundColor = color;
+        element.style.padding = `${padding}px`;
+        element.style.borderRadius = '4px';
+    }
 
     return () => {
       if (element) {
-        annotate(element, { type: action }).remove();
+        element.style.backgroundColor = '';
+        element.style.border = '';
+        element.style.borderBottom = '';
+        element.style.textDecoration = '';
+        element.style.padding = '';
+        element.style.borderRadius = '';
       }
     };
   }, [

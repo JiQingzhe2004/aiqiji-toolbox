@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import { ComicText } from "./magicui/comic-text";
 import { AnimatedShinyText } from "./magicui/animated-shiny-text";
-import {  AiOutlineX, AiOutlineZhihu } from "react-icons/ai";
+// 按需导入社交媒体图标以减少打包体积
+import { AiOutlineX, AiOutlineZhihu } from "react-icons/ai";
 import { TbBrandWechat } from "react-icons/tb";
 import { SiCsdn } from "react-icons/si";
 import { RiQqLine } from "react-icons/ri";

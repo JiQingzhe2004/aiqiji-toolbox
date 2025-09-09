@@ -38,10 +38,11 @@ export function useTools(externalSearchQuery?: string): UseToolsReturn {
           return;
         }
 
-        // 从API加载数据
+        // 从API加载数据，后端默认按权重排序
         const response = await toolsApi.getTools({ 
           limit: 1000, // 获取所有数据
           status: 'active' // 只获取活跃的工具
+          // 注意：后端默认排序就是按权重(sort_order DESC, created_at DESC)
         });
         
         if (!response.success || !response.data) {
@@ -56,6 +57,7 @@ export function useTools(externalSearchQuery?: string): UseToolsReturn {
         }
         
         // 数据转换 - 添加兼容性字段
+        // 注意：数据已经在后端按权重排序，前端无需再次排序
         const transformedTools: Tool[] = toolsData.map(tool => ({
           ...tool,
           // 添加兼容性字段
@@ -114,6 +116,8 @@ export function useTools(externalSearchQuery?: string): UseToolsReturn {
       });
     }
 
+    // 返回过滤后的结果
+    // 注意：由于原始数据已经在后端按权重排序，过滤操作会保持相对顺序
     return filtered;
   }, [tools, effectiveSearchQuery, activeCategory]);
 

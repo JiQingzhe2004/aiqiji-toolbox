@@ -1,7 +1,6 @@
 import React, { memo, useMemo, useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -35,13 +34,6 @@ export const MagicCard = memo(function MagicCard({
 }: MagicCardProps) {
   const confettiRef = React.useRef<ConfettiRef>(null);
   const [showQRModal, setShowQRModal] = useState(false);
-  // 动态获取图标组件
-  const IconComponent = useMemo(() => 
-    tool.icon && tool.icon in LucideIcons 
-      ? (LucideIcons as any)[tool.icon] 
-      : LucideIcons.Wrench,
-    [tool.icon]
-  );
 
   // 复制链接功能
   const copyLink = useCallback(async (e: React.MouseEvent) => {
@@ -198,9 +190,7 @@ export const MagicCard = memo(function MagicCard({
                   }}
                 />
               ) : null}
-              <IconComponent 
-                className={`h-9 w-9 text-foreground ${getToolIconUrl(tool) ? 'hidden' : ''}`} 
-              />
+              {/* 图标功能已移除，使用图片或默认样式 */}
             </div>
           </div>
           

@@ -30,7 +30,7 @@ export interface ToolsQueryParams {
   /** 搜索关键词 */
   q?: string;
   /** 排序方式 */
-  sort?: 'default' | 'name' | 'views' | 'clicks' | 'rating' | 'latest';
+  sort?: 'default' | 'name' | 'views' | 'clicks' | 'rating' | 'latest' | 'weight';
 }
 
 /**

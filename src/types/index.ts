@@ -17,8 +17,8 @@ export interface Tool {
   icon_file?: string;
   /** 图标主题适配方式 */
   icon_theme?: 'auto' | 'auto-light' | 'auto-dark' | 'light' | 'dark' | 'none';
-  /** 分类：AI/效率/设计/开发/其他 */
-  category: string;
+  /** 分类：AI/效率/设计/开发/其他 - 支持多分类 */
+  category: string | string[];
   /** 标签数组 */
   tags: string[];
   /** 外部链接 */

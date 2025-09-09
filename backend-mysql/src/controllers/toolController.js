@@ -40,7 +40,7 @@ export const getAllTools = async (req, res) => {
     const result = await Tool.searchTools(query, {
       category,
       featured: featured !== undefined ? featured === 'true' : undefined,
-      status,
+      status: status === 'all' ? undefined : (status || 'active'), // 当status为'all'时不筛选，否则默认为'active'
       limit: parseInt(limit),
       offset,
       order

@@ -34,11 +34,16 @@ function AdminPage() {
   const [itemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
 
-  // 加载工具列表
+  // 加载工具列表 - 管理界面显示所有状态的工具
   const loadTools = async () => {
     try {
       setLoading(true);
-      const response = await toolsApi.getTools({ limit: 1000 });
+      // 传递 status: 'all' 让后端返回所有状态的工具
+      const response = await toolsApi.getTools({ 
+        limit: 1000,
+        status: 'all' // 管理界面需要显示所有状态的工具
+      });
+      
       if (response.success && response.data) {
         setTools(response.data.tools);
       }
@@ -174,11 +179,12 @@ function AdminPage() {
               </div>
               <ThemeToggle />
               <Button
+                variant="ghost"
                 onClick={() => {
                   setSelectedTool(null);
                   setShowForm(true);
                 }}
-                className="flex items-center gap-2 bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                className="flex items-center gap-2 !bg-black !text-white hover:!bg-gray-800 dark:!bg-white dark:!text-black dark:hover:!bg-gray-200"
               >
                 <Plus className="w-4 h-4" />
                 添加工具

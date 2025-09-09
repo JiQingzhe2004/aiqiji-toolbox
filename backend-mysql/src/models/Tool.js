@@ -1,4 +1,4 @@
-import { DataTypes } from 'sequelize';
+import { DataTypes, Op } from 'sequelize';
 import sequelize from '../config/database.js';
 
 /**
@@ -84,8 +84,26 @@ const Tool = sequelize.define('Tool', {
   },
   
   category: {
-    type: DataTypes.ENUM('AI', '效率', '设计', '开发', '其他'),
-    allowNull: false
+    type: DataTypes.JSON,
+    allowNull: false,
+    defaultValue: [],
+    validate: {
+      isArray(value) {
+        if (!Array.isArray(value)) {
+          throw new Error('Category must be an array');
+        }
+        if (value.length === 0) {
+          throw new Error('At least one category is required');
+        }
+        // 验证每个分类都是有效的
+        const validCategories = ['AI', '效率', '设计', '开发', '其他'];
+        for (const cat of value) {
+          if (!validCategories.includes(cat)) {
+            throw new Error(`Invalid category: ${cat}`);
+          }
+        }
+      }
+    }
   },
   
   tags: {
@@ -202,19 +220,25 @@ Tool.prototype.addRating = async function(rating) {
 
 // 类方法：搜索工具
 Tool.searchTools = async function(query, options = {}) {
-  const { 
+  const {
     category, 
     featured, 
-    status = 'active',
+    status, // 移除默认值，让调用方决定是否筛选状态
     limit = 20, 
     offset = 0,
     order = [['sort_order', 'DESC'], ['created_at', 'DESC']]
   } = options;
   
-  const whereClause = { status };
+  const whereClause = {};
+  
+  // 只有当status有值时才添加状态筛选
+  if (status !== undefined) {
+    whereClause.status = status;
+  }
   
   if (category) {
-    whereClause.category = category;
+    // 支持多分类搜索：检查JSON数组中是否包含指定分类
+    whereClause[sequelize.literal(`JSON_SEARCH(category, 'one', '${category}') IS NOT NULL`)] = true;
   }
   
   if (featured !== undefined) {
@@ -222,7 +246,6 @@ Tool.searchTools = async function(query, options = {}) {
   }
   
   if (query) {
-    const { Op } = await import('sequelize');
     whereClause[Op.or] = [
       { name: { [Op.like]: `%${query}%` } },
       { description: { [Op.like]: `%${query}%` } },
@@ -251,25 +274,34 @@ Tool.getStats = async function() {
   const totalTools = await Tool.count({ where: { status: 'active' } });
   const featuredTools = await Tool.count({ where: { status: 'active', featured: true } });
   
-  const categoryStats = await Tool.findAll({
-    attributes: [
-      'category',
-      [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
-      [sequelize.fn('AVG', sequelize.literal('rating_sum / GREATEST(rating_count, 1)')), 'avg_rating']
-    ],
-    where: { status: 'active' },
-    group: ['category'],
-    order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']]
-  });
+  // 由于category现在是JSON数组，需要特殊处理统计
+  // 这里先返回总体统计，分类统计需要通过其他方式实现
+  const categoryStats = [];
+  const validCategories = ['AI', '效率', '设计', '开发', '其他'];
+  
+  for (const cat of validCategories) {
+    const count = await Tool.count({
+      where: {
+        status: 'active',
+        [Op.and]: [
+          sequelize.literal(`JSON_SEARCH(category, 'one', '${cat}') IS NOT NULL`)
+        ]
+      }
+    });
+    
+    if (count > 0) {
+      categoryStats.push({
+        category: cat,
+        count: count,
+        avgRating: 0 // 暂时设为0，后续可以优化
+      });
+    }
+  }
   
   return {
     totalTools,
     featuredTools,
-    categoryStats: categoryStats.map(stat => ({
-      category: stat.category,
-      count: parseInt(stat.dataValues.count),
-      avgRating: parseFloat(stat.dataValues.avg_rating) || 0
-    }))
+    categoryStats: categoryStats
   };
 };
 

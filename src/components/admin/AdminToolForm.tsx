@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Upload, Star, Trash2 } from 'lucide-react';
+import { Upload, Star, Trash2, X } from 'lucide-react';
 import { preprocessFormData } from '@/utils/dataValidator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,7 +41,8 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
     name: tool?.name || '',
     description: tool?.description || '',
     icon_url: tool?.icon_url || '',
-    categories: tool?.category ? [tool.category] : [] as string[], // 支持多分类
+    icon_theme: tool?.icon_theme || 'auto',
+    categories: tool?.category ? (Array.isArray(tool.category) ? tool.category : [tool.category]) : [] as string[], // 支持多分类
     url: tool?.url || '',
     featured: tool?.featured || false,
     status: tool?.status || 'active',
@@ -190,7 +191,7 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
       const submitData = {
         ...processedData.data,
         id: processedData.data.id || generateToolId(processedData.data.name),
-        category: processedData.data.categories[0] || '其他', // 取第一个分类作为主分类
+        category: processedData.data.categories.length > 0 ? processedData.data.categories : ['其他'], // 发送完整的分类数组
       };
       
       // 如果icon_url为空，则不发送该字段，避免后端验证失败
@@ -214,16 +215,8 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
     <Dialog open={true} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>{tool ? '编辑工具' : '添加工具'}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="p-1 hover:bg-muted"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+          <DialogTitle>
+            {tool ? '编辑工具' : '添加工具'}
           </DialogTitle>
         </DialogHeader>
 
@@ -271,7 +264,7 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 !bg-black dark:!bg-white !text-white dark:!text-black hover:!bg-gray-800 dark:hover:!bg-gray-100 !border-black dark:!border-white"
                 >
                   <Upload className="w-4 h-4" />
                   {uploading ? '上传中...' : '上传图标'}
@@ -286,11 +279,13 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
                 {/* 图标预览 */}
                 {(previewUrl || formData.icon_url) && (
                   <div className="flex items-center gap-2">
-                    <img
-                      src={previewUrl || formData.icon_url}
-                      alt="图标预览"
-                      className="w-8 h-8 object-contain rounded border"
-                    />
+                    <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center p-2">
+                      <img
+                        src={previewUrl || formData.icon_url}
+                        alt="图标预览"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                     <Badge variant="secondary">
                       {previewUrl ? '本地文件' : '外链图标'}
                     </Badge>
@@ -307,9 +302,9 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
                           }
                           handleInputChange('icon_url', '');
                         }}
-                        className="p-1 hover:bg-destructive hover:text-destructive-foreground"
+                        className="p-2 hover:bg-destructive hover:text-destructive-foreground min-h-[32px] min-w-[32px]"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     )}
                   </div>
@@ -321,6 +316,30 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
                 placeholder="或直接输入图标URL"
               />
             </div>
+            
+            {/* 图标主题选择 */}
+            <div className="space-y-2">
+              <Label>图标主题适配</Label>
+              <Select
+                value={formData.icon_theme}
+                onValueChange={(value) => handleInputChange('icon_theme', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">自动适配</SelectItem>
+                  <SelectItem value="auto-light">自动适配（偏亮色）</SelectItem>
+                  <SelectItem value="auto-dark">自动适配（偏暗色）</SelectItem>
+                  <SelectItem value="light">浅色图标</SelectItem>
+                  <SelectItem value="dark">深色图标</SelectItem>
+                  <SelectItem value="none">保持原色</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                控制图标在不同主题下的显示效果。自动适配会根据当前主题自动调整图标颜色。
+              </p>
+            </div>
           </div>
 
           {/* 分类选择 */}
@@ -331,10 +350,15 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
                 <Button
                   key={category}
                   type="button"
-                  variant={formData.categories.includes(category) ? "default" : "outline"}
+                  variant={formData.categories.includes(category) ? "solidCancel" : "outline"}
                   size="sm"
                   onClick={() => toggleCategory(category)}
-                  className="transition-colors"
+                  className={cn(
+                    "transition-colors",
+                    formData.categories.includes(category) 
+                      ? "!bg-black dark:!bg-white !text-white dark:!text-black hover:!bg-gray-800 dark:hover:!bg-gray-100" 
+                      : ""
+                  )}
                 >
                   {category}
                 </Button>
@@ -355,7 +379,7 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
                 placeholder="添加标签"
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
               />
-              <Button type="button" onClick={addTag} variant="outline">
+              <Button type="button" onClick={addTag} variant="outline" className="!bg-black dark:!bg-white !text-white dark:!text-black hover:!bg-gray-800 dark:hover:!bg-gray-100 !border-black dark:!border-white min-w-[80px] px-6">
                 添加
               </Button>
             </div>
@@ -413,6 +437,7 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
                 <SelectContent>
                   <SelectItem value="active">启用</SelectItem>
                   <SelectItem value="inactive">禁用</SelectItem>
+                  <SelectItem value="maintenance">维护</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -436,9 +461,10 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
               取消
             </Button>
             <Button 
+              variant="ghost"
               type="submit" 
               disabled={uploading || !formData.name || !formData.url || formData.categories.length === 0}
-              className="min-w-[100px]"
+              className="min-w-[100px] !bg-black dark:!bg-white !text-white dark:!text-black hover:!bg-gray-800 dark:hover:!bg-gray-100"
             >
               {uploading ? '保存中...' : tool ? '保存修改' : '添加工具'}
             </Button>

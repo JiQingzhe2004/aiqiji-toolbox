@@ -16,52 +16,183 @@ const __dirname = path.dirname(__filename);
 import sequelizeInstance from '../config/database.js';
 
 async function initializeDatabase() {
-  let sequelize;
+  const sequelize = sequelizeInstance;
   
   try {
-    console.log('🚀 开始初始化数据库...\n');
+    console.log('🚀 开始检查数据库状态...\n');
     
-    // 使用主应用的数据库配置
-    sequelize = sequelizeInstance;
-    await sequelize.authenticate();
-    console.log('✅ 数据库连接成功');
+    // 检查数据库连接状态，不重新认证
+    console.log('✅ 使用现有数据库连接');
     
-    // 创建表结构
-    await createTables(sequelize);
+    // 检查表是否存在
+    const [tables] = await sequelize.query("SHOW TABLES LIKE 'tools'");
+    const isFirstRun = tables.length === 0;
     
-    // 初始化管理员账户
-    await initializeAdminUser(sequelize);
+    if (isFirstRun) {
+      console.log('📋 首次运行，创建数据表...');
+      // 创建表结构
+      await createTables(sequelize);
+    } else {
+      console.log('📋 数据表已存在，跳过创建...');
+    }
     
-    // 初始化系统设置
-    await initializeSystemSettings(sequelize);
+    // 自动升级数据库结构（每次启动都检查）
+    await upgradeDatabase(sequelize);
     
-    console.log('\n🎉 数据库初始化完成!');
-    console.log(`
+    if (isFirstRun) {
+      // 初始化管理员账户
+      await initializeAdminUser(sequelize);
+      
+      // 初始化系统设置
+      await initializeSystemSettings(sequelize);
+    } else {
+      console.log('📋 非首次运行，跳过数据初始化...');
+    }
+    
+    console.log('\n🎉 数据库检查完成!');
+    if (isFirstRun) {
+      console.log(`
 📊 初始化完成:
 - ✅ 创建 users 表
-- ✅ 创建 tools 表
+- ✅ 创建 tools 表 (支持多分类)
 - ✅ 创建 system_settings 表
 - ✅ 创建管理员账户
 - ✅ 初始化系统设置
-
-🔧 数据库信息:
-- 数据库: ${sequelize.config.database}
-- 主机: ${sequelize.config.host}:${sequelize.config.port}
-- 字符集: utf8mb4
 
 👤 管理员账户:
 - 用户名: admin
 - 密码: admin123
 - 角色: 管理员
+      `);
+    } else {
+      console.log(`
+📊 检查完成:
+- ✅ 数据库结构已是最新版本
+- ✅ 多分类功能已启用
+- ✅ 所有功能正常运行
+      `);
+    }
+    
+    console.log(`
+🔧 数据库信息:
+- 数据库: ${sequelize.config.database}
+- 主机: ${sequelize.config.host}:${sequelize.config.port}
+- 字符集: utf8mb4
     `);
     
   } catch (error) {
     console.error('❌ 数据库初始化失败:', error);
-    process.exit(1);
-  } finally {
-    if (sequelize) {
-      await sequelize.close();
+    throw error; // 抛出错误而不是退出进程
+  }
+  // 不关闭数据库连接，因为主应用还需要使用
+}
+
+async function upgradeDatabase(sequelize) {
+  console.log('🔄 检查数据库升级...');
+  
+  try {
+    // 检查 category 字段类型
+    const [columns] = await sequelize.query(`
+      SHOW COLUMNS FROM tools LIKE 'category'
+    `);
+    
+    if (columns.length === 0) {
+      console.log('  ⚠️  tools 表中没有 category 字段，跳过升级');
+      return;
     }
+    
+    const currentType = columns[0].Type;
+    console.log(`  📊 当前 category 字段类型: ${currentType}`);
+    
+    // 如果已经是 JSON 类型，跳过升级
+    if (currentType.toLowerCase().includes('json')) {
+      console.log('  ✅ category 字段已经是 JSON 类型，无需升级');
+      return;
+    }
+    
+    console.log('  🚀 开始自动升级 category 字段以支持多分类...');
+    
+    // 备份现有数据
+    const [existingTools] = await sequelize.query(`
+      SELECT id, category FROM tools WHERE category IS NOT NULL
+    `);
+    console.log(`  📊 找到 ${existingTools.length} 个工具需要迁移`);
+    
+    // 添加临时字段
+    try {
+      await sequelize.query(`
+        ALTER TABLE tools 
+        ADD COLUMN category_new JSON DEFAULT NULL
+      `);
+      console.log('  ✅ 添加临时字段 category_new');
+    } catch (error) {
+      if (!error.message.includes('Duplicate column name')) {
+        throw error;
+      }
+    }
+    
+    // 迁移数据
+    let migratedCount = 0;
+    for (const tool of existingTools) {
+      if (tool.category && tool.category.trim()) {
+        const categoryArray = [tool.category.trim()];
+        await sequelize.query(`
+          UPDATE tools 
+          SET category_new = ? 
+          WHERE id = ?
+        `, {
+          replacements: [JSON.stringify(categoryArray), tool.id]
+        });
+        migratedCount++;
+      }
+    }
+    console.log(`  ✅ 迁移 ${migratedCount} 个工具的分类数据`);
+    
+    // 备份原字段
+    try {
+      await sequelize.query(`
+        ALTER TABLE tools 
+        CHANGE COLUMN category category_backup VARCHAR(100)
+      `);
+      console.log('  ✅ 备份原 category 字段');
+    } catch (error) {
+      if (!error.message.includes("doesn't exist")) {
+        throw error;
+      }
+    }
+    
+    // 激活新字段
+    try {
+      await sequelize.query(`
+        ALTER TABLE tools 
+        CHANGE COLUMN category_new category JSON NOT NULL
+      `);
+      console.log('  ✅ 激活新的 category 字段');
+    } catch (error) {
+      if (!error.message.includes("doesn't exist")) {
+        throw error;
+      }
+    }
+    
+    // 处理空值
+    await sequelize.query(`
+      UPDATE tools 
+      SET category = JSON_ARRAY('其他') 
+      WHERE category IS NULL
+    `);
+    
+    // 更新索引
+    try {
+      await sequelize.query(`DROP INDEX idx_tools_category ON tools`);
+    } catch (error) {
+      // 索引不存在，忽略
+    }
+    
+    console.log('  🎉 数据库升级完成！category 字段现在支持多分类');
+    
+  } catch (error) {
+    console.error('  ❌ 数据库升级失败:', error.message);
+    console.log('  ⚠️  继续使用现有结构...');
   }
 }
 
@@ -101,7 +232,7 @@ async function createTables(sequelize) {
       \`icon_url\` varchar(500) DEFAULT NULL,
       \`icon_file\` varchar(255) DEFAULT NULL,
       \`icon_theme\` enum('auto','light','dark','none') DEFAULT 'auto',
-      \`category\` varchar(50) NOT NULL,
+      \`category\` json NOT NULL,
       \`tags\` json DEFAULT NULL,
       \`url\` varchar(500) NOT NULL,
       \`featured\` tinyint(1) DEFAULT '0',

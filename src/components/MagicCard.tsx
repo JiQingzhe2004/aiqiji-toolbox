@@ -1,11 +1,9 @@
-import React, { memo, useMemo, useCallback, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone } from 'lucide-react';
+import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
+import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone, ShieldBan, ShieldAlert } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-button';
-import { DotPattern } from '@/components/magicui/dot-pattern';
 import { Confetti, type ConfettiRef } from '@/components/magicui/confetti';
 import { QRCodeModal } from './QRCodeModal';
 import * as AspectRatio from '@radix-ui/react-aspect-ratio';
@@ -22,6 +20,117 @@ interface MagicCardProps {
   searchQuery?: string;
   className?: string;
 }
+
+/**
+ * 智能标签组件 - 根据容器宽度动态显示标签
+ */
+const SmartTags = memo(function SmartTags({ tags }: { tags: string[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visibleTags, setVisibleTags] = useState<string[]>([]);
+  const [hiddenTags, setHiddenTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!containerRef.current || !tags.length) return;
+
+    const container = containerRef.current;
+    const containerWidth = container.offsetWidth;
+    
+    // 创建临时测量元素
+    const measureTag = (text: string) => {
+      const temp = document.createElement('span');
+      temp.className = 'inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-secondary/60 text-secondary-foreground whitespace-nowrap';
+      temp.textContent = text;
+      temp.style.position = 'absolute';
+      temp.style.visibility = 'hidden';
+      temp.style.pointerEvents = 'none';
+      document.body.appendChild(temp);
+      const width = temp.offsetWidth + 6; // 6px for gap
+      document.body.removeChild(temp);
+      return width;
+    };
+
+    let currentWidth = 0;
+    const visible: string[] = [];
+    const hidden: string[] = [];
+    
+    // 为 "+N" 标签预留空间（估算）
+    const plusTagWidth = 40; // 估算 "+N" 标签的宽度
+    const availableWidth = containerWidth - plusTagWidth;
+
+    for (let i = 0; i < tags.length; i++) {
+      const tagWidth = measureTag(tags[i]);
+      
+      if (currentWidth + tagWidth <= availableWidth || i === 0) {
+        // 至少显示一个标签，即使超出宽度
+        visible.push(tags[i]);
+        currentWidth += tagWidth;
+      } else {
+        hidden.push(...tags.slice(i));
+        break;
+      }
+    }
+
+    // 如果所有标签都能放下，就不需要 "+N" 标签
+    if (hidden.length === 0) {
+      // 重新计算，不预留 "+N" 标签空间
+      currentWidth = 0;
+      visible.length = 0;
+      
+      for (let i = 0; i < tags.length; i++) {
+        const tagWidth = measureTag(tags[i]);
+        
+        if (currentWidth + tagWidth <= containerWidth) {
+          visible.push(tags[i]);
+          currentWidth += tagWidth;
+        } else {
+          hidden.push(...tags.slice(i));
+          break;
+        }
+      }
+    }
+
+    setVisibleTags(visible);
+    setHiddenTags(hidden);
+  }, [tags]);
+
+  if (!tags.length) return null;
+
+  return (
+    <div ref={containerRef} className="flex flex-wrap gap-1.5 min-h-[28px]">
+      {visibleTags.map((tag, index) => (
+        <span
+          key={index}
+          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-secondary/60 text-secondary-foreground hover:bg-secondary transition-colors whitespace-nowrap"
+        >
+          {tag}
+        </span>
+      ))}
+      {hiddenTags.length > 0 && (
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors cursor-help whitespace-nowrap">
+                +{hiddenTags.length}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md max-w-xs">
+              <div className="flex flex-wrap gap-1 justify-center">
+                {hiddenTags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center justify-center px-2 py-0.5 text-xs rounded bg-secondary/80 text-secondary-foreground"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
+  );
+});
 
 /**
  * Magic UI风格的工具卡片组件
@@ -156,18 +265,6 @@ export const MagicCard = memo(function MagicCard({
       {/* Radix AspectRatio 确保图片区域完美比例 */}
       <AspectRatio.Root ratio={16 / 9}>
         <div className="relative w-full h-full bg-gradient-to-br from-background/5 via-muted/30 to-muted/60 overflow-hidden">
-          {/* 背景图案 */}
-          <DotPattern 
-            glow={true}
-            cr={2}
-            className={cn(
-              "[mask-image:radial-gradient(200px_circle_at_center,white,transparent)]",
-              "text-muted-foreground/30"
-            )}
-          />
-          
-          {/* 径向渐变遮罩 - 创建中心亮、周围暗的效果 */}
-          <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-background/40" />
           
           {/* 主图标/Logo */}
           <div className="absolute inset-0 flex items-center justify-center">
@@ -194,15 +291,35 @@ export const MagicCard = memo(function MagicCard({
             </div>
           </div>
           
-          {/* 推荐标识 */}
-          {tool.featured && (
-            <div className="absolute top-3 right-3">
+          {/* 推荐标识和状态标识 */}
+          <div className="absolute top-3 right-3 flex flex-col gap-1.5">
+            {tool.featured && (
               <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/90 backdrop-blur-sm text-yellow-50 rounded-full text-xs font-medium shadow-sm">
                 <Star className="w-3 h-3 fill-current" />
                 推荐
               </div>
-            </div>
-          )}
+            )}
+            {/* 状态标识 */}
+            {tool.status !== 'active' && (
+              <div className={cn(
+                "flex items-center gap-1 px-2 py-1 backdrop-blur-sm rounded-full text-xs font-medium shadow-sm",
+                tool.status === 'inactive' && "bg-red-500/90 text-red-50",
+                tool.status === 'maintenance' && "bg-yellow-600/90 text-yellow-50"
+              )}>
+                {tool.status === 'inactive' ? (
+                  <>
+                    <ShieldBan className="w-3 h-3" />
+                    停用
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert className="w-3 h-3" />
+                    维护
+                  </>
+                )}
+              </div>
+            )}
+          </div>
           
           {/* Hover 效果 */}
           <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
@@ -232,41 +349,9 @@ export const MagicCard = memo(function MagicCard({
           </TooltipProvider>
         </div>
 
-        {/* 标签 */}
+        {/* 智能标签 */}
         {tool.tags && tool.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {tool.tags.slice(0, 5).map((tag, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-secondary/60 text-secondary-foreground hover:bg-secondary transition-colors"
-              >
-                {tag}
-              </span>
-            ))}
-            {tool.tags.length > 5 && (
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors cursor-help">
-                      +{tool.tags.length - 5}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md max-w-xs">
-                    <div className="flex flex-wrap gap-1 justify-center">
-                      {tool.tags.slice(5).map((tag, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center justify-center px-2 py-0.5 text-xs rounded bg-secondary/80 text-secondary-foreground"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
+          <SmartTags tags={tool.tags} />
         )}
 
         {/* 时间信息 */}
@@ -281,14 +366,47 @@ export const MagicCard = memo(function MagicCard({
         <div className="flex gap-2 pt-2">
           <div className="flex-1 group/button">
             <InteractiveHoverButton 
-              className="w-full"
-              hoverText={`打开${tool.name}`}
+              className={cn(
+                "w-full",
+                tool.status === 'inactive' && "opacity-50 cursor-not-allowed"
+              )}
+              hoverText={
+                tool.status === 'active' 
+                  ? `打开${tool.name}` 
+                  : tool.status === 'inactive' 
+                    ? '工具已停用' 
+                    : `打开${tool.name}（维护）`
+              }
               onClick={(e) => {
                 e.stopPropagation();
-                openTool(e);
+                if (tool.status === 'inactive') {
+                  // 只有停用的工具禁止访问
+                  toast.error('该工具已停用', {
+                    duration: 2000,
+                    position: 'bottom-center'
+                  });
+                } else {
+                  // 正常和维护的工具都可以访问
+                  if (tool.status === 'maintenance') {
+                    // 维护工具给予提示但仍可访问
+                    toast('该工具正在维护，可能存在功能不稳定', {
+                      duration: 3000,
+                      position: 'bottom-center',
+                      style: {
+                        background: 'hsl(var(--background))',
+                        color: 'hsl(var(--foreground))',
+                        border: '1px solid hsl(var(--warning))',
+                        borderLeft: '4px solid hsl(var(--warning))'
+                      },
+                      icon: '⚠️'
+                    });
+                  }
+                  openTool(e);
+                }
               }}
             >
-              打开工具
+              {tool.status === 'active' ? '打开工具' : 
+               tool.status === 'inactive' ? '已停用' : '打开工具'}
             </InteractiveHoverButton>
           </div>
           
@@ -296,40 +414,32 @@ export const MagicCard = memo(function MagicCard({
           <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <motion.div
-                  whileHover={{ 
-                    scale: 1.1,
-                    rotate: 5,
-                    transition: { duration: 0.2, ease: "easeOut" }
-                  }}
-                  whileTap={{ 
-                    scale: 0.95,
-                    transition: { duration: 0.1 }
-                  }}
-                >
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    className="rounded-full aspect-square w-10 h-10 transition-colors duration-200 hover:bg-blue-500 hover:text-white hover:border-blue-500"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                <Button
+                  size="icon"
+                  variant="outline"
+                  disabled={tool.status === 'inactive'}
+                  className={cn(
+                    "rounded-full aspect-square w-10 h-10 transition-all duration-200",
+                    tool.status !== 'inactive' 
+                      ? "hover:bg-blue-500 hover:text-white hover:border-blue-500 hover:scale-105"
+                      : "opacity-50 cursor-not-allowed"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (tool.status !== 'inactive') {
                       setShowQRModal(true);
-                    }}
-                    aria-label={`查看 ${tool.name} 的二维码`}
-                  >
-                    <motion.div
-                      whileHover={{ 
-                        rotate: -5,
-                        transition: { duration: 0.2, ease: "easeOut" }
-                      }}
-                    >
-                      <TabletSmartphone size={16} />
-                    </motion.div>
-                  </Button>
-                </motion.div>
+                    }
+                  }}
+                  aria-label={`查看 ${tool.name} 的二维码`}
+                >
+                  <TabletSmartphone size={16} />
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md">
-                <p className="text-sm">显示二维码</p>
+                <p className="text-sm">
+                  {tool.status === 'inactive' ? '工具已停用' : 
+                   tool.status === 'maintenance' ? '显示二维码（维护）' : '显示二维码'}
+                </p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -338,40 +448,32 @@ export const MagicCard = memo(function MagicCard({
           <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <motion.div
-                  whileHover={{ 
-                    scale: 1.1,
-                    rotate: 15,
-                    transition: { duration: 0.2, ease: "easeOut" }
-                  }}
-                  whileTap={{ 
-                    scale: 0.95,
-                    transition: { duration: 0.1 }
-                  }}
-                >
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    className="rounded-full aspect-square w-10 h-10 transition-colors duration-200 hover:bg-primary hover:text-primary-foreground hover:border-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                <Button
+                  size="icon"
+                  variant="outline"
+                  disabled={tool.status === 'inactive'}
+                  className={cn(
+                    "rounded-full aspect-square w-10 h-10 transition-all duration-200",
+                    tool.status !== 'inactive' 
+                      ? "hover:bg-primary hover:text-primary-foreground hover:border-primary hover:scale-105"
+                      : "opacity-50 cursor-not-allowed"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (tool.status !== 'inactive') {
                       copyLink(e);
-                    }}
-                    aria-label={`复制 ${tool.name} 的链接`}
-                  >
-                    <motion.div
-                      whileHover={{ 
-                        rotate: -15,
-                        transition: { duration: 0.2, ease: "easeOut" }
-                      }}
-                    >
-                      <Copy size={16} />
-                    </motion.div>
-                  </Button>
-                </motion.div>
+                    }
+                  }}
+                  aria-label={`复制 ${tool.name} 的链接`}
+                >
+                  <Copy size={16} />
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md">
-                <p className="text-sm">复制链接</p>
+                <p className="text-sm">
+                  {tool.status === 'inactive' ? '工具已停用' : 
+                   tool.status === 'maintenance' ? '复制链接（维护）' : '复制链接'}
+                </p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Github, Sparkles, Search, LogIn, Settings, MailCheck } from 'lucide-react';
+import { Github, Sparkles, Search, LogIn, Settings, MailCheck, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SearchBar } from './SearchBar';
 import { AnimatedThemeToggler } from './magicui/animated-theme-toggler';
@@ -24,6 +24,7 @@ interface HeaderProps {
 export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
   const { isAuthenticated, isAdmin } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -37,6 +38,56 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
       navigate('/');
     }
   };
+
+  // 移动端搜索展开时自动聚焦
+  useEffect(() => {
+    if (showMobileSearch) {
+      // 延迟聚焦，确保动画完成
+      setTimeout(() => {
+        const searchInput = document.querySelector('.md\\:hidden .relative input');
+        if (searchInput) {
+          (searchInput as HTMLInputElement).focus();
+        }
+      }, 200);
+    }
+  }, [showMobileSearch]);
+
+  // ESC键关闭移动端搜索
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showMobileSearch) {
+        setShowMobileSearch(false);
+      }
+    };
+
+    if (showMobileSearch) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showMobileSearch]);
+
+  // 点击外部区域关闭移动端搜索
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showMobileSearch) {
+        const target = e.target as HTMLElement;
+        // 检查点击是否在搜索区域外部
+        const searchContainer = document.querySelector('.mobile-search-container');
+        if (searchContainer && !searchContainer.contains(target)) {
+          setShowMobileSearch(false);
+        }
+      }
+    };
+
+    if (showMobileSearch) {
+      // 延迟添加监听器，避免立即关闭
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 100);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showMobileSearch]);
+
   return (
     <>
     <motion.header
@@ -44,15 +95,24 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
       className="sticky top-0 z-50 w-full border-b border-muted-foreground/10 bg-background/80 backdrop-blur-md"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+      }}
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        {/* Logo区域 */}
+        {/* Logo区域 - 在搜索模式下有动画隐藏 */}
         <motion.div
           className="flex items-center space-x-3 cursor-pointer"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.2 }}
           onClick={handleTitleClick}
+          initial={false}
+          animate={{ 
+            opacity: showMobileSearch ? 0 : 1,
+            x: showMobileSearch ? -20 : 0,
+            pointerEvents: showMobileSearch ? 'none' : 'auto'
+          }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
         >
           {/* Logo图标 */}
           <div className="relative">
@@ -80,9 +140,36 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           </div>
         </motion.div>
 
-        {/* 右侧操作区 */}
-        <div className="flex items-center space-x-2">
-          {/* 搜索栏 - 移至右侧 */}
+        {/* 移动端搜索展开模式 */}
+        {showMobileSearch && (
+          <motion.div
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'calc(100% - 2rem)' }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="mobile-search-container absolute left-4 flex items-center md:hidden"
+          >
+            <SearchBar
+              value={searchValue}
+              onChange={onSearchChange || (() => {})}
+              className="flex-1"
+              placeholder="搜索工具..."
+            />
+          </motion.div>
+        )}
+
+        {/* 右侧操作区 - 在搜索模式下有动画隐藏 */}
+        <motion.div 
+          className="flex items-center space-x-2"
+          initial={false}
+          animate={{ 
+            opacity: showMobileSearch ? 0 : 1,
+            x: showMobileSearch ? 20 : 0,
+            pointerEvents: showMobileSearch ? 'none' : 'auto'
+          }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+        >
+          {/* 桌面端搜索栏 */}
           <SearchBar
             value={searchValue}
             onChange={onSearchChange || (() => {})}
@@ -94,10 +181,12 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
             variant="ghost"
             size="icon"
             className="md:hidden rounded-2xl hover:bg-muted"
+            onClick={() => setShowMobileSearch(true)}
             aria-label="搜索"
           >
             <Search className="w-5 h-5" />
           </Button>
+          
           {/* 移动端登录/管理按钮 */}
           {isAuthenticated && isAdmin ? (
             <Button
@@ -189,8 +278,9 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
               反馈
             </Button>
           </div>
-        </div>
+        </motion.div>
       </div>
+
       
       {/* 底部装饰线 */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
@@ -201,6 +291,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
       open={showLoginModal} 
       onOpenChange={setShowLoginModal} 
     />
+
   </>
   );
 }

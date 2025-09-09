@@ -68,16 +68,24 @@ export function SearchBar({
   return (
     <motion.div
       className={cn('relative', className)}
-      initial={{ width: 220 }}
-      animate={{ width: isFocused ? 360 : 220 }}
+      initial={{ width: className?.includes('flex-1') ? '100%' : 220 }}
+      animate={{ width: className?.includes('flex-1') ? '100%' : (isFocused ? 360 : 220) }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
     >
       <div className="relative">
         {/* 搜索图标 */}
         <Search 
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4"
+          className={cn(
+            "absolute top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none",
+            className?.includes('flex-1') ? 'left-2' : 'left-3'
+          )}
           role="img"
           aria-label="搜索图标"
+          style={{ 
+            filter: 'none',
+            backfaceVisibility: 'hidden',
+            WebkitFontSmoothing: 'antialiased'
+          }}
         />
         
         {/* 输入框 */}
@@ -91,13 +99,20 @@ export function SearchBar({
           onKeyPress={handleKeyPress}
           placeholder={placeholder}
           className={cn(
-            'pl-10 pr-10 bg-background/50 backdrop-blur-sm border-muted-foreground/20',
-            // 暗色主题：石板色聚焦
-            'dark:focus-visible:ring-slate-400/50 dark:focus-visible:border-slate-400/50',
-            // 浅色主题：橙色聚焦
-            'focus-visible:ring-orange-400/50 focus-visible:border-orange-400/50',
-            'transition-all duration-180'
+            'bg-background/80 border-muted-foreground/20',
+            // 完全移除所有聚焦边框效果
+            'focus:ring-0 focus:ring-offset-0 focus:border-muted-foreground/20 focus:outline-none',
+            'focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-muted-foreground/20 focus-visible:outline-none',
+            'active:ring-0 active:ring-offset-0 active:outline-none',
+            'outline-none',
+            'transition-all duration-180',
+            // 移动端flex-1模式下减少padding
+            className?.includes('flex-1') ? 'pl-8 pr-8' : 'pl-10 pr-10'
           )}
+          style={{
+            outline: 'none',
+            boxShadow: 'none'
+          }}
           aria-label="搜索工具"
           aria-describedby="search-help"
         />
@@ -108,7 +123,10 @@ export function SearchBar({
             variant="ghost"
             size="icon"
             onClick={clearSearch}
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 hover:bg-muted"
+            className={cn(
+              "absolute top-1/2 transform -translate-y-1/2 h-8 w-8 hover:bg-muted",
+              className?.includes('flex-1') ? 'right-0.5' : 'right-1'
+            )}
             aria-label="清空搜索"
           >
             <X className="w-4 h-4" />

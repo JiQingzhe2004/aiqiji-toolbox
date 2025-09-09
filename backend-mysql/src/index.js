@@ -12,6 +12,7 @@ import dotenv from 'dotenv';
 
 // 导入配置和模块
 import sequelize, { testConnection, syncDatabase, closeConnection } from './config/database.js';
+import { initializeDatabase } from './database/init.js';
 import toolRoutes from './routes/toolRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
@@ -261,8 +262,15 @@ class Server {
       // 同步数据库模型
       await syncDatabase();
 
-      // 数据库初始化完成，无需种子数据
-      console.log('ℹ️ 数据库连接就绪，如需初始化数据请运行: npm run db:init');
+      // 自动运行数据库初始化和升级
+      console.log('🔄 正在自动检查和升级数据库...');
+      try {
+        await initializeDatabase();
+        console.log('✅ 数据库初始化和升级完成');
+      } catch (error) {
+        console.error('⚠️ 数据库初始化失败，但服务继续启动:', error.message);
+        // 继续启动服务，不中断
+      }
 
       // 启动HTTP服务器
       this.server = this.app.listen(this.port, () => {

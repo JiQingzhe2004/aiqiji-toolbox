@@ -2,10 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, Sparkles, Dot } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { TextAnimate } from '@/components/magicui/text-animate';
 import { TypingAnimation } from '@/components/magicui/typing-animation';
-import { Ripple } from '@/components/magicui/ripple';
-import { FlickeringGrid } from '@/components/magicui/flickering-grid';
 import { AuroraText } from '@/components/magicui/aurora-text';
 
 /**
@@ -16,48 +13,33 @@ export function HeroBanner() {
   // 滚动到工具区域
   const scrollToTools = () => {
     const toolsSection = document.getElementById('tools-section');
+    
     if (toolsSection) {
-      toolsSection.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
+      // 使用自定义偏移量，让工具区域标题有更好的显示位置
+      const headerHeight = 50; // 增加偏移量，给工具区域留更多顶部空间
+      const elementTop = toolsSection.offsetTop - headerHeight;
+      
+      window.scrollTo({
+        top: Math.max(0, elementTop),
+        behavior: 'smooth'
       });
     }
   };
 
   return (
-    <section className="relative h-screen w-full overflow-hidden">
-      {/* Magic UI 波纹背景 */}
-      <Ripple
-        mainCircleSize={200}
-        mainCircleOpacity={0.3}
-        numCircles={8}
+    <section className="relative h-screen w-full overflow-hidden bg-white dark:bg-black">
+      {/* 网格背景 */}
+      <div
         className={cn(
-          // 暗色主题：更明显的石板色波纹
-          "dark:[&>div]:bg-slate-300/20 dark:[&>div]:border-slate-200/40",
-          // 浅色主题：更明显的橙色波纹
-          "[&>div]:bg-orange-300/25 [&>div]:border-orange-200/50"
+          "absolute inset-0",
+          "[background-size:40px_40px]",
+          "[background-image:linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)]",
+          "dark:[background-image:linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)]",
         )}
       />
-
-      {/* Magic UI 闪烁网格背景 - 深色主题 */}
-      <FlickeringGrid
-        className="absolute inset-0 z-0 dark:block hidden"
-        squareSize={4}
-        gridGap={6}
-        flickerChance={0.3}
-        color="rgb(148, 163, 184)" // slate-400
-        maxOpacity={0.15}
-      />
-
-      {/* Magic UI 闪烁网格背景 - 浅色主题 */}
-      <FlickeringGrid
-        className="absolute inset-0 z-0 dark:hidden block"
-        squareSize={4}
-        gridGap={6}
-        flickerChance={0.3}
-        color="rgb(251, 146, 60)" // orange-400
-        maxOpacity={0.12}
-      />
+      
+      {/* 径向渐变遮罩 - 创建中心亮、周围暗的效果 */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] dark:bg-black"></div>
 
       {/* 主要内容 */}
       <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
@@ -154,14 +136,9 @@ export function HeroBanner() {
               为开发者、设计师和效率工具爱好者精心收集的工具导航站点
             </TypingAnimation>
             <br />
-            <TextAnimate 
-              animation="blurInUp" 
-              by="character" 
-              duration={5}
-              className="text-lg opacity-80 inline-block mt-2"
-            >
+            <div className="text-lg opacity-80 inline-block mt-2">
               让工作更高效，让创作更便捷
-            </TextAnimate>
+            </div>
           </motion.div>
 
           {/* 统计信息 */}
@@ -177,7 +154,7 @@ export function HeroBanner() {
               { label: '持续更新', value: '持续中' }
             ].map((stat, index) => (
               <div key={stat.label} className="text-center">
-                <motion.div
+                <div
                   className={cn(
                     "text-2xl md:text-3xl font-bold bg-clip-text text-transparent",
                     // 暗色主题：石板色渐变
@@ -185,18 +162,9 @@ export function HeroBanner() {
                     // 浅色主题：橙黄色渐变
                     "bg-gradient-to-r from-orange-500 to-yellow-500"
                   )}
-                  animate={{ 
-                    scale: [1, 1.1, 1] 
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    delay: index * 0.2,
-                    repeat: Infinity,
-                    repeatType: 'reverse'
-                  }}
                 >
                   {stat.value}
-                </motion.div>
+                </div>
                 <div className={cn(
                   "text-sm mt-1",
                   "dark:text-slate-400 text-gray-500"
@@ -210,15 +178,16 @@ export function HeroBanner() {
       </div>
 
       {/* 滚动提示 */}
-      <div className="absolute bottom-20 left-0 right-0 flex justify-center">
+      <div className="absolute bottom-20 left-0 right-0 flex justify-center z-30">
         <motion.button
-          className="group cursor-pointer"
+          className="group cursor-pointer p-4 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           onClick={scrollToTools}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1 }}
           whileHover={{ y: -2 }}
           aria-label="滚动到工具区域"
+          style={{ zIndex: 1000 }}
         >
           <div className="flex flex-col items-center justify-center space-y-3">
             <span className={cn(

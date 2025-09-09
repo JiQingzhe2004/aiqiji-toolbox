@@ -90,8 +90,9 @@ export function AdminToolsList({
   };
 
   return (
-    <div className="rounded-md border">
-      <Table>
+    <div className="rounded-md border overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow>
             {onSelectAll && (
@@ -102,11 +103,11 @@ export function AdminToolsList({
                 />
               </TableHead>
             )}
-            <TableHead>工具信息</TableHead>
-            <TableHead>分类</TableHead>
-            <TableHead>状态</TableHead>
-            <TableHead>创建时间</TableHead>
-            <TableHead>操作</TableHead>
+            <TableHead className="w-1/2">工具信息</TableHead>
+            <TableHead className="w-1/8">分类</TableHead>
+            <TableHead className="w-20">状态</TableHead>
+            <TableHead className="w-1/8">创建时间</TableHead>
+            <TableHead className="flex-1">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -120,45 +121,41 @@ export function AdminToolsList({
                   />
                 </TableCell>
               )}
-              <TableCell>
+              <TableCell className="w-1/2">
                 <div className="flex items-start space-x-3">
                   {getToolIconUrl(tool) ? (
-                    <img
-                      src={getToolIconUrl(tool)}
-                      alt={tool.name}
-                      className={cn(
-                        "w-8 h-8 rounded object-contain",
-                        // 主题适配逻辑：根据图标原始颜色类型进行适配
-                        (tool.logoTheme === 'auto-dark' || tool.logoTheme === 'auto' || tool.logoTheme === 'dark' || !tool.logoTheme) && "dark:invert", // 深色图标
-                        (tool.logoTheme === 'auto-light' || tool.logoTheme === 'light') && "invert dark:invert-0", // 浅色图标
-                        // none: 不添加任何样式，保持原色
-                      )}
-                    />
+                    <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center p-2">
+                      <img
+                        src={getToolIconUrl(tool)}
+                        alt={tool.name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                   ) : (
-                    <div className="w-8 h-8 bg-muted rounded flex items-center justify-center">
-                      <span className="text-xs">{tool.name.charAt(0)}</span>
+                    <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
+                      <span className="text-sm font-medium text-blue-800">{tool.name.charAt(0)}</span>
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{tool.name}</p>
+                      <p className="font-medium text-sm truncate">{tool.name}</p>
                       {tool.featured && (
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
+                    <p className="text-xs text-muted-foreground truncate max-w-full">
                       {tool.description}
                     </p>
                     {tool.tags && tool.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {tool.tags.slice(0, 3).map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
+                      <div className="flex flex-wrap gap-1 mt-1 max-w-full overflow-hidden">
+                        {tool.tags.slice(0, 2).map((tag, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs truncate max-w-20">
                             {tag}
                           </Badge>
                         ))}
-                        {tool.tags.length > 3 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{tool.tags.length - 3}
+                        {tool.tags.length > 2 && (
+                          <Badge variant="secondary" className="text-xs flex-shrink-0">
+                            +{tool.tags.length - 2}
                           </Badge>
                         )}
                       </div>
@@ -166,23 +163,46 @@ export function AdminToolsList({
                   </div>
                 </div>
               </TableCell>
-              <TableCell>
-                <Badge className={getCategoryColor(tool.category)}>
-                  {tool.category}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge className={getStatusColor(tool.status)}>
-                  {tool.status === 'active' ? '正常' : 
-                   tool.status === 'inactive' ? '停用' : '维护中'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="text-xs text-muted-foreground">
-                  {tool.created_at ? new Date(tool.created_at).toLocaleDateString('zh-CN') : '-'}
+              <TableCell className="w-1/8">
+                <div className="flex flex-wrap gap-1">
+                  {(Array.isArray(tool.category) ? tool.category : [tool.category]).map((cat, index) => (
+                    <Badge key={index} className={cn(getCategoryColor(cat), "text-xs")}>
+                      {cat}
+                    </Badge>
+                  ))}
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell className="w-20">
+                <Badge className={cn(getStatusColor(tool.status), "text-xs")}>
+                  {tool.status === 'active' ? '正常' : 
+                   tool.status === 'inactive' ? '停用' : '维护'}
+                </Badge>
+              </TableCell>
+              <TableCell className="w-1/8">
+                <div className="text-xs text-muted-foreground">
+                  {(() => {
+                    const dateString = tool.created_at || tool.createdAt;
+                    if (!dateString) return '-';
+                    
+                    try {
+                      const date = new Date(dateString);
+                      if (isNaN(date.getTime())) {
+                        console.warn('Invalid date value:', dateString, 'for tool:', tool.name);
+                        return '-';
+                      }
+                      return date.toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      });
+                    } catch (error) {
+                      console.warn('Date parsing error:', error, 'dateString:', dateString, 'tool:', tool.name);
+                      return '-';
+                    }
+                  })()}
+                </div>
+              </TableCell>
+              <TableCell className="flex-1">
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
@@ -228,6 +248,7 @@ export function AdminToolsList({
           ))}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

@@ -41,7 +41,7 @@ export function useTools(externalSearchQuery?: string): UseToolsReturn {
         // 从API加载数据，后端默认按权重排序
         const response = await toolsApi.getTools({ 
           limit: 1000, // 获取所有数据
-          status: 'active' // 只获取活跃的工具
+          status: 'all' // 获取所有状态的工具，在前端显示时区分状态
           // 注意：后端默认排序就是按权重(sort_order DESC, created_at DESC)
         });
         

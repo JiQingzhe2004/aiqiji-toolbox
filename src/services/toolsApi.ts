@@ -26,7 +26,7 @@ export interface ToolsQueryParams {
   /** 是否精选 */
   featured?: boolean;
   /** 状态筛选 */
-  status?: 'active' | 'inactive' | 'maintenance';
+  status?: 'active' | 'inactive' | 'maintenance' | 'all';
   /** 搜索关键词 */
   q?: string;
   /** 排序方式 */
@@ -57,7 +57,7 @@ export interface ToolFormData {
   icon?: string;
   icon_url?: string;
   icon_theme?: 'auto' | 'auto-light' | 'auto-dark' | 'light' | 'dark' | 'none';
-  category: string;
+  category: string | string[];
   tags?: string[];
   url: string;
   featured?: boolean;

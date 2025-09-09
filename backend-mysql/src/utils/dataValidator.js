@@ -22,6 +22,11 @@ export function cleanToolData(data) {
       .replace(/\n{3,}/g, '\n\n'); // 限制连续换行
   }
   
+  // 清理分类数据（支持多分类）
+  if (cleaned.category) {
+    cleaned.category = cleanCategoryData(cleaned.category);
+  }
+  
   // 清理标签数据
   if (cleaned.tags) {
     cleaned.tags = cleanTagsData(cleaned.tags);
@@ -37,6 +42,46 @@ export function cleanToolData(data) {
   }
   
   return cleaned;
+}
+
+/**
+ * 清理分类数据（支持多分类）
+ */
+export function cleanCategoryData(category) {
+  let categoryArray = [];
+  
+  if (Array.isArray(category)) {
+    categoryArray = category;
+  } else if (typeof category === 'string') {
+    try {
+      // 尝试解析JSON
+      const parsed = JSON.parse(category);
+      if (Array.isArray(parsed)) {
+        categoryArray = parsed;
+      } else {
+        // 不是数组，按逗号分割
+        categoryArray = category.split(',');
+      }
+    } catch {
+      // JSON解析失败，按逗号分割
+      categoryArray = category.split(',');
+    }
+  }
+  
+  // 清理每个分类
+  const validCategories = ['AI', '效率', '设计', '开发', '其他'];
+  const cleanedCategories = categoryArray
+    .map(cat => {
+      if (typeof cat !== 'string') {
+        return String(cat);
+      }
+      return cat.trim();
+    })
+    .filter(cat => cat && validCategories.includes(cat)) // 过滤无效分类
+    .filter((cat, index, arr) => arr.indexOf(cat) === index); // 去重
+  
+  // 如果没有有效分类，返回默认分类
+  return cleanedCategories.length > 0 ? cleanedCategories : ['其他'];
 }
 
 /**
@@ -95,8 +140,18 @@ export function validateToolData(data) {
     errors.push('工具链接不能为空');
   }
   
-  if (!data.category || data.category.trim().length === 0) {
+  // 验证分类（支持多分类）
+  if (!data.category || (Array.isArray(data.category) ? data.category.length === 0 : data.category.trim().length === 0)) {
     errors.push('工具分类不能为空');
+  }
+  
+  // 如果是数组，验证每个分类
+  if (Array.isArray(data.category)) {
+    const validCategories = ['AI', '效率', '设计', '开发', '其他'];
+    const invalidCategories = data.category.filter(cat => !validCategories.includes(cat));
+    if (invalidCategories.length > 0) {
+      errors.push(`无效的分类: ${invalidCategories.join(', ')}`);
+    }
   }
   
   // 验证URL格式

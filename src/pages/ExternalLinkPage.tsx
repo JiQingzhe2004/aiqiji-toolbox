@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { ExternalLink, ArrowLeft, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { BackgroundLines } from '@/components/ui/background-lines';
 import { Highlighter } from '@/components/magicui/highlighter';
 
 /**
@@ -60,7 +59,39 @@ export default function ExternalLinkPage() {
   }
 
   return (
-    <BackgroundLines className="min-h-screen flex items-center justify-center w-full px-4">
+    <div className="min-h-screen flex items-center justify-center w-full px-4 bg-gradient-to-br from-background via-muted/10 to-background relative overflow-hidden">
+      {/* 静态线条背景 */}
+      <div className="absolute inset-0 opacity-5">
+        <svg
+          className="absolute inset-0 h-full w-full"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="none"
+          viewBox="0 0 1200 800"
+        >
+          <path
+            d="M0,400 Q300,200 600,400 T1200,400"
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="none"
+            className="text-foreground"
+          />
+          <path
+            d="M0,300 Q400,100 800,300 T1200,300"
+            stroke="currentColor"
+            strokeWidth="1"
+            fill="none"
+            className="text-foreground"
+          />
+          <path
+            d="M0,500 Q200,300 400,500 T800,500 T1200,500"
+            stroke="currentColor"
+            strokeWidth="1"
+            fill="none"
+            className="text-foreground"
+          />
+        </svg>
+      </div>
+      
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -145,6 +176,6 @@ export default function ExternalLinkPage() {
           </div>
         </Card>
       </motion.div>
-    </BackgroundLines>
+    </div>
   );
 }

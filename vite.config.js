@@ -40,42 +40,68 @@ export default defineConfig({
         },
         assetFileNames: 'assets/[name]-[hash].[ext]',
         
-        // 手动分割代码块 - 更精细的分割策略
-        manualChunks: {
+        // 更激进的代码分割策略
+        manualChunks: (id) => {
           // React 核心库
-          'react-vendor': ['react', 'react-dom'],
+          if (id.includes('react/') || id.includes('react-dom/')) {
+            return 'react-vendor';
+          }
           
           // 路由相关
-          'router': ['react-router-dom'],
+          if (id.includes('react-router')) {
+            return 'router';
+          }
           
-          // Radix UI 组件
-          'radix-ui': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-alert-dialog',
-            '@radix-ui/react-select',
-            '@radix-ui/react-switch',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-label',
-            '@radix-ui/react-separator',
-            '@radix-ui/react-progress',
-            '@radix-ui/react-aspect-ratio'
-          ],
+          // Radix UI 组件 - 按使用频率分组
+          if (id.includes('@radix-ui/react-dialog') || 
+              id.includes('@radix-ui/react-tooltip') || 
+              id.includes('@radix-ui/react-alert-dialog')) {
+            return 'radix-core';
+          }
+          if (id.includes('@radix-ui')) {
+            return 'radix-other';
+          }
           
-          // 动画和特效
-          'animation': ['framer-motion', 'canvas-confetti'],
+          // 动画库
+          if (id.includes('framer-motion')) {
+            return 'animation';
+          }
           
-          // 图标库
-          'icons': ['lucide-react', 'react-icons'],
+          // 图标库 - 分离大小不同的图标库
+          if (id.includes('lucide-react')) {
+            return 'lucide-icons';
+          }
+          if (id.includes('react-icons')) {
+            return 'social-icons';
+          }
           
           // QR码相关
-          'qr-utils': ['qrcode'],
+          if (id.includes('qrcode')) {
+            return 'qr-utils';
+          }
           
           // 工具库
-          'utils': ['clsx', 'tailwind-merge', 'class-variance-authority'],
+          if (id.includes('clsx') || id.includes('tailwind-merge') || id.includes('class-variance-authority')) {
+            return 'utils';
+          }
           
-          // 其他第三方库
-          'vendor': ['react-hot-toast', 'react-intersection-observer', 'mini-svg-data-uri']
+          // 大型第三方库单独分包
+          if (id.includes('react-hot-toast')) {
+            return 'toast';
+          }
+          if (id.includes('react-intersection-observer')) {
+            return 'intersection-observer';
+          }
+          
+          // 其他小型库
+          if (id.includes('mini-svg-data-uri')) {
+            return 'svg-utils';
+          }
+          
+          // 其他 node_modules
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
         }
       },
       // 外部化依赖 - 对于大型库考虑CDN

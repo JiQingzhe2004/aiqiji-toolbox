@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Github, Sparkles, Search, LogIn, Settings, MailCheck } from '@/lib/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SearchBar } from './SearchBar';
-import { AnimatedThemeToggler } from './magicui/animated-theme-toggler';
+import { ThemeToggle } from './ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { LoginModal } from './LoginModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -120,7 +120,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           )}
 
           {/* 动画主题切换器 */}
-          <AnimatedThemeToggler />
+          <ThemeToggle />
           
           {/* Github链接 */}
           <Button

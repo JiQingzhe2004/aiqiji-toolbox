@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-button';
 import { DotPattern } from '@/components/magicui/dot-pattern';
-import { Confetti, type ConfettiRef } from '@/components/magicui/confetti';
+import { ConfettiLite, type ConfettiRef } from '@/components/magicui/confetti-lite';
 import { QRCodeModal } from './QRCodeModal';
 import { Root as AspectRatio } from '@radix-ui/react-aspect-ratio';
 import toast from 'react-hot-toast';
@@ -44,19 +44,7 @@ export const MagicCard = memo(function MagicCard({
       await navigator.clipboard.writeText(tool.url);
       
       // 触发彩带效果
-      confettiRef.current?.fire({
-        particleCount: 30,
-        spread: 60,
-        origin: { 
-          x: (e.clientX) / window.innerWidth, 
-          y: (e.clientY) / window.innerHeight 
-        },
-        colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42'],
-        shapes: ['circle', 'square'],
-        startVelocity: 25,
-        decay: 0.95,
-        ticks: 150
-      });
+      confettiRef.current?.fire();
       
       // 显示成功提示
       toast.success('链接已复制到剪贴板！', {
@@ -83,16 +71,7 @@ export const MagicCard = memo(function MagicCard({
       document.body.removeChild(textArea);
       
       // 即使降级方案也触发彩带效果
-      confettiRef.current?.fire({
-        particleCount: 20,
-        spread: 45,
-        origin: { 
-          x: (e.clientX) / window.innerWidth, 
-          y: (e.clientY) / window.innerHeight 
-        },
-        colors: ['#26ccff', '#a25afd'],
-        startVelocity: 20
-      });
+      confettiRef.current?.fire();
       
       // 显示成功提示
       toast.success('链接已复制到剪贴板！', {
@@ -151,7 +130,7 @@ export const MagicCard = memo(function MagicCard({
 
   return (
     <>
-      <Confetti ref={confettiRef} />
+      <ConfettiLite ref={confettiRef} />
       <Card className="overflow-hidden group">
       {/* Radix AspectRatio 确保图片区域完美比例 */}
       <AspectRatio ratio={16 / 9}>

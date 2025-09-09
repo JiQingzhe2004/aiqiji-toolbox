@@ -1,10 +1,10 @@
 import React, { memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { HeroBanner } from '@/components/HeroBanner';
+// 移除 framer-motion 依赖，使用 CSS 动画
+import { HeroBannerLite } from '@/components/HeroBannerLite';
 import { CategoryTabs } from '@/components/CategoryTabs';
 import { SidebarCategoryTabs } from '@/components/SidebarCategoryTabs';
 import { BottomNavigation } from '@/components/BottomNavigation';
-import { ToolGrid } from '@/components/ToolGrid';
+import { ToolGridLite } from '@/components/ToolGridLite';
 import { EmptyState } from '@/components/EmptyState';
 import { useTools } from '@/hooks/useTools';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -36,7 +36,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
   return (
     <div className="relative">
       {/* 首页全屏壁纸横幅 */}
-      <HeroBanner />
+      <HeroBannerLite />
 
       {/* 侧边栏分类 - 桌面端滚动显示 */}
       {!isLoading && (
@@ -48,72 +48,45 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
       )}
 
       {/* 工具区域 */}
-      <motion.div
+      <div
         id="tools-section"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-        className="relative z-10 bg-background min-h-screen pt-8 md:pt-12 pb-24 md:pb-24"
+        className="relative z-10 bg-background min-h-screen pt-8 md:pt-12 pb-24 md:pb-24 animate-fade-in"
       >
         <div className="container mx-auto px-4 max-w-7xl">
 
           {/* 工具网格 */}
-          <motion.section
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="min-h-[400px] w-full"
-          >
-            <AnimatePresence mode="wait">
-              {isLoading ? (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center justify-center min-h-[400px] space-y-4"
+          <section className="min-h-[400px] w-full animate-fade-in animate-delay-200">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 animate-fade-in">
+                <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+                <p className="text-muted-foreground">正在加载工具数据...</p>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 text-center animate-fade-in-up">
+                <AlertCircle className="w-12 h-12 text-red-500" />
+                <h2 className="text-xl font-semibold">加载失败</h2>
+                <p className="text-muted-foreground max-w-md">
+                  无法加载工具数据：{error}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors"
                 >
-                  <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-                  <p className="text-muted-foreground">正在加载工具数据...</p>
-                </motion.div>
-              ) : error ? (
-                <motion.div
-                  key="error"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="flex flex-col items-center justify-center min-h-[400px] space-y-4 text-center"
-                >
-                  <AlertCircle className="w-12 h-12 text-red-500" />
-                  <h2 className="text-xl font-semibold">加载失败</h2>
-                  <p className="text-muted-foreground max-w-md">
-                    无法加载工具数据：{error}
-                  </p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="px-4 py-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors"
-                  >
-                    重新加载
-                  </button>
-                </motion.div>
-              ) : (
-                <ToolGrid
-                  key={`${activeCategory}-${effectiveSearchQuery}`}
-                  tools={filteredTools}
-                  searchQuery={effectiveSearchQuery}
-                />
-              )}
-            </AnimatePresence>
-          </motion.section>
+                  重新加载
+                </button>
+              </div>
+            ) : (
+              <ToolGridLite
+                key={`${activeCategory}-${effectiveSearchQuery}`}
+                tools={filteredTools}
+                searchQuery={effectiveSearchQuery}
+              />
+            )}
+          </section>
 
           {/* 统计信息 */}
           {!isLoading && !error && (
-            <motion.section
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-center py-8 md:py-12 mt-8"
-            >
+            <section className="text-center py-8 md:py-12 mt-8 animate-fade-in animate-delay-300">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
                 <div className="space-y-2">
                   <div className="text-2xl font-bold text-gradient">
@@ -140,10 +113,10 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
                   </div>
                 </div>
               </div>
-            </motion.section>
+            </section>
           )}
         </div>
-      </motion.div>
+      </div>
 
       {/* 底部固定分类导航 - 移动端显示 */}
       {!isLoading && (

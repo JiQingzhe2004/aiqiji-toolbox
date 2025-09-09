@@ -1,15 +1,9 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Github, Sparkles, Search, LogIn, Settings, MailCheck, X } from 'lucide-react';
-=======
-import React, { useState } from 'react';
-// 移除 framer-motion，使用 CSS 动画替代
-import { Github, Sparkles, Search, LogIn, Settings, MailCheck } from '@/lib/icons';
->>>>>>> 79ce046bf5cc80a86f044c6d4dc6ef0ab034430c
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SearchBar } from './SearchBar';
-import { ThemeToggle } from './ThemeToggle';
+import { AnimatedThemeToggler } from './magicui/animated-theme-toggler';
 import { Button } from '@/components/ui/button';
 import { LoginModal } from './LoginModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -96,7 +90,6 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
 
   return (
     <>
-<<<<<<< HEAD
     <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -112,15 +105,6 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           className="flex items-center space-x-3 cursor-pointer"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-=======
-    <header
-      className="sticky top-0 z-50 w-full border-b border-muted-foreground/10 bg-background/80 backdrop-blur-md animate-in slide-in-from-top-4 fade-in duration-300"
-    >
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        {/* Logo区域 */}
-        <div
-          className="flex items-center space-x-3 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
->>>>>>> 79ce046bf5cc80a86f044c6d4dc6ef0ab034430c
           onClick={handleTitleClick}
           initial={false}
           animate={{ 
@@ -154,7 +138,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
               效率工具导航站
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* 移动端搜索展开模式 */}
         {showMobileSearch && (
@@ -231,7 +215,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           )}
 
           {/* 动画主题切换器 */}
-          <ThemeToggle />
+          <AnimatedThemeToggler />
           
           {/* Github链接 */}
           <Button
@@ -300,7 +284,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
       
       {/* 底部装饰线 */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-    </header>
+    </motion.header>
 
     {/* 登录弹窗 */}
     <LoginModal 

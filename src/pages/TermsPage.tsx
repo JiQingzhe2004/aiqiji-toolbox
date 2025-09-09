@@ -1,5 +1,5 @@
 import React from 'react';
-// 移除 framer-motion，使用 CSS 动画替代
+import { motion } from 'framer-motion';
 import { FileText, AlertTriangle, Scale, Users, Globe, Calendar } from 'lucide-react';
 import packageJson from '../../package.json';
 
@@ -12,7 +12,12 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-12 max-w-4xl">
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-600">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="space-y-8"
+        >
           {/* 页面标题 */}
           <div className="text-center space-y-4">
             <div className="flex justify-center">
@@ -218,7 +223,7 @@ export default function TermsPage() {
             </section>
 
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

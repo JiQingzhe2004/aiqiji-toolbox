@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// 移除 framer-motion，使用 CSS 动画替代
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
   Heart, 
@@ -21,12 +21,6 @@ import { TbBrandWechat } from "react-icons/tb";
 import { SiCsdn } from "react-icons/si";
 import { RiQqLine } from "react-icons/ri";
 import { FaWordpress } from "react-icons/fa";
-
-// 类型安全的图标组件包装器
-const IconWrapper = ({ Icon, ...props }: { Icon: any; [key: string]: any }) => {
-  const Component = Icon as React.ComponentType<any>;
-  return <Component {...props} />;
-};
 import { Button } from '@/components/ui/button';
 import { SponsorModal } from './SponsorModal';
 import { QRCodeTooltip } from './QRCodeTooltip';
@@ -42,29 +36,6 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
   const [isSponsorModalOpen, setIsSponsorModalOpen] = useState(false);
   const [websiteInfo, setWebsiteInfo] = useState<WebsiteInfo | null>(null);
-  
-  // 检测是否为移动设备
-  const isMobile = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-  };
-  
-  // 处理QQ点击事件
-  const handleQQClick = () => {
-    if (isMobile()) {
-      // 移动端直接跳转到QQ群链接
-      window.open('https://qm.qq.com/q/qgHLoJ6vke', '_blank');
-    }
-    // 桌面端由QRCodeTooltip处理
-  };
-  
-  // 处理微信点击事件
-  const handleWechatClick = () => {
-    if (isMobile()) {
-      // 移动端直接跳转到微信链接
-      window.open('https://u.wechat.com/MB9BaFGvZO39R3MpoQ165dk?s=3', '_blank');
-    }
-    // 桌面端由QRCodeTooltip处理
-  };
 
   // 获取网站信息
   useEffect(() => {
@@ -91,7 +62,12 @@ export function Footer() {
 
   return (
     <>
-    <footer className="mt-auto border-t border-muted-foreground/10 bg-background/50 backdrop-blur-sm pb-20 md:pb-0 animate-in fade-in slide-in-from-bottom-4 duration-400 delay-200">
+    <motion.footer
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.2 }}
+      className="mt-auto border-t border-muted-foreground/10 bg-background/50 backdrop-blur-sm pb-20 md:pb-0"
+    >
       <div className="container mx-auto px-4 py-12">
         {/* 顶部大标题 */}
         <div className="text-center mb-12">
@@ -152,20 +128,24 @@ export function Footer() {
                 { label: 'CS-Explorer', href: 'https://cs.aiqji.cn/', icon: FileTerminal },
                 { label: 'AiQiji智能博客插件', href: 'https://wpai.aiqji.com/', icon: Brain },
               ].map((link, index) => (
-                <a
+                <motion.a
                   key={link.label}
                   href={link.href}
                   {...(link.href.startsWith('http') ? {
                     target: '_blank',
                     rel: 'noopener noreferrer'
                   } : {})}
-                  className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground hover:translate-x-1 transition-all duration-200 animate-in fade-in slide-in-from-left-2"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  whileHover={{ x: 4 }}
+                  transition={{ duration: 0.2 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  style={{ transitionDelay: `${index * 0.1}s` }}
                 >
                   <link.icon className="w-4 h-4" />
                   <span>{link.label}</span>
                   <ExternalLink className="w-3 h-3 opacity-50" />
-                </a>
+                </motion.a>
               ))}
             </div>
           </div>
@@ -220,7 +200,7 @@ export function Footer() {
                     aria-label="关注X (Twitter)"
                     title="关注X (Twitter)"
                   >
-                    <IconWrapper Icon={AiOutlineX} className="w-5 h-5" />
+                    <AiOutlineX className="w-5 h-5" />
                   </a>
                 </Button>
                 
@@ -237,7 +217,7 @@ export function Footer() {
                     aria-label="关注知乎"
                     title="关注知乎"
                   >
-                    <IconWrapper Icon={AiOutlineZhihu} className="w-5 h-5" />
+                    <AiOutlineZhihu className="w-5 h-5" />
                   </a>
                 </Button>
                 
@@ -264,7 +244,7 @@ export function Footer() {
                     aria-label="关注CSDN博客"
                     title="关注CSDN博客"
                   >
-                    <IconWrapper Icon={SiCsdn} className="w-5 h-5" />
+                    <SiCsdn className="w-5 h-5" />
                   </a>
                 </Button>
                 
@@ -281,71 +261,41 @@ export function Footer() {
                     aria-label="访问AiQiji博客"
                     title="访问AiQiji博客"
                   >
-                    <IconWrapper Icon={FaWordpress} className="w-5 h-5" />
+                    <FaWordpress className="w-5 h-5" />
                   </a>
                 </Button>
                 
-                {/* QQ联系方式 - 移动端直接跳转，桌面端显示二维码 */}
-                <div className="hidden md:block">
-                  <QRCodeTooltip
-                    url="https://qm.qq.com/q/qgHLoJ6vke"
-                    title="添加QQ好友"
-                    position="top"
-                  >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-xl hover:bg-muted"
-                      aria-label="添加QQ好友"
-                      title="悬停查看QQ二维码"
-                    >
-                      <IconWrapper Icon={RiQqLine} className="w-5 h-5" />
-                    </Button>
-                  </QRCodeTooltip>
-                </div>
-                <div className="md:hidden">
+                <QRCodeTooltip
+                  url="https://qm.qq.com/q/qgHLoJ6vke"
+                  title="添加QQ好友"
+                  position="top"
+                >
                   <Button
                     variant="ghost"
                     size="icon"
                     className="rounded-xl hover:bg-muted"
-                    onClick={handleQQClick}
                     aria-label="添加QQ好友"
-                    title="点击添加QQ好友"
+                    title="悬停查看QQ二维码"
                   >
-                    <IconWrapper Icon={RiQqLine} className="w-5 h-5" />
+                    <RiQqLine className="w-5 h-5" />
                   </Button>
-                </div>
+                </QRCodeTooltip>
                 
-                {/* 微信联系方式 - 移动端直接跳转，桌面端显示二维码 */}
-                <div className="hidden md:block">
-                  <QRCodeTooltip
-                    url="https://u.wechat.com/MB9BaFGvZO39R3MpoQ165dk?s=3"
-                    title="添加微信好友"
-                    position="top"
-                  >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-xl hover:bg-muted"
-                      aria-label="添加微信好友"
-                      title="悬停查看微信二维码"
-                    >
-                      <IconWrapper Icon={TbBrandWechat} className="w-5 h-5" />
-                    </Button>
-                  </QRCodeTooltip>
-                </div>
-                <div className="md:hidden">
+                <QRCodeTooltip
+                  url="https://u.wechat.com/MB9BaFGvZO39R3MpoQ165dk?s=3"
+                  title="添加微信好友"
+                  position="top"
+                >
                   <Button
                     variant="ghost"
                     size="icon"
                     className="rounded-xl hover:bg-muted"
-                    onClick={handleWechatClick}
                     aria-label="添加微信好友"
-                    title="点击添加微信好友"
+                    title="悬停查看微信二维码"
                   >
-                    <IconWrapper Icon={TbBrandWechat} className="w-5 h-5" />
+                    <TbBrandWechat className="w-5 h-5" />
                   </Button>
-                </div>
+                </QRCodeTooltip>
               </div>
               
               <p className="text-xs text-muted-foreground">
@@ -374,14 +324,17 @@ export function Footer() {
           
           {/* 中间：备案号显示 */}
           {websiteInfo?.show_icp && websiteInfo?.icp_number && (
-            <a
+            <motion.a
               href="https://beian.miit.gov.cn/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 underline-offset-4 hover:underline animate-in fade-in delay-100"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 underline-offset-4 hover:underline"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
             >
               {websiteInfo.icp_number}
-            </a>
+            </motion.a>
           )}
           
           {/* 右侧：政策链接和技术信息 */}
@@ -413,7 +366,7 @@ export function Footer() {
           </div>
         </div>
       </div>
-    </footer>
+    </motion.footer>
     
     {/* 赞助弹窗 */}
     <SponsorModal 

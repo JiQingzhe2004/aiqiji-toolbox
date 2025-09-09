@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Category } from '@/types';
@@ -24,7 +25,12 @@ export function CategoryTabs({
   className 
 }: CategoryTabsProps) {
   return (
-    <div className={cn("flex justify-center animate-fade-in-up animate-delay-200", className)}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      className={cn("flex justify-center", className)}
+    >
       <Tabs
         value={activeCategory}
         onValueChange={(value) => onChange(value as Category)}
@@ -50,6 +56,6 @@ export function CategoryTabs({
           ))}
         </TabsList>
       </Tabs>
-    </div>
+    </motion.div>
   );
 }

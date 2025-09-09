@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home } from '@/lib/icons';
+import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

@@ -8,7 +8,7 @@ import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-b
 import { DotPattern } from '@/components/magicui/dot-pattern';
 import { Confetti, type ConfettiRef } from '@/components/magicui/confetti';
 import { QRCodeModal } from './QRCodeModal';
-import * as AspectRatio from '@radix-ui/react-aspect-ratio';
+import { Root as AspectRatio } from '@radix-ui/react-aspect-ratio';
 import toast from 'react-hot-toast';
 import type { Tool } from '@/types';
 import { cn, openExternalLinkWithWarning, formatDate } from '@/lib/utils';
@@ -154,7 +154,7 @@ export const MagicCard = memo(function MagicCard({
       <Confetti ref={confettiRef} />
       <Card className="overflow-hidden group">
       {/* Radix AspectRatio 确保图片区域完美比例 */}
-      <AspectRatio.Root ratio={16 / 9}>
+      <AspectRatio ratio={16 / 9}>
         <div className="relative w-full h-full bg-gradient-to-br from-background/5 via-muted/30 to-muted/60 overflow-hidden">
           {/* 背景图案 */}
           <DotPattern 
@@ -207,7 +207,7 @@ export const MagicCard = memo(function MagicCard({
           {/* Hover 效果 */}
           <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
         </div>
-      </AspectRatio.Root>
+      </AspectRatio>
 
       {/* 内容区域 */}
       <div className="p-4 space-y-3">

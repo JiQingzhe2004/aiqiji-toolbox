@@ -303,14 +303,7 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+/* 重复的 @layer base 已移除，避免重复定义 */
 
 /* Additional animations */
 @keyframes shine {

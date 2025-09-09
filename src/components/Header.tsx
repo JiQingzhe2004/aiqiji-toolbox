@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Github, Sparkles, Search, LogIn, Settings, MailCheck } from 'lucide-react';
+// 移除 framer-motion，使用 CSS 动画替代
+import { Github, Sparkles, Search, LogIn, Settings, MailCheck } from '@/lib/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SearchBar } from './SearchBar';
 import { AnimatedThemeToggler } from './magicui/animated-theme-toggler';
@@ -39,19 +39,13 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
   };
   return (
     <>
-    <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="sticky top-0 z-50 w-full border-b border-muted-foreground/10 bg-background/80 backdrop-blur-md"
+    <header
+      className="sticky top-0 z-50 w-full border-b border-muted-foreground/10 bg-background/80 backdrop-blur-md animate-in slide-in-from-top-4 fade-in duration-300"
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* Logo区域 */}
-        <motion.div
-          className="flex items-center space-x-3 cursor-pointer"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.2 }}
+        <div
+          className="flex items-center space-x-3 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200"
           onClick={handleTitleClick}
         >
           {/* Logo图标 */}
@@ -78,7 +72,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
               效率工具导航站
             </span>
           </div>
-        </motion.div>
+        </div>
 
         {/* 右侧操作区 */}
         <div className="flex items-center space-x-2">
@@ -194,7 +188,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
       
       {/* 底部装饰线 */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-    </motion.header>
+    </header>
 
     {/* 登录弹窗 */}
     <LoginModal 

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, Sparkles, Dot } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { TextAnimate } from '@/components/magicui/text-animate';
+// 移除 TextAnimate 组件，使用简单文本替代
 import { TypingAnimation } from '@/components/magicui/typing-animation';
 import { Ripple } from '@/components/magicui/ripple';
 import { FlickeringGrid } from '@/components/magicui/flickering-grid';
@@ -154,14 +154,9 @@ export function HeroBanner() {
               为开发者、设计师和效率工具爱好者精心收集的工具导航站点
             </TypingAnimation>
             <br />
-            <TextAnimate 
-              animation="blurInUp" 
-              by="character" 
-              duration={5}
-              className="text-lg opacity-80 inline-block mt-2"
-            >
+            <p className="text-lg opacity-80 mt-2 animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
               让工作更高效，让创作更便捷
-            </TextAnimate>
+            </p>
           </motion.div>
 
           {/* 统计信息 */}

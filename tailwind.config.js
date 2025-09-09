@@ -113,8 +113,15 @@ export default {
 			'accordion-up': 'accordion-up 0.2s ease-out',
 			'fade-in': 'fade-in 0.28s ease-out',
 			'ripple': 'ripple 2s ease infinite',
-			'shimmer': 'shimmer 8s ease-in-out infinite'
+        'shimmer': 'shimmer 8s ease-in-out infinite'
+      },
+      transitionDuration: {
+        '180': '180ms',
+        '600': '600ms'
 		},
+      transitionDelay: {
+        '500': '500ms'
+      },
 		fontFamily: {
 			sans: [
 				'system-ui',

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home } from 'lucide-react';
+import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home, FileSpreadsheet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { AdminToolsList } from '@/components/admin/AdminToolsList';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminToolForm } from '@/components/admin/AdminToolForm';
 import { AdminSystemSettings } from '@/components/admin/AdminSystemSettings';
+import { AdminExcelImport } from '@/components/admin/AdminExcelImport';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { toolsApi } from '@/services/toolsApi';
 import { useAuth } from '@/contexts/AuthContext';
@@ -208,10 +209,14 @@ function AdminPage() {
       {/* 主要内容 - 添加顶部边距以避免被固定顶部栏遮挡 */}
       <main className="container mx-auto px-4 py-6 pt-32">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
               工具管理
+            </TabsTrigger>
+            <TabsTrigger value="import" className="flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4" />
+              批量导入
             </TabsTrigger>
             <TabsTrigger value="stats" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -345,6 +350,11 @@ function AdminPage() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Excel批量导入 */}
+          <TabsContent value="import">
+            <AdminExcelImport onImportComplete={loadTools} />
           </TabsContent>
 
           {/* 统计数据 */}

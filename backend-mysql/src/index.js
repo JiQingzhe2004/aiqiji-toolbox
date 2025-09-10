@@ -16,6 +16,7 @@ import { initializeDatabase } from './database/init.js';
 import toolRoutes from './routes/toolRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import importRoutes from './routes/importRoutes.js';
 
 // 加载环境变量
 dotenv.config();
@@ -161,6 +162,9 @@ class Server {
           description: '基于Node.js + MySQL的工具导航API服务',
           endpoints: {
             tools: `${this.apiPrefix}/tools`,
+            auth: `${this.apiPrefix}/auth`,
+            settings: `${this.apiPrefix}/settings`,
+            import: `${this.apiPrefix}/import`,
             health: '/health',
             info: `${this.apiPrefix}/info`,
             static: process.env.STATIC_URL || '/static'
@@ -170,7 +174,9 @@ class Server {
             '图标文件上传',
             '搜索和筛选',
             '统计分析',
-            '点击和评分记录'
+            '点击和评分记录',
+            'Excel批量导入导出',
+            '用户认证和权限管理'
           ],
           contact: {
             author: 'AiQiji',
@@ -191,6 +197,9 @@ class Server {
     
     // 系统设置路由
     this.app.use(`${this.apiPrefix}/settings`, settingsRoutes);
+    
+    // 导入导出路由
+    this.app.use(`${this.apiPrefix}/import`, importRoutes);
 
 
     // 根路径

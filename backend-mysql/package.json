@@ -1,6 +1,6 @@
 {
   "name": "aiqiji-tools-backend-mysql",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "AiQiji工具箱后端API服务 - MySQL版本",
   "main": "src/index.js",
   "type": "module",
@@ -39,7 +39,8 @@
     "node-fetch": "^2.7.0",
     "sequelize": "^6.32.1",
     "sharp": "^0.32.6",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^2.0.22",

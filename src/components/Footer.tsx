@@ -12,7 +12,8 @@ import {
   Shield,
   FileText,
   Cookie,
-  Users
+  Users,
+  Award
 } from 'lucide-react';
 import { isMobile, BrowserView, MobileView } from 'react-device-detect';
 import { ComicText } from "./magicui/comic-text";
@@ -449,11 +450,12 @@ export function Footer() {
               href="https://beian.miit.gov.cn/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 underline-offset-4 hover:underline"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 underline-offset-4 hover:underline flex items-center gap-1"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.1 }}
             >
+              <Award className="w-3 h-3" />
               {websiteInfo.icp_number}
             </motion.a>
           )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Cookie, X, Settings, Shield, BarChart3, Check, Ban } from 'lucide-react';
+import { Cookie, X, Settings, Shield, BarChart3, Check, Ban, Users, Target, Heart, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -14,6 +14,10 @@ interface CookiePreferences {
   necessary: boolean;
   analytics: boolean;
   functional: boolean;
+  advertising: boolean;
+  social: boolean;
+  personalization: boolean;
+  security: boolean;
 }
 
 /**
@@ -27,6 +31,10 @@ function CookieConsent() {
     necessary: true, // 必要Cookie始终启用
     analytics: false,
     functional: false,
+    advertising: false,
+    social: false,
+    personalization: false,
+    security: false,
   });
 
   // 检查是否已经有Cookie同意记录
@@ -43,25 +51,24 @@ function CookieConsent() {
       try {
         const savedPreferences = JSON.parse(consent);
         setPreferences(savedPreferences);
-        applyAnalyticsSettings(savedPreferences.analytics);
+        applyAllSettings(savedPreferences);
       } catch (error) {
         console.error('解析Cookie偏好设置失败:', error);
       }
     }
   }, []);
 
-  // 应用分析工具设置
-  const applyAnalyticsSettings = (enabled: boolean) => {
-    if (enabled) {
+  // 应用所有Cookie设置
+  const applyAllSettings = (prefs: CookiePreferences) => {
+    // 分析Cookie设置
+    if (prefs.analytics) {
       // 启用Google Analytics和Cloudflare Insights
-      // Google Analytics
       if (typeof window.gtag !== 'undefined') {
         window.gtag('consent', 'update', {
           analytics_storage: 'granted'
         });
       }
       
-      // Cloudflare Browser Insights会自动工作，但可以通过beacon设置控制
       if (window.cloudflare && window.cloudflare.beacon) {
         window.cloudflare.beacon.enabled = true;
       }
@@ -77,13 +84,48 @@ function CookieConsent() {
         window.cloudflare.beacon.enabled = false;
       }
     }
+
+    // 广告Cookie设置
+    if (typeof window.gtag !== 'undefined') {
+      window.gtag('consent', 'update', {
+        ad_storage: prefs.advertising ? 'granted' : 'denied',
+        ad_user_data: prefs.advertising ? 'granted' : 'denied',
+        ad_personalization: prefs.advertising ? 'granted' : 'denied'
+      });
+    }
+
+    // 社交媒体Cookie设置
+    if (prefs.social) {
+      // 启用社交媒体插件
+      console.log('启用社交媒体Cookie');
+    } else {
+      // 禁用社交媒体插件
+      console.log('禁用社交媒体Cookie');
+    }
+
+    // 个性化Cookie设置
+    if (prefs.personalization) {
+      // 启用个性化功能
+      localStorage.setItem('personalization-enabled', 'true');
+    } else {
+      // 禁用个性化功能
+      localStorage.removeItem('personalization-enabled');
+    }
+
+    // 安全Cookie设置
+    if (prefs.security) {
+      // 启用增强安全功能
+      console.log('启用安全Cookie');
+    } else {
+      console.log('禁用非必要安全Cookie');
+    }
   };
 
   // 保存Cookie偏好设置
   const savePreferences = (prefs: CookiePreferences) => {
     localStorage.setItem('cookie-consent', JSON.stringify(prefs));
     localStorage.setItem('cookie-consent-date', new Date().toISOString());
-    applyAnalyticsSettings(prefs.analytics);
+    applyAllSettings(prefs);
     setPreferences(prefs);
   };
 
@@ -93,6 +135,10 @@ function CookieConsent() {
       necessary: true,
       analytics: true,
       functional: true,
+      advertising: true,
+      social: true,
+      personalization: true,
+      security: true,
     };
     savePreferences(allAccepted);
     setIsVisible(false);
@@ -105,6 +151,10 @@ function CookieConsent() {
       necessary: true,
       analytics: false,
       functional: false,
+      advertising: false,
+      social: false,
+      personalization: false,
+      security: false,
     };
     savePreferences(necessaryOnly);
     setIsVisible(false);
@@ -150,9 +200,7 @@ function CookieConsent() {
                       我们使用Cookie来改善您的体验
                     </h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      我们使用Cookie和类似技术来分析网站流量、个性化内容并改善用户体验。
-                      这包括Google Analytics和Cloudflare Browser Insights用于网站分析。
-                      您可以选择接受所有Cookie或自定义您的偏好设置。
+                    我们使用Cookie来优化网站体验、分析流量并为您提供相关内容。
                     </p>
                   </div>
                 </div>
@@ -251,13 +299,93 @@ function CookieConsent() {
                 <div className="space-y-1">
                   <h4 className="font-medium">功能Cookie</h4>
                   <p className="text-sm text-muted-foreground">
-                    用于记住您的偏好设置和选择，提供个性化体验。
+                    用于记住您的偏好设置和选择，提供基本个性化体验。
                   </p>
                 </div>
                 <Switch
                   checked={preferences.functional}
                   onCheckedChange={(checked) => updatePreference('functional', checked)}
                   aria-label="功能Cookie"
+                />
+              </div>
+            </div>
+
+            {/* 广告Cookie */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    广告Cookie
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    用于向您展示相关的广告内容。这些Cookie可能由我们的广告合作伙伴设置。
+                  </p>
+                </div>
+                <Switch
+                  checked={preferences.advertising}
+                  onCheckedChange={(checked) => updatePreference('advertising', checked)}
+                  aria-label="广告Cookie"
+                />
+              </div>
+            </div>
+
+            {/* 社交媒体Cookie */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Share2 className="w-4 h-4" />
+                    社交媒体Cookie
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    允许您分享内容到社交媒体平台，并查看社交媒体内容。
+                  </p>
+                </div>
+                <Switch
+                  checked={preferences.social}
+                  onCheckedChange={(checked) => updatePreference('social', checked)}
+                  aria-label="社交媒体Cookie"
+                />
+              </div>
+            </div>
+
+            {/* 个性化Cookie */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Heart className="w-4 h-4" />
+                    个性化Cookie
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    根据您的使用习惯和偏好，为您提供更个性化的内容和推荐。
+                  </p>
+                </div>
+                <Switch
+                  checked={preferences.personalization}
+                  onCheckedChange={(checked) => updatePreference('personalization', checked)}
+                  aria-label="个性化Cookie"
+                />
+              </div>
+            </div>
+
+            {/* 安全Cookie */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    安全Cookie
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    增强网站安全性，检测异常活动并保护您的账户安全。
+                  </p>
+                </div>
+                <Switch
+                  checked={preferences.security}
+                  onCheckedChange={(checked) => updatePreference('security', checked)}
+                  aria-label="安全Cookie"
                 />
               </div>
             </div>

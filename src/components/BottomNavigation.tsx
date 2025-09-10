@@ -54,7 +54,7 @@ export function BottomNavigation({
       )}
     >
       <div className="px-2">
-        <div className="flex items-center justify-around h-16 max-w-sm mx-auto">
+        <div className="flex items-center justify-around h-20 max-w-sm mx-auto">
           {categories.map((category, index) => {
             const IconComponent = categoryIcons[category] || Boxes;
             const isActive = activeCategory === category;
@@ -64,7 +64,7 @@ export function BottomNavigation({
                 key={category}
                 onClick={() => onChange(category)}
                 className={cn(
-                  'flex flex-col items-center justify-center min-w-0 px-1 py-2 transition-all duration-200',
+                  'flex flex-col items-center justify-center min-w-0 px-1 py-3 transition-all duration-200',
                   'active:scale-95 relative'
                 )}
                 whileHover={{ scale: 1.02 }}

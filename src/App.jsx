@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ScrollToTop } from './components/ScrollToTop';
 import CookieConsent from './components/CookieConsent';
 
 // 懒加载页面组件以提高性能
@@ -15,6 +16,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const FriendLinksPage = lazy(() => import('./pages/FriendLinksPage'));
 
 
 /**
@@ -77,6 +79,7 @@ function App() {
     <AuthProvider>
         <ErrorBoundary>
           <Router>
+            <ScrollToTop />
             <Routes>
               {/* 外链提醒页面 - 独立布局，无Header和Footer */}
               <Route path="/external-link" element={
@@ -115,6 +118,11 @@ function App() {
                       <Route path="/terms" element={
                         <Suspense fallback={<LoadingSpinner />}>
                           <TermsPage />
+                        </Suspense>
+                      } />
+                      <Route path="/friends" element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <FriendLinksPage />
                         </Suspense>
                       } />
                       <Route path="*" element={

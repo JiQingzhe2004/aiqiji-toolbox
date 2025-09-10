@@ -54,7 +54,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="relative z-10 bg-background min-h-screen pt-8 md:pt-12 pb-8 md:pb-12"
+        className="relative z-10 bg-background dark:bg-black min-h-screen pt-8 md:pt-12 pb-8 md:pb-12"
       >
         <div className="container mx-auto px-4 max-w-7xl">
 

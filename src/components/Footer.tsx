@@ -11,7 +11,8 @@ import {
   ExternalLink,
   Shield,
   FileText,
-  Cookie
+  Cookie,
+  Users
 } from 'lucide-react';
 import { isMobile, BrowserView, MobileView } from 'react-device-detect';
 import { ComicText } from "./magicui/comic-text";
@@ -346,19 +347,57 @@ export function Footer() {
           </div>
         </div>
 
-        {/* 友情链接 */}
+        {/* 友情链接 - SEO优化版本 */}
         {Array.isArray(websiteInfo?.friend_links) && websiteInfo!.friend_links.length > 0 && (
-          <div className="flex items-start flex-wrap gap-3 text-sm text-muted-foreground mb-6">
-            <span className="font-medium text-foreground">友情链接：</span>
-            {websiteInfo!.friend_links.map((link, idx) => (
-              <a
-                key={`${link.url}-${idx}`}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 hover:text-foreground transition-colors"
-                title={link.name}
-              >
+          <>
+            {/* 友情链接结构化数据 */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "WebSite",
+                  "name": websiteInfo?.site_name || "AiQiji工具箱",
+                  "url": window.location.origin,
+                  "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                      "@type": "EntryPoint",
+                      "urlTemplate": `${window.location.origin}/?search={search_term_string}`
+                    },
+                    "query-input": "required name=search_term_string"
+                  },
+                  "relatedLink": websiteInfo.friend_links.map((link: any) => ({
+                    "@type": "URL",
+                    "url": link.url,
+                    "name": link.name,
+                    "description": `友情链接：${link.name}`
+                  }))
+                })
+              }}
+            />
+            <section className="mb-6" aria-label="友情链接">
+              <div className="flex items-center gap-3 mb-3">
+                <h3 className="font-medium text-foreground text-sm">友情链接</h3>
+                <Link 
+                  to="/friends" 
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  查看更多
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
+              <nav className="flex items-start flex-wrap gap-3 text-sm text-muted-foreground" role="navigation" aria-label="友情链接导航">
+              {websiteInfo!.friend_links.map((link, idx) => (
+                <a
+                  key={`${link.url}-${idx}`}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer external"
+                  className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 hover:text-foreground transition-colors"
+                  title={`访问 ${link.name}`}
+                  aria-label={`访问友情链接：${link.name}`}
+                >
                 {link.icon ? (
                   <img 
                     src={link.icon} 
@@ -382,7 +421,9 @@ export function Footer() {
                 <span>{link.name}</span>
               </a>
             ))}
-          </div>
+            </nav>
+          </section>
+          </>
         )}
 
         {/* 分割线 */}
@@ -397,7 +438,7 @@ export function Footer() {
             </div>
             <div className="flex items-center">
               <AnimatedShinyText className="text-xs font-medium">
-                ✨ v{packageJson.version}
+                ✨ 工具箱版本 · v{packageJson.version}
               </AnimatedShinyText>
             </div>
           </div>
@@ -423,6 +464,11 @@ export function Footer() {
               <Link to="/privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
                 <Shield className="w-3 h-3" />
                 <span>隐私政策</span>
+              </Link>
+              <span>•</span>
+              <Link to="/friends" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                <Users className="w-3 h-3" />
+                <span>友情链接</span>
               </Link>
               <span>•</span>
               <Link to="/terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">

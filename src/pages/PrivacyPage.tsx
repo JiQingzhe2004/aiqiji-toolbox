@@ -1,16 +1,67 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Cookie, BarChart3, Database, Mail, Calendar } from 'lucide-react';
+import { Shield, Cookie, BarChart3, Database, Mail, Calendar, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 /**
  * 隐私政策页面
  */
 export default function PrivacyPage() {
   const currentDate = new Date().toLocaleDateString('zh-CN');
+  const [showBackButton, setShowBackButton] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // 处理滚动时按钮显示/隐藏
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // 向下滚动且超过100px时隐藏按钮
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setShowBackButton(false);
+      } 
+      // 向上滚动时显示按钮
+      else if (currentScrollY < lastScrollY) {
+        setShowBackButton(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   return (
     <div className="min-h-screen bg-background">
+      {/* 固定返回首页按钮 - 顶部Header下方 */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ 
+          opacity: showBackButton ? 1 : 0, 
+          x: showBackButton ? 0 : -20,
+          scale: showBackButton ? 1 : 0.8
+        }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="fixed top-20 left-6 z-40"
+        style={{ pointerEvents: showBackButton ? 'auto' : 'none' }}
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          asChild
+            className="bg-background/95 backdrop-blur-sm border-border/50 hover:bg-muted shadow-2xl drop-shadow-lg"
+        >
+          <Link to="/" className="flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            返回首页
+          </Link>
+        </Button>
+      </motion.div>
+
       <div className="container mx-auto px-4 py-12 max-w-4xl">
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -462,34 +462,42 @@ export function Footer() {
           
           {/* 右侧：政策链接和技术信息 */}
           <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-xs text-muted-foreground">
-            <div className="flex items-center space-x-4">
-              <Link to="/privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
-                <Shield className="w-3 h-3" />
-                <span>隐私政策</span>
-              </Link>
-              <span>•</span>
-              <Link to="/friends" className="flex items-center space-x-1 hover:text-foreground transition-colors">
-                <Users className="w-3 h-3" />
-                <span>友情链接</span>
-              </Link>
-              <span>•</span>
-              <Link to="/terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">
-                <FileText className="w-3 h-3" />
-                <span>使用条款</span>
-              </Link>
-              <span>•</span>
-              <button 
-                onClick={() => {
-                  // 移除现有的Cookie同意记录，重新显示设置
-                  localStorage.removeItem('cookie-consent');
-                  localStorage.removeItem('cookie-consent-date');
-                  window.location.reload();
-                }}
-                className="flex items-center space-x-1 hover:text-foreground transition-colors text-xs"
-              >
-                <Cookie className="w-3 h-3" />
-                <span>Cookie设置</span>
-              </button>
+            {/* 手机端：分两行显示，桌面端：单行显示 */}
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4 items-center">
+              {/* 第一行/组：隐私政策和友情链接 */}
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <Link to="/privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                  <Shield className="w-3 h-3" />
+                  <span>隐私政策</span>
+                </Link>
+                <span className="hidden sm:inline">•</span>
+                <Link to="/friends" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                  <Users className="w-3 h-3" />
+                  <span>友情链接</span>
+                </Link>
+              </div>
+              
+              {/* 第二行/组：使用条款和Cookie设置 */}
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <span className="hidden sm:inline">•</span>
+                <Link to="/terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                  <FileText className="w-3 h-3" />
+                  <span>使用条款</span>
+                </Link>
+                <span className="hidden sm:inline">•</span>
+                <button 
+                  onClick={() => {
+                    // 移除现有的Cookie同意记录，重新显示设置
+                    localStorage.removeItem('cookie-consent');
+                    localStorage.removeItem('cookie-consent-date');
+                    window.location.reload();
+                  }}
+                  className="flex items-center space-x-1 hover:text-foreground transition-colors text-xs"
+                >
+                  <Cookie className="w-3 h-3" />
+                  <span>Cookie设置</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

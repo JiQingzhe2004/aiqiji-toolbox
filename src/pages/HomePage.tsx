@@ -6,6 +6,7 @@ import { SidebarCategoryTabs } from '@/components/SidebarCategoryTabs';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { ToolGrid } from '@/components/ToolGrid';
 import { EmptyState } from '@/components/EmptyState';
+import { ThanksSection } from '@/components/ThanksSection';
 import { useTools } from '@/hooks/useTools';
 import { Loader2, AlertCircle } from 'lucide-react';
 
@@ -53,7 +54,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="relative z-10 bg-background min-h-screen pt-8 md:pt-12 pb-24 md:pb-24"
+        className="relative z-10 bg-background min-h-screen pt-8 md:pt-12 pb-8 md:pb-12"
       >
         <div className="container mx-auto px-4 max-w-7xl">
 
@@ -142,6 +143,9 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
               </div>
             </motion.section>
           )}
+
+          {/* 感谢支持部分 */}
+          {!isLoading && !error && <ThanksSection />}
         </div>
       </motion.div>
 

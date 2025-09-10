@@ -5,7 +5,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, ArrowLeft } from 'lucide-react';
+import { Home, ArrowLeft, FileQuestion } from 'lucide-react';
 
 export default function NotFoundPage() {
   const navigate = useNavigate();
@@ -15,11 +15,9 @@ export default function NotFoundPage() {
       <div className="text-center space-y-6 p-8">
         {/* 404图标 */}
         <div className="flex justify-center mb-8">
-          <img 
-            src="/404.svg" 
-            alt="404 - 页面未找到"
-            className="w-64 h-64 sm:w-80 sm:h-80 object-contain filter dark:brightness-90 dark:contrast-110"
-          />
+          <div className="w-48 h-48 sm:w-64 sm:h-64 rounded-full bg-muted/20 flex items-center justify-center">
+            <FileQuestion className="w-24 h-24 sm:w-32 sm:h-32 text-muted-foreground/50" />
+          </div>
         </div>
 
         {/* 标题和描述 */}

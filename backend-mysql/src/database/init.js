@@ -194,6 +194,39 @@ async function upgradeDatabase(sequelize) {
     console.error('  ❌ 数据库升级失败:', error.message);
     console.log('  ⚠️  继续使用现有结构...');
   }
+
+  // 升级：确保存在 friend_links 设置（用于友情链接）
+  try {
+    console.log('🔄 检查系统设置：friend_links ...');
+    const [existsRows] = await sequelize.query(`
+      SELECT COUNT(*) as count FROM system_settings WHERE setting_key = 'friend_links'
+    `);
+    if (existsRows[0].count === 0) {
+      console.log('  ➕ 新增 friend_links 设置（默认空数组）');
+      const id = 'friend-links-' + Date.now();
+      await sequelize.query(`
+        INSERT INTO system_settings (
+          id, setting_key, setting_value, setting_type, description, category, is_public, created_at, updated_at
+        ) VALUES (
+          :id, 'friend_links', '[]', 'json', '友情链接列表（数组：{name,url,icon}）', 'website', 1, NOW(), NOW()
+        )
+      `, { replacements: { id } });
+    } else {
+      console.log('  ✅ friend_links 设置已存在，检查 category...');
+      // 确保 category 是 'website'
+      const [updateResult] = await sequelize.query(`
+        UPDATE system_settings 
+        SET category = 'website' 
+        WHERE setting_key = 'friend_links' AND category != 'website'
+      `);
+      if (updateResult.affectedRows > 0) {
+        console.log('  🔧 已修正 friend_links 的 category 为 website');
+      }
+    }
+  } catch (error) {
+    console.error('  ❌ 升级 friend_links 设置失败:', error.message);
+  }
+
 }
 
 async function createTables(sequelize) {
@@ -362,6 +395,15 @@ async function initializeSystemSettings(sequelize) {
       setting_value: '为开发者、设计师和效率工具爱好者精心收集的工具导航站点',
       setting_type: 'string',
       description: '网站描述',
+      category: 'website',
+      is_public: 1
+    },
+    {
+      id: 'friend-links-' + Date.now(),
+      setting_key: 'friend_links',
+      setting_value: '[]',
+      setting_type: 'json',
+      description: '友情链接列表（数组：{name,url,icon}）',
       category: 'website',
       is_public: 1
     }

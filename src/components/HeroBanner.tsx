@@ -1,9 +1,90 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, Sparkles, Dot } from 'lucide-react';
+import { isMobile, isTablet, isDesktop, osName, browserName, deviceType } from 'react-device-detect';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { findIconDefinition, IconLookup } from '@fortawesome/fontawesome-svg-core';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { TypingAnimation } from '@/components/magicui/typing-animation';
 import { AuroraText } from '@/components/magicui/aurora-text';
+
+/**
+ * 根据操作系统返回对应的品牌图标
+ */
+const getDeviceIcon = () => {
+  const os = osName.toLowerCase();
+  
+  let iconLookup: IconLookup;
+  
+  if (os.includes('ios') || os.includes('mac')) {
+    iconLookup = { prefix: 'fab', iconName: 'apple' };
+  } else if (os.includes('android')) {
+    iconLookup = { prefix: 'fab', iconName: 'android' };
+  } else if (os.includes('windows')) {
+    iconLookup = { prefix: 'fab', iconName: 'microsoft' };
+  } else if (os.includes('linux')) {
+    iconLookup = { prefix: 'fab', iconName: 'linux' };
+  } else {
+    // 默认根据设备类型返回
+    iconLookup = isMobile 
+      ? { prefix: 'fab', iconName: 'android' }
+      : { prefix: 'fab', iconName: 'microsoft' };
+  }
+  
+  return findIconDefinition(iconLookup);
+};
+
+/**
+ * 根据浏览器返回对应的品牌图标
+ */
+const getBrowserIcon = () => {
+  const browser = browserName.toLowerCase();
+  
+  let iconLookup: IconLookup;
+  
+  if (browser.includes('firefox')) {
+    iconLookup = { prefix: 'fab', iconName: 'firefox' };
+  } else if (browser.includes('chrome')) {
+    iconLookup = { prefix: 'fab', iconName: 'chrome' };
+  } else if (browser.includes('safari')) {
+    iconLookup = { prefix: 'fab', iconName: 'safari' };
+  } else if (browser.includes('edge')) {
+    iconLookup = { prefix: 'fab', iconName: 'edge' };
+  } else {
+    // 其他浏览器显示IE图标
+    iconLookup = { prefix: 'fab', iconName: 'internet-explorer' };
+  }
+  
+  return findIconDefinition(iconLookup);
+};
+
+/**
+ * 获取中文设备类型
+ */
+const getDeviceTypeChinese = () => {
+  if (isMobile) {
+    return '移动设备';
+  } else if (isTablet) {
+    return '平板设备';
+  } else if (isDesktop) {
+    return '桌面设备';
+  } else {
+    // 根据deviceType英文值转换
+    const type = deviceType?.toLowerCase();
+    switch (type) {
+      case 'mobile':
+        return '移动设备';
+      case 'tablet':
+        return '平板设备';
+      case 'desktop':
+      case 'browser':
+        return '桌面设备';
+      default:
+        return '未知设备';
+    }
+  }
+};
 
 /**
  * 首页全屏壁纸横幅组件
@@ -146,33 +227,85 @@ export function HeroBanner() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-wrap justify-center gap-8 mt-8"
+            className="mt-8 space-y-6"
           >
-            {[
-              { label: '精选工具', value: '20+' },
-              { label: '工具分类', value: '5+' },
-              { label: '持续更新', value: '持续中' }
-            ].map((stat, index) => (
-              <div key={stat.label} className="text-center">
-                <div
-                  className={cn(
-                    "text-2xl md:text-3xl font-bold bg-clip-text text-transparent",
-                    // 暗色主题：石板色渐变
-                    "dark:bg-gradient-to-r dark:from-slate-300 dark:to-slate-400",
-                    // 浅色主题：橙黄色渐变
-                    "bg-gradient-to-r from-orange-500 to-yellow-500"
-                  )}
-                >
-                  {stat.value}
+            {/* 第一行：主要统计信息 */}
+            <div className="flex flex-wrap justify-center gap-8">
+              {[
+                { label: '精选工具', value: '20+' },
+                { label: '工具分类', value: '5+' },
+                { label: '持续更新', value: '持续中' }
+              ].map((stat, index) => (
+                <div key={stat.label} className="text-center">
+                  <div
+                    className={cn(
+                      "text-2xl md:text-3xl font-bold bg-clip-text text-transparent",
+                      // 暗色主题：石板色渐变
+                      "dark:bg-gradient-to-r dark:from-slate-300 dark:to-slate-400",
+                      // 浅色主题：橙黄色渐变
+                      "bg-gradient-to-r from-orange-500 to-yellow-500"
+                    )}
+                  >
+                    {stat.value}
+                  </div>
+                  <div className={cn(
+                    "text-sm mt-1",
+                    "dark:text-slate-400 text-gray-500"
+                  )}>
+                    {stat.label}
+                  </div>
                 </div>
-                <div className={cn(
-                  "text-sm mt-1",
-                  "dark:text-slate-400 text-gray-500"
-                )}>
-                  {stat.label}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* 第二行：设备信息 */}
+            <div className="flex justify-center">
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="cursor-pointer hover:scale-110 transition-transform duration-200 flex items-center gap-3">
+                      {/* 系统图标 */}
+                      <FontAwesomeIcon 
+                        icon={getDeviceIcon()} 
+                        className={cn(
+                          "w-8 h-8 md:w-10 md:h-10",
+                          "dark:text-slate-300 text-orange-500"
+                        )}
+                      />
+                      {/* 分隔符 */}
+                      <span className={cn(
+                        "text-lg md:text-xl font-medium",
+                        "dark:text-slate-400 text-orange-400"
+                      )}>
+                        +
+                      </span>
+                      {/* 浏览器图标 */}
+                      <FontAwesomeIcon 
+                        icon={getBrowserIcon()} 
+                        className={cn(
+                          "w-8 h-8 md:w-10 md:h-10",
+                          "dark:text-slate-300 text-orange-500"
+                        )}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    side="bottom" 
+                    className="bg-popover text-popover-foreground border border-border shadow-md max-w-xs"
+                  >
+                    <div className="space-y-1 text-sm">
+                      <div className="font-medium">设备与浏览器信息</div>
+                      <div className="space-y-0.5 text-xs">
+                        <div>操作系统: {osName}</div>
+                        <div>浏览器: {browserName}</div>
+                        <div>设备类型: {getDeviceTypeChinese()}</div>
+                        <div>屏幕尺寸: {typeof window !== 'undefined' ? `${window.innerWidth} × ${window.innerHeight}` : '未知'}</div>
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </motion.div>
         </motion.div>
       </div>

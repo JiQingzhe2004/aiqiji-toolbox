@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { X, Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { cn } from '@/lib/utils';
 
 interface LoginModalProps {
   open: boolean;
@@ -80,23 +81,38 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-full max-w-sm sm:max-w-md mx-4 sm:mx-auto border-0 shadow-2xl bg-gradient-to-br from-background via-background to-muted/30">
-        <DialogHeader className="text-center pb-6">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mb-4">
-            <LogIn className="w-8 h-8 text-primary" />
+      <DialogContent className={cn(
+        "w-[92vw] sm:w-full max-w-sm sm:max-w-md md:max-w-lg mx-auto",
+        "border border-border bg-background sm:rounded-xl",
+        "shadow-lg"
+      )}>
+
+        <DialogHeader className="relative text-center pb-4 pt-2">
+
+          {/* 图标区域 */}
+          <div className="mx-auto w-14 h-14 bg-muted/40 rounded-xl flex items-center justify-center mb-4">
+            <Shield className="w-7 h-7 text-primary" />
           </div>
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-            登录
-          </DialogTitle>
-          <p className="text-muted-foreground text-sm mt-2">
-            欢迎回来，请输入您的登录信息
-          </p>
+
+          {/* 标题 */}
+          <div>
+            <DialogTitle className="text-2xl font-semibold text-foreground mb-1">
+              管理员登录
+            </DialogTitle>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              欢迎回来，请输入您的登录信息以访问管理面板
+            </p>
+          </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 px-1">
+        <form 
+          onSubmit={handleSubmit} 
+          className="space-y-5 px-2 pb-4"
+        >
           {/* 用户名输入 */}
-          <div className="space-y-3">
-            <Label htmlFor="username" className="text-sm font-medium text-foreground">
+          <div className="space-y-2">
+            <Label htmlFor="username" className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary" />
               用户名
             </Label>
             <Input
@@ -108,13 +124,14 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               disabled={isLoading}
               autoComplete="username"
               required
-              className="h-12 border-2 border-muted focus:border-primary transition-colors bg-background/50 backdrop-blur-sm"
+              className={cn("h-11 rounded-lg text-sm")}
             />
           </div>
 
           {/* 密码输入 */}
-          <div className="space-y-3">
-            <Label htmlFor="password" className="text-sm font-medium text-foreground">
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary" />
               密码
             </Label>
             <div className="relative">
@@ -127,42 +144,36 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                 disabled={isLoading}
                 autoComplete="current-password"
                 required
-                className="h-12 pr-12 border-2 border-muted focus:border-primary transition-colors bg-background/50 backdrop-blur-sm"
+                className={cn("h-11 pr-10 rounded-lg text-sm")}
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
               >
                 {showPassword ? (
-                  <EyeOff className="w-5 h-5" />
+                  <EyeOff className="w-4 h-4" />
                 ) : (
-                  <Eye className="w-5 h-5" />
+                  <Eye className="w-4 h-4" />
                 )}
               </Button>
             </div>
           </div>
 
           {/* 登录按钮 */}
-          <div className="pt-4">
+          <div className="pt-2">
             <Button
               type="submit"
-              className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={cn("w-full h-11 rounded-lg text-sm font-medium")}
               disabled={isLoading}
             >
               {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  登录中...
-                </>
+                <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> 登录中...</span>
               ) : (
-                <>
-                  <LogIn className="w-5 h-5 mr-2" />
-                  登录
-                </>
+                <span className="inline-flex items-center gap-2"><LogIn className="w-4 h-4" /> 立即登录</span>
               )}
             </Button>
           </div>

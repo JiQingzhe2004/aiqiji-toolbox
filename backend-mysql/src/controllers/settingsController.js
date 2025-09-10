@@ -203,7 +203,8 @@ export const getWebsiteInfo = async (req, res) => {
       site_name: websiteSettings.site_name?.value || 'AiQiji工具箱',
       site_description: websiteSettings.site_description?.value || '为开发者、设计师和效率工具爱好者精心收集的工具导航站点',
       icp_number: websiteSettings.icp_number?.value || '',
-      show_icp: websiteSettings.show_icp?.value || false
+      show_icp: websiteSettings.show_icp?.value || false,
+      friend_links: Array.isArray(websiteSettings.friend_links?.value) ? websiteSettings.friend_links.value : []
     };
     
     res.json({

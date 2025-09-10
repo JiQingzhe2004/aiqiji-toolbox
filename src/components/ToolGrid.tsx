@@ -5,6 +5,7 @@ import { LazyMagicCard } from './LazyMagicCard';
 import { useVirtualizedGrid } from '@/hooks/useVirtualizedGrid';
 import type { Tool } from '@/types';
 import { cn } from '@/lib/utils';
+import { Database, Search } from 'lucide-react';
 
 /**
  * ToolGrid组件属性接口
@@ -73,11 +74,13 @@ export const ToolGrid = memo(function ToolGrid({
     >
       {/* 无数据图标 */}
       <div className="flex justify-center mb-8">
-        <img 
-          src="/无数据.svg" 
-          alt="暂无数据"
-          className="w-48 h-48 sm:w-56 sm:h-56 object-contain filter dark:brightness-90 dark:contrast-110"
-        />
+        <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-muted/30 flex items-center justify-center">
+          {searchQuery ? (
+            <Search className="w-16 h-16 sm:w-20 sm:h-20 text-muted-foreground/50" />
+          ) : (
+            <Database className="w-16 h-16 sm:w-20 sm:h-20 text-muted-foreground/50" />
+          )}
+        </div>
       </div>
       
       <h3 className="text-xl font-semibold text-foreground mb-2">

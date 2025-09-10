@@ -5,12 +5,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, RefreshCw, Settings, Globe, Info, Eye, EyeOff } from 'lucide-react';
+import { Save, RefreshCw, Settings, Globe, Info, Eye, EyeOff, Plus, Edit, Trash, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { settingsApi, type SettingsUpdateData } from '@/services/settingsApi';
 import toast from 'react-hot-toast';
 
@@ -33,7 +34,16 @@ export function AdminSystemSettings() {
     site_name: '',
     site_description: '',
     icp_number: '',
-    show_icp: false
+    show_icp: false,
+    friend_links: [] as Array<{ name: string; url: string; icon?: string }>
+  });
+
+  // 友情链接弹窗状态
+  const [friendLinkModal, setFriendLinkModal] = useState({
+    open: false,
+    editing: false,
+    editIndex: -1,
+    form: { name: '', url: '', icon: '' }
   });
 
   // 加载系统设置
@@ -41,16 +51,19 @@ export function AdminSystemSettings() {
     try {
       setLoading(true);
       const response = await settingsApi.getAllSettings();
+      // console.log('AdminSystemSettings - 系统设置API响应:', response); // 调试日志
       if (response.success) {
         setSettings(response.data);
         
         // 更新表单数据
         const websiteSettings = response.data.website || {};
+        // console.log('AdminSystemSettings - 网站设置:', websiteSettings); // 调试日志
         setFormData({
           site_name: websiteSettings.site_name?.value || '',
           site_description: websiteSettings.site_description?.value || '',
           icp_number: websiteSettings.icp_number?.value || '',
-          show_icp: websiteSettings.show_icp?.value || false
+          show_icp: websiteSettings.show_icp?.value || false,
+          friend_links: Array.isArray(websiteSettings.friend_links?.value) ? websiteSettings.friend_links.value : []
         });
       }
     } catch (error) {
@@ -86,6 +99,11 @@ export function AdminSystemSettings() {
           setting_key: 'show_icp',
           setting_value: formData.show_icp,
           setting_type: 'boolean'
+        },
+        {
+          setting_key: 'friend_links',
+          setting_value: formData.friend_links,
+          setting_type: 'json'
         }
       ];
       
@@ -112,10 +130,64 @@ export function AdminSystemSettings() {
         site_name: websiteSettings.site_name?.value || '',
         site_description: websiteSettings.site_description?.value || '',
         icp_number: websiteSettings.icp_number?.value || '',
-        show_icp: websiteSettings.show_icp?.value || false
+        show_icp: websiteSettings.show_icp?.value || false,
+        friend_links: Array.isArray(websiteSettings.friend_links?.value) ? websiteSettings.friend_links.value : []
       });
       toast.success('表单已重置');
     }
+  };
+
+  // 友情链接操作函数
+  const handleFriendLinkAdd = () => {
+    setFriendLinkModal({
+      open: true,
+      editing: false,
+      editIndex: -1,
+      form: { name: '', url: '', icon: '' }
+    });
+  };
+
+  const handleFriendLinkEdit = (index: number) => {
+    const link = formData.friend_links[index];
+    setFriendLinkModal({
+      open: true,
+      editing: true,
+      editIndex: index,
+      form: { name: link.name, url: link.url, icon: link.icon || '' }
+    });
+  };
+
+  const handleFriendLinkDelete = (index: number) => {
+    const newLinks = formData.friend_links.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, friend_links: newLinks }));
+    toast.success('友链已删除');
+  };
+
+  const handleFriendLinkSave = () => {
+    const { form, editing, editIndex } = friendLinkModal;
+    
+    if (!form.name.trim() || !form.url.trim()) {
+      toast.error('请填写站点名称和链接');
+      return;
+    }
+
+    let newLinks = [...formData.friend_links];
+    
+    if (editing && editIndex !== -1) {
+      newLinks[editIndex] = { ...form };
+      toast.success('友链已更新');
+    } else {
+      newLinks.push({ ...form });
+      toast.success('友链已添加');
+    }
+    
+    setFormData(prev => ({ ...prev, friend_links: newLinks }));
+    setFriendLinkModal({
+      open: false,
+      editing: false,
+      editIndex: -1,
+      form: { name: '', url: '', icon: '' }
+    });
   };
 
   useEffect(() => {
@@ -295,6 +367,150 @@ export function AdminSystemSettings() {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* 友情链接设置 */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <Globe className="w-5 h-5" />
+                <span>友情链接</span>
+              </CardTitle>
+              <Dialog 
+                open={friendLinkModal.open} 
+                onOpenChange={(open) => setFriendLinkModal(prev => ({ ...prev, open }))}
+              >
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleFriendLinkAdd}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    新增友链
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {friendLinkModal.editing ? '编辑友情链接' : '新增友情链接'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="link-name">站点名称 *</Label>
+                      <Input
+                        id="link-name"
+                        value={friendLinkModal.form.name}
+                        onChange={(e) => setFriendLinkModal(prev => ({
+                          ...prev,
+                          form: { ...prev.form, name: e.target.value }
+                        }))}
+                        placeholder="如：AiQiji博客"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="link-url">站点链接 *</Label>
+                      <Input
+                        id="link-url"
+                        value={friendLinkModal.form.url}
+                        onChange={(e) => setFriendLinkModal(prev => ({
+                          ...prev,
+                          form: { ...prev.form, url: e.target.value }
+                        }))}
+                        placeholder="如：https://aiqji.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="link-icon">站点图标</Label>
+                      <Input
+                        id="link-icon"
+                        value={friendLinkModal.form.icon}
+                        onChange={(e) => setFriendLinkModal(prev => ({
+                          ...prev,
+                          form: { ...prev.form, icon: e.target.value }
+                        }))}
+                        placeholder="图标URL（可选）"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setFriendLinkModal(prev => ({ ...prev, open: false }))}
+                      >
+                        取消
+                      </Button>
+                      <Button onClick={handleFriendLinkSave}>
+                        {friendLinkModal.editing ? '更新' : '添加'}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-muted-foreground mb-4">
+              配置将在Footer中显示的友情链接。
+            </div>
+            {formData.friend_links.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {formData.friend_links.map((link, idx) => (
+                  <Card key={idx} className="border-2">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            {link.icon ? (
+                              <img 
+                                src={link.icon} 
+                                alt={link.name}
+                                className="w-4 h-4 object-contain"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                            )}
+                            <h4 className="font-medium text-sm truncate">{link.name}</h4>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">{link.url}</p>
+                        </div>
+                        <div className="flex gap-1 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleFriendLinkEdit(idx)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleFriendLinkDelete(idx)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Globe className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>暂无友情链接</p>
+                <p className="text-xs">点击右上角"新增友链"按钮添加</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

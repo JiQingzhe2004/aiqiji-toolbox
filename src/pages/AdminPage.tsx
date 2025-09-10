@@ -191,7 +191,10 @@ function AdminPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={logout}
+                onClick={async () => {
+                  await logout();
+                  navigate('/');
+                }}
                 className="flex items-center gap-2 border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
               >
                 <LogOut className="w-4 h-4" />

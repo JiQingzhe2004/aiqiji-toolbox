@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './lib/fontawesome' // 导入 Font Awesome 配置
 import App from './App.jsx'
 
 // 初始化主题

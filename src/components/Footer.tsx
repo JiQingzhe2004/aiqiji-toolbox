@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
   Heart, 
-  Github, 
+  Github,
   Mail, 
   Coffee, 
   FileTerminal,
@@ -13,6 +13,7 @@ import {
   FileText,
   Cookie
 } from 'lucide-react';
+import { isMobile, BrowserView, MobileView } from 'react-device-detect';
 import { ComicText } from "./magicui/comic-text";
 import { AnimatedShinyText } from "./magicui/animated-shiny-text";
 // 按需导入社交媒体图标以减少打包体积
@@ -265,37 +266,77 @@ export function Footer() {
                   </a>
                 </Button>
                 
-                <QRCodeTooltip
-                  url="https://qm.qq.com/q/qgHLoJ6vke"
-                  title="添加QQ好友"
-                  position="top"
-                >
+<MobileView>
                   <Button
                     variant="ghost"
                     size="icon"
+                    asChild
                     className="rounded-xl hover:bg-muted"
-                    aria-label="添加QQ好友"
-                    title="悬停查看QQ二维码"
                   >
-                    <RiQqLine className="w-5 h-5" />
+                    <a
+                      href="https://qm.qq.com/q/qgHLoJ6vke"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="添加QQ好友"
+                      title="添加QQ好友"
+                    >
+                      <RiQqLine className="w-5 h-5" />
+                    </a>
                   </Button>
-                </QRCodeTooltip>
+                </MobileView>
+                <BrowserView>
+                  <QRCodeTooltip
+                    url="https://qm.qq.com/q/qgHLoJ6vke"
+                    title="添加QQ好友"
+                    position="top"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-xl hover:bg-muted"
+                      aria-label="添加QQ好友"
+                      title="悬停查看QQ二维码"
+                    >
+                      <RiQqLine className="w-5 h-5" />
+                    </Button>
+                  </QRCodeTooltip>
+                </BrowserView>
                 
-                <QRCodeTooltip
-                  url="https://u.wechat.com/MB9BaFGvZO39R3MpoQ165dk?s=3"
-                  title="添加微信好友"
-                  position="top"
-                >
+<MobileView>
                   <Button
                     variant="ghost"
                     size="icon"
+                    asChild
                     className="rounded-xl hover:bg-muted"
-                    aria-label="添加微信好友"
-                    title="悬停查看微信二维码"
                   >
-                    <TbBrandWechat className="w-5 h-5" />
+                    <a
+                      href="https://u.wechat.com/MB9BaFGvZO39R3MpoQ165dk?s=3"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="添加微信好友"
+                      title="添加微信好友"
+                    >
+                      <TbBrandWechat className="w-5 h-5" />
+                    </a>
                   </Button>
-                </QRCodeTooltip>
+                </MobileView>
+                <BrowserView>
+                  <QRCodeTooltip
+                    url="https://u.wechat.com/MB9BaFGvZO39R3MpoQ165dk?s=3"
+                    title="添加微信好友"
+                    position="top"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-xl hover:bg-muted"
+                      aria-label="添加微信好友"
+                      title="悬停查看微信二维码"
+                    >
+                      <TbBrandWechat className="w-5 h-5" />
+                    </Button>
+                  </QRCodeTooltip>
+                </BrowserView>
               </div>
               
               <p className="text-xs text-muted-foreground">
@@ -304,6 +345,45 @@ export function Footer() {
             </div>
           </div>
         </div>
+
+        {/* 友情链接 */}
+        {Array.isArray(websiteInfo?.friend_links) && websiteInfo!.friend_links.length > 0 && (
+          <div className="flex items-start flex-wrap gap-3 text-sm text-muted-foreground mb-6">
+            <span className="font-medium text-foreground">友情链接：</span>
+            {websiteInfo!.friend_links.map((link, idx) => (
+              <a
+                key={`${link.url}-${idx}`}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 hover:text-foreground transition-colors"
+                title={link.name}
+              >
+                {link.icon ? (
+                  <img 
+                    src={link.icon} 
+                    alt={link.name}
+                    className="w-4 h-4 object-contain"
+                      onError={(e) => {
+                        // 如果自定义图标加载失败，使用默认外链图标
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const fallback = document.createElement('div');
+                          fallback.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>';
+                          parent.appendChild(fallback);
+                        }
+                      }}
+                  />
+                ) : (
+                  <ExternalLink className="w-4 h-4" />
+                )}
+                <span>{link.name}</span>
+              </a>
+            ))}
+          </div>
+        )}
 
         {/* 分割线 */}
         <div className="h-px bg-gradient-to-r from-transparent via-muted-foreground/20 to-transparent mb-6" />

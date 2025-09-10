@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Database } from 'lucide-react';
 
 interface EmptyStateProps {
   title?: string;
@@ -25,11 +25,9 @@ export function EmptyState({
     <div className={`text-center space-y-6 p-8 ${className}`}>
       {/* 无数据图标 */}
       <div className="flex justify-center mb-8">
-        <img 
-          src="/无数据.svg" 
-          alt="暂无数据"
-          className="w-48 h-48 sm:w-64 sm:h-64 object-contain filter dark:brightness-90 dark:contrast-110"
-        />
+        <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-muted/30 flex items-center justify-center">
+          <Database className="w-16 h-16 sm:w-20 sm:h-20 text-muted-foreground/50" />
+        </div>
       </div>
 
       {/* 标题和描述 */}

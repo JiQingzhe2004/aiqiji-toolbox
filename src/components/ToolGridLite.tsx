@@ -4,6 +4,7 @@ import { LazyMagicCard } from './LazyMagicCard';
 import { useVirtualizedGrid } from '@/hooks/useVirtualizedGrid';
 import type { Tool } from '@/types';
 import { cn } from '@/lib/utils';
+import { Database } from 'lucide-react';
 
 /**
  * ToolGrid组件属性接口
@@ -51,20 +52,10 @@ export const ToolGridLite = memo(function ToolGridLite({
   // 空状态组件
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 text-center animate-fade-in-up">
-      <div className="w-24 h-24 mx-auto opacity-20">
-        <img 
-          src="/无数据.svg" 
-          alt="无数据"
-          className="w-full h-full object-contain"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-            const fallback = document.createElement('div');
-            fallback.className = 'w-24 h-24 bg-muted rounded-lg flex items-center justify-center text-4xl';
-            fallback.textContent = '📦';
-            target.parentElement!.appendChild(fallback);
-          }}
-        />
+      <div className="w-24 h-24 mx-auto">
+        <div className="w-full h-full rounded-full bg-muted/30 flex items-center justify-center">
+          <Database className="w-12 h-12 text-muted-foreground/50" />
+        </div>
       </div>
       
       <div className="space-y-2">

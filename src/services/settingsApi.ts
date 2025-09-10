@@ -19,6 +19,7 @@ export interface WebsiteInfo {
   site_description: string;
   icp_number: string;
   show_icp: boolean;
+  friend_links?: Array<{ name: string; url: string; icon?: string }>;
 }
 
 export interface SettingsUpdateData {

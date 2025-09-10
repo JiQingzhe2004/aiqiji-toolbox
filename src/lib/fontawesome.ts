@@ -22,7 +22,8 @@ import {
 import {
   faDesktop,
   faMobile,
-  faTablet
+  faTablet,
+  faMobileButton
 } from '@fortawesome/free-solid-svg-icons';
 
 // 将图标添加到库中，这样可以按需加载
@@ -40,7 +41,8 @@ library.add(
   // 设备图标
   faDesktop,
   faMobile,
-  faTablet
+  faTablet,
+  faMobileButton
 );
 
 export {
@@ -57,5 +59,6 @@ export {
   // 设备图标
   faDesktop,
   faMobile,
-  faTablet
+  faTablet,
+  faMobileButton
 };

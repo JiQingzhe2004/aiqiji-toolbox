@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, Sparkles, Dot } from 'lucide-react';
 import { isMobile, isTablet, isDesktop, osName, browserName, deviceType } from 'react-device-detect';
@@ -87,10 +87,53 @@ const getDeviceTypeChinese = () => {
 };
 
 /**
+ * 根据设备类型返回对应的设备类型图标
+ */
+const getDeviceTypeIcon = () => {
+  if (isMobile) {
+    // 移动设备图标 - 使用solid样式
+    const iconLookup: IconLookup = { prefix: 'fas', iconName: 'mobile-button' };
+    return findIconDefinition(iconLookup);
+  } else {
+    // 桌面设备图标 - 使用solid样式
+    const iconLookup: IconLookup = { prefix: 'fas', iconName: 'desktop' };
+    return findIconDefinition(iconLookup);
+  }
+};
+
+/**
  * 首页全屏壁纸横幅组件
  * 作为首页初始视图，包含视差效果和滚动提示
  */
 export function HeroBanner() {
+  const [showDeviceInfo, setShowDeviceInfo] = useState(false);
+  const deviceInfoRef = useRef<HTMLDivElement>(null);
+  
+  // 点击任意位置关闭弹出框
+  useEffect(() => {
+    function handleClick(event: MouseEvent) {
+      // 如果点击的是设备图标本身，不关闭弹出框（让onClick处理）
+      const target = event.target as Element;
+      const isDeviceIcon = deviceInfoRef.current?.querySelector('.cursor-pointer')?.contains(target);
+      
+      if (!isDeviceIcon && showDeviceInfo) {
+        setShowDeviceInfo(false);
+      }
+    }
+
+    if (showDeviceInfo) {
+      // 使用 setTimeout 确保当前的点击事件处理完成后再添加监听器
+      const timer = setTimeout(() => {
+        document.addEventListener('click', handleClick);
+      }, 0);
+      
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('click', handleClick);
+      };
+    }
+  }, [showDeviceInfo]);
+  
   // 滚动到工具区域
   const scrollToTools = () => {
     const toolsSection = document.getElementById('tools-section');
@@ -108,7 +151,7 @@ export function HeroBanner() {
   };
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-white dark:bg-black">
+    <section className="relative h-[calc(100vh-80px)] md:h-screen w-full overflow-hidden bg-white dark:bg-black">
       {/* 网格背景 */}
       <div
         className={cn(
@@ -123,12 +166,12 @@ export function HeroBanner() {
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] dark:bg-black"></div>
 
       {/* 主要内容 */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
+      <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4 py-8 md:py-0">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="space-y-6 max-w-4xl mx-auto"
+          className="space-y-4 md:space-y-6 max-w-4xl mx-auto"
         >
           {/* Logo图标 */}
           <motion.div
@@ -227,7 +270,7 @@ export function HeroBanner() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-8 space-y-6"
+            className="mt-4 md:mt-8 space-y-4 md:space-y-6"
           >
             {/* 第一行：主要统计信息 */}
             <div className="flex flex-wrap justify-center gap-8">
@@ -259,52 +302,138 @@ export function HeroBanner() {
             </div>
 
             {/* 第二行：设备信息 */}
-            <div className="flex justify-center">
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="cursor-pointer hover:scale-110 transition-transform duration-200 flex items-center gap-3">
-                      {/* 系统图标 */}
-                      <FontAwesomeIcon 
-                        icon={getDeviceIcon()} 
-                        className={cn(
-                          "w-8 h-8 md:w-10 md:h-10",
-                          "dark:text-slate-300 text-orange-500"
-                        )}
-                      />
-                      {/* 分隔符 */}
-                      <span className={cn(
-                        "text-lg md:text-xl font-medium",
-                        "dark:text-slate-400 text-orange-400"
-                      )}>
-                        +
-                      </span>
-                      {/* 浏览器图标 */}
-                      <FontAwesomeIcon 
-                        icon={getBrowserIcon()} 
-                        className={cn(
-                          "w-8 h-8 md:w-10 md:h-10",
-                          "dark:text-slate-300 text-orange-500"
-                        )}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent 
-                    side="bottom" 
-                    className="bg-popover text-popover-foreground border border-border shadow-md max-w-xs"
+            <div className="flex justify-center relative" ref={deviceInfoRef}>
+              {isMobile ? (
+                // 手机端：点击显示/隐藏信息
+                <>
+                  <div 
+                    className="cursor-pointer hover:scale-110 transition-transform duration-200 flex items-center gap-3"
+                    onClick={() => setShowDeviceInfo(!showDeviceInfo)}
                   >
-                    <div className="space-y-1 text-sm">
-                      <div className="font-medium">设备与浏览器信息</div>
-                      <div className="space-y-0.5 text-xs">
-                        <div>操作系统: {osName}</div>
-                        <div>浏览器: {browserName}</div>
-                        <div>设备类型: {getDeviceTypeChinese()}</div>
-                        <div>屏幕尺寸: {typeof window !== 'undefined' ? `${window.innerWidth} × ${window.innerHeight}` : '未知'}</div>
+                    {/* 设备类型图标 */}
+                    <FontAwesomeIcon 
+                      icon={getDeviceTypeIcon()} 
+                      className={cn(
+                        "w-8 h-8 md:w-10 md:h-10",
+                        "dark:text-slate-300 text-orange-500"
+                      )}
+                    />
+                    {/* 分隔符 */}
+                    <span className={cn(
+                      "text-lg md:text-xl font-medium",
+                      "dark:text-slate-400 text-orange-400"
+                    )}>
+                      +
+                    </span>
+                    {/* 系统图标 */}
+                    <FontAwesomeIcon 
+                      icon={getDeviceIcon()} 
+                      className={cn(
+                        "w-8 h-8 md:w-10 md:h-10",
+                        "dark:text-slate-300 text-orange-500"
+                      )}
+                    />
+                    {/* 分隔符 */}
+                    <span className={cn(
+                      "text-lg md:text-xl font-medium",
+                      "dark:text-slate-400 text-orange-400"
+                    )}>
+                      +
+                    </span>
+                    {/* 浏览器图标 */}
+                    <FontAwesomeIcon 
+                      icon={getBrowserIcon()} 
+                      className={cn(
+                        "w-8 h-8 md:w-10 md:h-10",
+                        "dark:text-slate-300 text-orange-500"
+                      )}
+                    />
+                  </div>
+                  {/* 手机端信息显示 - 悬浮弹出框 */}
+                  {showDeviceInfo && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      className="absolute top-full mt-3 bg-popover text-popover-foreground border border-border shadow-lg rounded-lg p-3 max-w-xs z-50 left-1/2 transform -translate-x-1/2"
+                    >
+                      <div className="space-y-1 text-sm">
+                        <div className="font-medium text-center">设备与浏览器信息</div>
+                        <div className="space-y-0.5 text-xs">
+                          <div>操作系统: {osName}</div>
+                          <div>浏览器: {browserName}</div>
+                          <div>设备类型: {getDeviceTypeChinese()}</div>
+                          <div>屏幕尺寸: {typeof window !== 'undefined' ? `${window.innerWidth} × ${window.innerHeight}` : '未知'}</div>
+                        </div>
                       </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                      {/* 小三角形指示器 */}
+                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-popover border-l border-t border-border rotate-45"></div>
+                    </motion.div>
+                  )}
+                </>
+              ) : (
+                // 桌面端：保持Tooltip
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-pointer hover:scale-110 transition-transform duration-200 flex items-center gap-3">
+                        {/* 设备类型图标 */}
+                        <FontAwesomeIcon 
+                          icon={getDeviceTypeIcon()} 
+                          className={cn(
+                            "w-8 h-8 md:w-10 md:h-10",
+                            "dark:text-slate-300 text-orange-500"
+                          )}
+                        />
+                        {/* 分隔符 */}
+                        <span className={cn(
+                          "text-lg md:text-xl font-medium",
+                          "dark:text-slate-400 text-orange-400"
+                        )}>
+                          +
+                        </span>
+                        {/* 系统图标 */}
+                        <FontAwesomeIcon 
+                          icon={getDeviceIcon()} 
+                          className={cn(
+                            "w-8 h-8 md:w-10 md:h-10",
+                            "dark:text-slate-300 text-orange-500"
+                          )}
+                        />
+                        {/* 分隔符 */}
+                        <span className={cn(
+                          "text-lg md:text-xl font-medium",
+                          "dark:text-slate-400 text-orange-400"
+                        )}>
+                          +
+                        </span>
+                        {/* 浏览器图标 */}
+                        <FontAwesomeIcon 
+                          icon={getBrowserIcon()} 
+                          className={cn(
+                            "w-8 h-8 md:w-10 md:h-10",
+                            "dark:text-slate-300 text-orange-500"
+                          )}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="bottom" 
+                      className="bg-popover text-popover-foreground border border-border shadow-md max-w-xs"
+                    >
+                      <div className="space-y-1 text-sm">
+                        <div className="font-medium">设备与浏览器信息</div>
+                        <div className="space-y-0.5 text-xs">
+                          <div>操作系统: {osName}</div>
+                          <div>浏览器: {browserName}</div>
+                          <div>设备类型: {getDeviceTypeChinese()}</div>
+                          <div>屏幕尺寸: {typeof window !== 'undefined' ? `${window.innerWidth} × ${window.innerHeight}` : '未知'}</div>
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
           </motion.div>
         </motion.div>

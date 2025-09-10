@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Star, Trash2, X } from 'lucide-react';
+import { Upload, Star, Trash2, X, Loader2 } from 'lucide-react';
 import { preprocessFormData } from '@/utils/dataValidator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,9 +33,10 @@ interface AdminToolFormProps {
   tool?: Tool;
   onSave: (tool: Partial<Tool>) => void;
   onClose: () => void;
+  saving?: boolean;
 }
 
-export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
+export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminToolFormProps) {
   const [formData, setFormData] = useState({
     id: tool?.id || '',
     name: tool?.name || '',
@@ -164,6 +165,17 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // 前端验证
+    if (formData.description.length < 10) {
+      toast.error('工具描述至少需要10个字符');
+      return;
+    }
+    
+    if (formData.description.length > 1000) {
+      toast.error('工具描述不能超过1000个字符');
+      return;
+    }
+    
     try {
       setUploading(true);
       
@@ -212,7 +224,7 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
   };
 
   return (
-    <Dialog open={true} onOpenChange={() => onClose()}>
+    <Dialog open={true} onOpenChange={() => !saving && !uploading && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -244,15 +256,26 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>工具描述</Label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="简要描述这个工具的功能和特点"
-              rows={3}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label>工具描述</Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="简要描述这个工具的功能和特点（至少10个字符）"
+                rows={3}
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>
+                  {formData.description.length < 10 && formData.description.length > 0 && (
+                    <span className="text-destructive">至少需要10个字符</span>
+                  )}
+                  {formData.description.length >= 10 && (
+                    <span className="text-green-600">描述长度合适</span>
+                  )}
+                </span>
+                <span>{formData.description.length}/1000</span>
+              </div>
+            </div>
 
           {/* 图标上传 */}
           <div className="space-y-4">
@@ -263,10 +286,10 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
                   type="button"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
+                  disabled={uploading || saving}
                   className="flex items-center gap-2 !bg-black dark:!bg-white !text-white dark:!text-black hover:!bg-gray-800 dark:hover:!bg-gray-100 !border-black dark:!border-white"
                 >
-                  <Upload className="w-4 h-4" />
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                   {uploading ? '上传中...' : '上传图标'}
                 </Button>
                 <input
@@ -457,16 +480,19 @@ export function AdminToolForm({ tool, onSave, onClose }: AdminToolFormProps) {
 
           {/* 提交按钮 */}
           <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={saving || uploading}>
               取消
             </Button>
             <Button 
               variant="ghost"
               type="submit" 
-              disabled={uploading || !formData.name || !formData.url || formData.categories.length === 0}
+              disabled={saving || uploading || !formData.name || !formData.url || formData.categories.length === 0 || formData.description.length < 10}
               className="min-w-[100px] !bg-black dark:!bg-white !text-white dark:!text-black hover:!bg-gray-800 dark:hover:!bg-gray-100"
             >
-              {uploading ? '保存中...' : tool ? '保存修改' : '添加工具'}
+              {(saving || uploading) && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              {saving ? '提交中...' : uploading ? '上传中...' : tool ? '保存修改' : '添加工具'}
             </Button>
           </div>
         </form>

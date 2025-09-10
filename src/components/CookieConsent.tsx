@@ -97,10 +97,8 @@ function CookieConsent() {
     // 社交媒体Cookie设置
     if (prefs.social) {
       // 启用社交媒体插件
-      console.log('启用社交媒体Cookie');
     } else {
       // 禁用社交媒体插件
-      console.log('禁用社交媒体Cookie');
     }
 
     // 个性化Cookie设置
@@ -115,9 +113,8 @@ function CookieConsent() {
     // 安全Cookie设置
     if (prefs.security) {
       // 启用增强安全功能
-      console.log('启用安全Cookie');
     } else {
-      console.log('禁用非必要安全Cookie');
+      // 禁用非必要安全功能
     }
   };
 

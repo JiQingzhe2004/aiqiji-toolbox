@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, RefreshCw, Settings, Globe, Info, Eye, EyeOff, Plus, Edit, Trash, ExternalLink } from 'lucide-react';
+import { Save, RefreshCw, Settings, Globe, Info, Eye, EyeOff, Plus, Edit, Trash, ExternalLink, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,8 @@ export function AdminSystemSettings() {
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingWebsite, setSavingWebsite] = useState(false);
+  const [savingIcp, setSavingIcp] = useState(false);
   const [formData, setFormData] = useState({
     site_name: '',
     site_description: '',
@@ -45,6 +47,9 @@ export function AdminSystemSettings() {
     editIndex: -1,
     form: { name: '', url: '', icon: '' }
   });
+  
+  // 友链操作加载状态
+  const [friendLinkLoading, setFriendLinkLoading] = useState(false);
 
   // 加载系统设置
   const loadSettings = async () => {
@@ -74,7 +79,93 @@ export function AdminSystemSettings() {
     }
   };
 
-  // 保存设置
+  // 保存网站基本信息
+  const handleSaveWebsite = async () => {
+    try {
+      setSavingWebsite(true);
+      
+      const updates: SettingsUpdateData[] = [
+        {
+          setting_key: 'site_name',
+          setting_value: formData.site_name,
+          setting_type: 'string'
+        },
+        {
+          setting_key: 'site_description',
+          setting_value: formData.site_description,
+          setting_type: 'string'
+        }
+      ];
+      
+      const response = await settingsApi.updateSettings(updates);
+      if (response.success) {
+        toast.success('网站基本信息保存成功');
+        // 无感更新本地状态，避免重新加载
+        if (settings?.website) {
+          setSettings(prev => ({
+            ...prev!,
+            website: {
+              ...prev!.website,
+              site_name: { ...prev!.website.site_name, value: formData.site_name },
+              site_description: { ...prev!.website.site_description, value: formData.site_description }
+            }
+          }));
+        }
+      } else {
+        toast.error('保存网站信息失败');
+      }
+    } catch (error) {
+      console.error('保存网站信息失败:', error);
+      toast.error('保存网站信息失败');
+    } finally {
+      setSavingWebsite(false);
+    }
+  };
+
+  // 保存备案信息
+  const handleSaveIcp = async () => {
+    try {
+      setSavingIcp(true);
+      
+      const updates: SettingsUpdateData[] = [
+        {
+          setting_key: 'icp_number',
+          setting_value: formData.icp_number,
+          setting_type: 'string'
+        },
+        {
+          setting_key: 'show_icp',
+          setting_value: formData.show_icp,
+          setting_type: 'boolean'
+        }
+      ];
+      
+      const response = await settingsApi.updateSettings(updates);
+      if (response.success) {
+        toast.success('备案信息保存成功');
+        // 无感更新本地状态，避免重新加载
+        if (settings?.website) {
+          setSettings(prev => ({
+            ...prev!,
+            website: {
+              ...prev!.website,
+              icp_number: { ...prev!.website.icp_number, value: formData.icp_number },
+              show_icp: { ...prev!.website.show_icp, value: formData.show_icp }
+            }
+          }));
+        }
+      } else {
+        toast.error('保存备案信息失败');
+      }
+    } catch (error) {
+      console.error('保存备案信息失败:', error);
+      toast.error('保存备案信息失败');
+    } finally {
+      setSavingIcp(false);
+    }
+  };
+
+  // 保存所有设置（保留作为备用）
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -157,13 +248,46 @@ export function AdminSystemSettings() {
     });
   };
 
-  const handleFriendLinkDelete = (index: number) => {
-    const newLinks = formData.friend_links.filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, friend_links: newLinks }));
-    toast.success('友链已删除');
+  const handleFriendLinkDelete = async (index: number) => {
+    try {
+      setFriendLinkLoading(true);
+      const newLinks = formData.friend_links.filter((_, i) => i !== index);
+      
+      // 立即保存到数据库
+      const updates: SettingsUpdateData[] = [{
+        setting_key: 'friend_links',
+        setting_value: newLinks,
+        setting_type: 'json'
+      }];
+      
+      const response = await settingsApi.updateSettings(updates);
+      if (response.success) {
+        // 更新本地状态
+        setFormData(prev => ({ ...prev, friend_links: newLinks }));
+        toast.success('友链已删除');
+        
+        // 无感更新本地状态，避免重新加载
+        if (settings?.website) {
+          setSettings(prev => ({
+            ...prev!,
+            website: {
+              ...prev!.website,
+              friend_links: { ...prev!.website.friend_links, value: newLinks }
+            }
+          }));
+        }
+      } else {
+        toast.error('删除友链失败');
+      }
+    } catch (error) {
+      console.error('删除友链失败:', error);
+      toast.error('删除友链失败');
+    } finally {
+      setFriendLinkLoading(false);
+    }
   };
 
-  const handleFriendLinkSave = () => {
+  const handleFriendLinkSave = async () => {
     const { form, editing, editIndex } = friendLinkModal;
     
     if (!form.name.trim() || !form.url.trim()) {
@@ -171,23 +295,61 @@ export function AdminSystemSettings() {
       return;
     }
 
-    let newLinks = [...formData.friend_links];
-    
-    if (editing && editIndex !== -1) {
-      newLinks[editIndex] = { ...form };
-      toast.success('友链已更新');
-    } else {
-      newLinks.push({ ...form });
-      toast.success('友链已添加');
+    try {
+      setFriendLinkLoading(true);
+      let newLinks = [...formData.friend_links];
+      
+      if (editing && editIndex !== -1) {
+        newLinks[editIndex] = { ...form };
+      } else {
+        newLinks.push({ ...form });
+      }
+      
+      // 立即保存到数据库
+      const updates: SettingsUpdateData[] = [{
+        setting_key: 'friend_links',
+        setting_value: newLinks,
+        setting_type: 'json'
+      }];
+      
+      const response = await settingsApi.updateSettings(updates);
+      if (response.success) {
+        // 更新本地状态
+        setFormData(prev => ({ ...prev, friend_links: newLinks }));
+        
+        // 关闭弹窗
+        setFriendLinkModal({
+          open: false,
+          editing: false,
+          editIndex: -1,
+          form: { name: '', url: '', icon: '' }
+        });
+        
+        if (editing && editIndex !== -1) {
+          toast.success('友链已更新');
+        } else {
+          toast.success('友链已添加');
+        }
+        
+        // 无感更新本地状态，避免重新加载
+        if (settings?.website) {
+          setSettings(prev => ({
+            ...prev!,
+            website: {
+              ...prev!.website,
+              friend_links: { ...prev!.website.friend_links, value: newLinks }
+            }
+          }));
+        }
+      } else {
+        toast.error('保存友链失败');
+      }
+    } catch (error) {
+      console.error('保存友链失败:', error);
+      toast.error('保存友链失败');
+    } finally {
+      setFriendLinkLoading(false);
     }
-    
-    setFormData(prev => ({ ...prev, friend_links: newLinks }));
-    setFriendLinkModal({
-      open: false,
-      editing: false,
-      editIndex: -1,
-      form: { name: '', url: '', icon: '' }
-    });
   };
 
   useEffect(() => {
@@ -244,15 +406,7 @@ export function AdminSystemSettings() {
             className="flex items-center space-x-2"
           >
             <RefreshCw className="w-4 h-4" />
-            <span>重置</span>
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center space-x-2 bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-          >
-            <Save className="w-4 h-4" />
-            <span>{saving ? '保存中...' : '保存设置'}</span>
+            <span>重置表单</span>
           </Button>
         </div>
       </div>
@@ -262,10 +416,23 @@ export function AdminSystemSettings() {
         {/* 网站基本信息 */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Globe className="w-5 h-5" />
-              <span>网站基本信息</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <Globe className="w-5 h-5" />
+                <span>网站基本信息</span>
+              </CardTitle>
+              <Button
+                variant="blackWhite"
+                onClick={handleSaveWebsite}
+                disabled={savingWebsite}
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                {savingWebsite && <Loader2 className="w-4 h-4 animate-spin" />}
+                <Save className="w-4 h-4" />
+                <span>{savingWebsite ? '保存中...' : '保存'}</span>
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -276,6 +443,7 @@ export function AdminSystemSettings() {
                 onChange={(e) => setFormData(prev => ({ ...prev, site_name: e.target.value }))}
                 placeholder="请输入网站名称"
                 className="w-full"
+                disabled={savingWebsite}
               />
               <p className="text-xs text-muted-foreground">
                 网站的显示名称，将在页面标题和Footer中显示
@@ -290,6 +458,7 @@ export function AdminSystemSettings() {
                 onChange={(e) => setFormData(prev => ({ ...prev, site_description: e.target.value }))}
                 placeholder="请输入网站描述"
                 className="w-full"
+                disabled={savingWebsite}
               />
               <p className="text-xs text-muted-foreground">
                 网站的简短描述，将在首页和Footer中显示
@@ -301,10 +470,23 @@ export function AdminSystemSettings() {
         {/* 备案信息设置 */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Info className="w-5 h-5" />
-              <span>备案信息</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <Info className="w-5 h-5" />
+                <span>备案信息</span>
+              </CardTitle>
+              <Button
+                variant="blackWhite"
+                onClick={handleSaveIcp}
+                disabled={savingIcp}
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                {savingIcp && <Loader2 className="w-4 h-4 animate-spin" />}
+                <Save className="w-4 h-4" />
+                <span>{savingIcp ? '保存中...' : '保存'}</span>
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -315,6 +497,7 @@ export function AdminSystemSettings() {
                 onChange={(e) => setFormData(prev => ({ ...prev, icp_number: e.target.value }))}
                 placeholder="请输入备案号，如：京ICP备12345678号"
                 className="w-full"
+                disabled={savingIcp}
               />
               <p className="text-xs text-muted-foreground">
                 网站的ICP备案号，点击后将链接到beian.miit.gov.cn
@@ -340,6 +523,7 @@ export function AdminSystemSettings() {
                   id="show_icp"
                   checked={formData.show_icp}
                   onCheckedChange={(checked) => setFormData(prev => ({ ...prev, show_icp: checked }))}
+                  disabled={savingIcp}
                 />
               </div>
               
@@ -384,7 +568,7 @@ export function AdminSystemSettings() {
               >
                 <DialogTrigger asChild>
                   <Button 
-                    variant="outline" 
+                    variant="blackWhite" 
                     size="sm"
                     onClick={handleFriendLinkAdd}
                     className="flex items-center gap-2"
@@ -440,11 +624,17 @@ export function AdminSystemSettings() {
                       <Button 
                         variant="outline" 
                         onClick={() => setFriendLinkModal(prev => ({ ...prev, open: false }))}
+                        disabled={friendLinkLoading}
                       >
                         取消
                       </Button>
-                      <Button onClick={handleFriendLinkSave}>
-                        {friendLinkModal.editing ? '更新' : '添加'}
+                      <Button 
+                        variant="blackWhite"
+                        onClick={handleFriendLinkSave} 
+                        disabled={friendLinkLoading}
+                      >
+                        {friendLinkLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        {friendLinkLoading ? '保存中...' : (friendLinkModal.editing ? '更新' : '添加')}
                       </Button>
                     </div>
                   </div>
@@ -487,6 +677,7 @@ export function AdminSystemSettings() {
                             size="sm"
                             onClick={() => handleFriendLinkEdit(idx)}
                             className="h-8 w-8 p-0"
+                            disabled={friendLinkLoading}
                           >
                             <Edit className="w-3 h-3" />
                           </Button>
@@ -495,8 +686,13 @@ export function AdminSystemSettings() {
                             size="sm"
                             onClick={() => handleFriendLinkDelete(idx)}
                             className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            disabled={friendLinkLoading}
                           >
-                            <Trash className="w-3 h-3" />
+                            {friendLinkLoading ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Trash className="w-3 h-3" />
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -524,10 +720,11 @@ export function AdminSystemSettings() {
               设置说明
             </h4>
             <ul className="mt-2 text-xs text-blue-800 dark:text-blue-200 space-y-1">
+              <li>• 每个设置区域都有独立的保存按钮，修改后点击对应的保存按钮即可</li>
               <li>• 网站名称和描述将在前端页面中实时更新</li>
               <li>• 备案号支持链接到工信部备案查询网站</li>
-              <li>• 显示开关可以控制备案号是否在前端展示</li>
-              <li>• 保存后设置将立即生效，无需重启服务</li>
+              <li>• 友情链接添加、编辑、删除操作会立即生效</li>
+              <li>• 所有设置保存后立即生效，无需重启服务</li>
             </ul>
           </div>
         </div>

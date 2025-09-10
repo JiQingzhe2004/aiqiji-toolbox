@@ -23,6 +23,7 @@ const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline',
         solid: 'bg-blue-600 text-white hover:bg-blue-700 focus:bg-blue-700 border-0',
         solidCancel: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
+        blackWhite: 'bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 border-black dark:border-white',
       },
       size: {
         default: 'h-10 px-4 py-2',

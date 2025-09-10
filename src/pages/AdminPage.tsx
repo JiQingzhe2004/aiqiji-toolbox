@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import { AdminExcelImport } from '@/components/admin/AdminExcelImport';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { toolsApi } from '@/services/toolsApi';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 import type { Tool } from '@/types';
 
 function AdminPage() {
@@ -34,6 +36,20 @@ function AdminPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // 转换后端数据格式到前端格式
+  const normalizeToolData = (toolData: any): Tool => {
+    return {
+      ...toolData,
+      created_at: toolData.created_at || toolData.createdAt,
+      updated_at: toolData.updated_at || toolData.updatedAt,
+      // 确保其他字段的兼容性
+      tags: toolData.tags || [],
+      category: toolData.category || ['其他'],
+    };
+  };
 
   // 加载工具列表 - 管理界面显示所有状态的工具
   const loadTools = async () => {
@@ -67,27 +83,77 @@ function AdminPage() {
     }
   };
 
+  // 刷新工具列表
+  const handleRefreshTools = async () => {
+    try {
+      setRefreshing(true);
+      toast.loading('正在刷新工具列表...', { id: 'refresh-tools' });
+      
+      const response = await toolsApi.getTools({ 
+        limit: 1000,
+        status: 'all'
+      });
+      
+      if (response.success && response.data) {
+        setTools(response.data.tools);
+        toast.success('工具列表刷新成功', { id: 'refresh-tools' });
+      } else {
+        toast.error('刷新工具列表失败', { id: 'refresh-tools' });
+      }
+    } catch (error) {
+      console.error('Failed to refresh tools:', error instanceof Error ? error.message : String(error));
+      toast.error('刷新工具列表失败', { id: 'refresh-tools' });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // 处理工具保存
   const handleToolSave = async (toolData: Partial<Tool>) => {
     try {
+      setSaving(true);
+      
       if (selectedTool) {
         // 更新工具
+        toast.loading('正在更新工具...', { id: 'tool-save' });
         const response = await toolsApi.updateTool(selectedTool.id, toolData);
-        if (response.success) {
-          await loadTools();
+        if (response.success && response.data) {
+          toast.success('工具更新成功', { id: 'tool-save' });
+          
+          // 无感刷新：使用正确的数据结构并标准化数据
+          const rawTool = (response.data as any).tool || response.data;
+          const updatedTool = normalizeToolData(rawTool);
+          setTools(prev => prev.map(tool => 
+            tool.id === selectedTool.id ? updatedTool : tool
+          ));
+          
           setShowForm(false);
           setSelectedTool(null);
+        } else {
+          toast.error(response.message || '工具更新失败', { id: 'tool-save' });
         }
       } else {
         // 创建工具
+        toast.loading('正在创建工具...', { id: 'tool-save' });
         const response = await toolsApi.createTool(toolData as any);
-        if (response.success) {
-          await loadTools();
+        if (response.success && response.data) {
+          toast.success('工具创建成功', { id: 'tool-save' });
+          
+          // 无感刷新：使用正确的数据结构并标准化数据
+          const rawTool = (response.data as any).tool || response.data;
+          const newTool = normalizeToolData(rawTool);
+          setTools(prev => [newTool, ...prev]);
+          
           setShowForm(false);
+        } else {
+          toast.error(response.message || '工具创建失败', { id: 'tool-save' });
         }
       }
     } catch (error) {
       console.error('Failed to save tool:', error instanceof Error ? error.message : String(error));
+      toast.error(error instanceof Error ? error.message : '操作失败，请重试', { id: 'tool-save' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -96,12 +162,17 @@ function AdminPage() {
     try {
       const response = await toolsApi.deleteTool(toolId);
       if (response.success) {
-        await loadTools();
+        // 无感刷新：直接从本地状态中移除
+        setTools(prev => prev.filter(tool => tool.id !== toolId));
         // 从选中列表中移除已删除的工具
         setSelectedTools(prev => prev.filter(id => id !== toolId));
+        toast.success('工具删除成功');
+      } else {
+        toast.error(response.message || '删除工具失败');
       }
     } catch (error) {
       console.error('Failed to delete tool:', error instanceof Error ? error.message : String(error));
+      toast.error('删除工具失败');
     }
   };
 
@@ -110,11 +181,31 @@ function AdminPage() {
     if (selectedTools.length === 0) return;
     
     try {
-      await Promise.all(selectedTools.map(toolId => toolsApi.deleteTool(toolId)));
-      await loadTools();
+      const deletePromises = selectedTools.map(toolId => toolsApi.deleteTool(toolId));
+      const results = await Promise.all(deletePromises);
+      
+      // 检查哪些删除成功了
+      const successfulDeletes = results
+        .map((result, index) => ({ result, toolId: selectedTools[index] }))
+        .filter(({ result }) => result.success)
+        .map(({ toolId }) => toolId);
+      
+      if (successfulDeletes.length > 0) {
+        // 无感刷新：直接从本地状态中移除成功删除的工具
+        setTools(prev => prev.filter(tool => !successfulDeletes.includes(tool.id)));
+        toast.success(`成功删除 ${successfulDeletes.length} 个工具`);
+      }
+      
+      // 检查是否有失败的删除
+      const failedDeletes = results.filter(result => !result.success);
+      if (failedDeletes.length > 0) {
+        toast.error(`${failedDeletes.length} 个工具删除失败`);
+      }
+      
       setSelectedTools([]);
     } catch (error) {
       console.error('Failed to batch delete tools:', error instanceof Error ? error.message : String(error));
+      toast.error('批量删除失败');
     }
   };
 
@@ -129,8 +220,8 @@ function AdminPage() {
 
   // 过滤工具
   const filteredTools = tools.filter(tool =>
-    tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tool.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (tool.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (tool.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
   // 分页逻辑
@@ -251,7 +342,18 @@ function AdminPage() {
                     <Button 
                       variant="outline" 
                       size="icon"
+                      onClick={handleRefreshTools}
+                      disabled={refreshing}
                       className="border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                      title="刷新工具列表"
+                    >
+                      <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      className="border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                      title="筛选工具"
                     >
                       <Filter className="w-4 h-4" />
                     </Button>
@@ -324,13 +426,15 @@ function AdminPage() {
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                           <Button
                             key={page}
-                            variant={page === currentPage ? "default" : "outline"}
-                            size="sm"
+                            variant={page === currentPage ? "blackWhite" : "outline"}
+                            size="icon"
                             onClick={() => setCurrentPage(page)}
-                            className={page === currentPage 
-                              ? "bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                              : "border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
-                            }
+                            className={cn(
+                              "w-8 h-8 rounded-full",
+                              page === currentPage 
+                                ? "" 
+                                : "border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                            )}
                           >
                             {page}
                           </Button>
@@ -390,6 +494,7 @@ function AdminPage() {
             setShowForm(false);
             setSelectedTool(null);
           }}
+          saving={saving}
         />
       )}
     </div>

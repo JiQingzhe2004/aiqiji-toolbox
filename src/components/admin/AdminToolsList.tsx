@@ -127,29 +127,29 @@ export function AdminToolsList({
                     <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center p-2">
                       <img
                         src={getToolIconUrl(tool)}
-                        alt={tool.name}
+                        alt={tool.name || '工具图标'}
                         className="w-full h-full object-contain"
                       />
                     </div>
                   ) : (
                     <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
-                      <span className="text-sm font-medium text-blue-800">{tool.name.charAt(0)}</span>
+                      <span className="text-sm font-medium text-blue-800">{tool.name?.charAt(0) || '?'}</span>
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm truncate">{tool.name}</p>
+                      <p className="font-medium text-sm truncate">{tool.name || '未命名工具'}</p>
                       {tool.featured && (
                         <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate max-w-full">
-                      {tool.description}
+                      {tool.description || '暂无描述'}
                     </p>
                     {tool.tags && tool.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1 max-w-full overflow-hidden">
                         {tool.tags.slice(0, 2).map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs truncate max-w-20">
+                          <Badge key={`${tool.id}-tag-${index}`} variant="secondary" className="text-xs truncate max-w-20">
                             {tag}
                           </Badge>
                         ))}
@@ -166,7 +166,7 @@ export function AdminToolsList({
               <TableCell className="w-1/8">
                 <div className="flex flex-wrap gap-1">
                   {(Array.isArray(tool.category) ? tool.category : [tool.category]).map((cat, index) => (
-                    <Badge key={index} className={cn(getCategoryColor(cat), "text-xs")}>
+                    <Badge key={`${tool.id}-cat-${index}`} className={cn(getCategoryColor(cat), "text-xs")}>
                       {cat}
                     </Badge>
                   ))}
@@ -228,7 +228,7 @@ export function AdminToolsList({
                       <AlertDialogHeader>
                         <AlertDialogTitle>确认删除</AlertDialogTitle>
                         <AlertDialogDescription>
-                          确定要删除工具 "{tool.name}" 吗？此操作无法撤销。
+                          确定要删除工具 "{tool.name || '未命名工具'}" 吗？此操作无法撤销。
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

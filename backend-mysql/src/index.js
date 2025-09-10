@@ -63,14 +63,39 @@ class Server {
       }
     }));
 
-    // CORS配置
-    const allowedOrigins = [
-      process.env.FRONTEND_URL || 'https://tools.aiqji.com',
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://localhost:5173',
-      'http://127.0.0.1:5173'
-    ];
+    // CORS配置 - 从环境变量读取允许的域名
+    const allowedOrigins = [];
+    
+    // 添加主要前端域名
+    if (process.env.FRONTEND_URL) {
+      allowedOrigins.push(process.env.FRONTEND_URL);
+    }
+    
+    // 添加额外的前端域名（逗号分隔）
+    if (process.env.FRONTEND_URLS) {
+      const additionalUrls = process.env.FRONTEND_URLS.split(',').map(url => url.trim());
+      allowedOrigins.push(...additionalUrls);
+    }
+    
+    // 开发环境域名
+    if (process.env.NODE_ENV === 'development') {
+      allowedOrigins.push(
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://localhost:5173',
+        'http://127.0.0.1:5173'
+      );
+    }
+    
+    // 如果没有配置任何域名，使用默认值
+    if (allowedOrigins.length === 0) {
+      allowedOrigins.push('https://tools.aiqji.com');
+    }
+    
+    // 输出CORS配置信息（仅在开发环境）
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🌐 CORS允许的域名:', allowedOrigins);
+    }
 
     this.app.use(cors({
       origin: function (origin, callback) {
@@ -149,7 +174,10 @@ class Server {
           ],
           contact: {
             author: 'AiQiji',
-            website: 'https://tools.aiqji.com'
+            website: process.env.FRONTEND_URL || 'https://tools.aiqji.com',
+            ...(process.env.FRONTEND_URLS && {
+              mirrors: process.env.FRONTEND_URLS.split(',').map(url => url.trim())
+            })
           }
         }
       });

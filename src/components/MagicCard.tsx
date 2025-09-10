@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
-import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone, ShieldBan, ShieldAlert } from 'lucide-react';
+import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone, ShieldBan, ShieldAlert, X } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,9 @@ import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-b
 import { Confetti, type ConfettiRef } from '@/components/magicui/confetti';
 import { QRCodeModal } from './QRCodeModal';
 import * as AspectRatio from '@radix-ui/react-aspect-ratio';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { isMobile } from 'react-device-detect';
 import type { Tool } from '@/types';
 import { cn, openExternalLinkWithWarning, formatDate } from '@/lib/utils';
 import { getToolIconUrl } from '@/utils/imageUtils';
@@ -28,6 +30,7 @@ const SmartTags = memo(function SmartTags({ tags }: { tags: string[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleTags, setVisibleTags] = useState<string[]>([]);
   const [hiddenTags, setHiddenTags] = useState<string[]>([]);
+  const [showHiddenTags, setShowHiddenTags] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current || !tags.length) return;
@@ -106,27 +109,99 @@ const SmartTags = memo(function SmartTags({ tags }: { tags: string[] }) {
         </span>
       ))}
       {hiddenTags.length > 0 && (
-        <TooltipProvider delayDuration={0}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors cursor-help whitespace-nowrap">
-                +{hiddenTags.length}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md max-w-xs">
-              <div className="flex flex-wrap gap-1 justify-center">
-                {hiddenTags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center justify-center px-2 py-0.5 text-xs rounded bg-secondary/80 text-secondary-foreground"
-                  >
-                    {tag}
+        <>
+          {/* 桌面端：悬停显示隐藏标签 */}
+          {!isMobile && (
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors cursor-help whitespace-nowrap">
+                    +{hiddenTags.length}
                   </span>
-                ))}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md max-w-xs">
+                  <div className="flex flex-wrap gap-1 justify-center">
+                    {hiddenTags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center justify-center px-2 py-0.5 text-xs rounded bg-secondary/80 text-secondary-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
+          {/* 手机端：点击显示隐藏标签 */}
+          {isMobile && (
+            <span 
+              className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors cursor-pointer whitespace-nowrap"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowHiddenTags(true);
+              }}
+            >
+              +{hiddenTags.length}
+            </span>
+          )}
+        </>
+      )}
+      
+      {/* 手机端隐藏标签弹框 */}
+      {isMobile && (
+        <AnimatePresence>
+          {showHiddenTags && (
+            <div 
+              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+              onClick={() => setShowHiddenTags(false)}
+            >
+              {/* 背景遮罩动画 */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+              />
+              
+              {/* 弹框内容动画 */}
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="relative bg-background border border-border rounded-lg shadow-xl max-w-sm w-full p-6"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="text-lg font-semibold">所有标签</h3>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowHiddenTags(false)}
+                    className="h-8 w-8 rounded-full hover:bg-muted"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md bg-secondary/60 text-secondary-foreground"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       )}
     </div>
   );
@@ -143,6 +218,7 @@ export const MagicCard = memo(function MagicCard({
 }: MagicCardProps) {
   const confettiRef = React.useRef<ConfettiRef>(null);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showDescModal, setShowDescModal] = useState(false);
 
   // 复制链接功能
   const copyLink = useCallback(async (e: React.MouseEvent) => {
@@ -223,8 +299,9 @@ export const MagicCard = memo(function MagicCard({
   const openTool = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    openExternalLinkWithWarning(tool.url, tool.name);
-  }, [tool.url, tool.name]);
+    const iconUrl = getToolIconUrl(tool);
+    openExternalLinkWithWarning(tool.url, tool.name, iconUrl);
+  }, [tool.url, tool.name, tool.icon_url, tool.logoUrl]);
 
   // 高亮匹配文本
   const highlightedName = useMemo(() => {
@@ -332,21 +409,38 @@ export const MagicCard = memo(function MagicCard({
           <CardTitle className="text-base font-semibold line-clamp-1 group-hover:text-primary transition-colors">
             {highlightedName}
           </CardTitle>
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <CardDescription className="text-sm mt-1 h-12 leading-6 line-clamp-2 cursor-help">
-                  {highlightedDesc}
-                </CardDescription>
-              </TooltipTrigger>
-              <TooltipContent 
-                side="top" 
-                className="max-w-xs p-3 bg-popover text-popover-foreground border border-border shadow-md"
-              >
-                <p className="text-sm">{tool.description || tool.desc}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {/* 桌面端：悬停显示完整描述 */}
+          {!isMobile && (
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CardDescription className="text-sm mt-1 h-12 leading-6 line-clamp-2 cursor-help">
+                    {highlightedDesc}
+                  </CardDescription>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="top" 
+                  className="max-w-xs p-3 bg-popover text-popover-foreground border border-border shadow-md"
+                >
+                  <p className="text-sm">{tool.description || tool.desc}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
+          {/* 手机端：点击显示完整描述 */}
+          {isMobile && (
+            <CardDescription 
+              className="text-sm mt-1 h-12 leading-6 line-clamp-2 cursor-pointer hover:text-foreground transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowDescModal(true);
+              }}
+            >
+              {highlightedDesc}
+            </CardDescription>
+          )}
         </div>
 
         {/* 智能标签 */}
@@ -410,39 +504,41 @@ export const MagicCard = memo(function MagicCard({
             </InteractiveHoverButton>
           </div>
           
-          {/* 二维码按钮 */}
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  disabled={tool.status === 'inactive'}
-                  className={cn(
-                    "rounded-full aspect-square w-10 h-10 transition-all duration-200",
-                    tool.status !== 'inactive' 
-                      ? "hover:bg-blue-500 hover:text-white hover:border-blue-500 hover:scale-105"
-                      : "opacity-50 cursor-not-allowed"
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (tool.status !== 'inactive') {
-                      setShowQRModal(true);
-                    }
-                  }}
-                  aria-label={`查看 ${tool.name} 的二维码`}
-                >
-                  <TabletSmartphone size={16} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md">
-                <p className="text-sm">
-                  {tool.status === 'inactive' ? '工具已停用' : 
-                   tool.status === 'maintenance' ? '显示二维码（维护）' : '显示二维码'}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {/* 二维码按钮 - 仅在非手机端显示 */}
+          {!isMobile && (
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    disabled={tool.status === 'inactive'}
+                    className={cn(
+                      "rounded-full aspect-square w-10 h-10 transition-all duration-200",
+                      tool.status !== 'inactive' 
+                        ? "hover:bg-blue-500 hover:text-white hover:border-blue-500 hover:scale-105"
+                        : "opacity-50 cursor-not-allowed"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (tool.status !== 'inactive') {
+                        setShowQRModal(true);
+                      }
+                    }}
+                    aria-label={`查看 ${tool.name} 的二维码`}
+                  >
+                    <TabletSmartphone size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-popover text-popover-foreground border border-border shadow-md">
+                  <p className="text-sm">
+                    {tool.status === 'inactive' ? '工具已停用' : 
+                     tool.status === 'maintenance' ? '显示二维码（维护）' : '显示二维码'}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           
           {/* 复制链接按钮 */}
           <TooltipProvider delayDuration={0}>
@@ -489,6 +585,52 @@ export const MagicCard = memo(function MagicCard({
       toolUrl={tool.url}
       toolDescription={tool.description || tool.desc}
     />
+    
+    {/* 手机端描述弹框 */}
+    {isMobile && (
+      <AnimatePresence>
+        {showDescModal && (
+          <div 
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+            onClick={() => setShowDescModal(false)}
+          >
+            {/* 背景遮罩动画 */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+            />
+            
+            {/* 弹框内容动画 */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative bg-background border border-border rounded-lg shadow-xl max-w-sm w-full p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-lg font-semibold line-clamp-1">{tool.name}</h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowDescModal(false)}
+                  className="h-8 w-8 rounded-full hover:bg-muted"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {tool.description || tool.desc || '暂无详细描述'}
+              </p>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    )}
     </>
   );
 });

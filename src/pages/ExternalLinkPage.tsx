@@ -16,6 +16,7 @@ export default function ExternalLinkPage() {
   
   const url = searchParams.get('url');
   const name = searchParams.get('name') || '外部工具';
+  const iconUrl = searchParams.get('icon');
   const returnUrl = searchParams.get('return') || '/';
 
   useEffect(() => {
@@ -105,9 +106,21 @@ export default function ExternalLinkPage() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white mb-4"
+              className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white mb-4 overflow-hidden"
             >
-              <ExternalLink className="w-8 h-8" />
+              {iconUrl ? (
+                <img 
+                  src={iconUrl} 
+                  alt={`${name} logo`}
+                  className="w-10 h-10 object-contain"
+                  onError={(e) => {
+                    // 如果图片加载失败，显示默认图标
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              <ExternalLink className={`w-8 h-8 ${iconUrl ? 'hidden fallback-icon' : ''}`} />
             </motion.div>
             <h1 className="text-2xl font-bold text-foreground">外部链接跳转</h1>
           </div>

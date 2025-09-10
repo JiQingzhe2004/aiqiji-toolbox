@@ -432,72 +432,127 @@ export function Footer() {
 
         {/* 版权信息 */}
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
-          {/* 左侧：版权信息 */}
-          <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-3">
-            <div className="text-sm text-muted-foreground">
-              © {currentYear} {websiteInfo?.site_name || 'AiQiji工具箱'}. All rights reserved.
+          {/* 桌面端布局 - 保持原有样式 */}
+          <div className="hidden sm:flex flex-row justify-between items-center w-full">
+            {/* 左侧：版权信息 */}
+            <div className="flex flex-row items-center space-x-3">
+              <div className="text-sm text-muted-foreground">
+                © {currentYear} {websiteInfo?.site_name || 'AiQiji工具箱'}. All rights reserved.
+              </div>
+              <div className="flex items-center">
+                <AnimatedShinyText className="text-xs font-medium">
+                  ✨ 工具箱版本 · v{packageJson.version}
+                </AnimatedShinyText>
+              </div>
             </div>
-            <div className="flex items-center">
-              <AnimatedShinyText className="text-xs font-medium">
-                ✨ 工具箱版本 · v{packageJson.version}
-              </AnimatedShinyText>
+            
+            {/* 中间：备案号显示 */}
+            {websiteInfo?.show_icp && websiteInfo?.icp_number && (
+              <motion.a
+                href="https://beian.miit.gov.cn/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 underline-offset-4 hover:underline flex items-center gap-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <Award className="w-3 h-3" />
+                {websiteInfo.icp_number}
+              </motion.a>
+            )}
+            
+            {/* 右侧：政策链接 */}
+            <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+              <Link to="/privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                <Shield className="w-3 h-3" />
+                <span>隐私政策</span>
+              </Link>
+              <span>•</span>
+              <Link to="/friends" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                <Users className="w-3 h-3" />
+                <span>友情链接</span>
+              </Link>
+              <span>•</span>
+              <Link to="/terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                <FileText className="w-3 h-3" />
+                <span>使用条款</span>
+              </Link>
+              <span>•</span>
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('cookie-consent');
+                  localStorage.removeItem('cookie-consent-date');
+                  window.location.reload();
+                }}
+                className="flex items-center space-x-1 hover:text-foreground transition-colors"
+              >
+                <Cookie className="w-3 h-3" />
+                <span>Cookie设置</span>
+              </button>
             </div>
           </div>
-          
-          {/* 中间：备案号显示 */}
-          {websiteInfo?.show_icp && websiteInfo?.icp_number && (
-            <motion.a
-              href="https://beian.miit.gov.cn/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 underline-offset-4 hover:underline flex items-center gap-1"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-            >
-              <Award className="w-3 h-3" />
-              {websiteInfo.icp_number}
-            </motion.a>
-          )}
-          
-          {/* 右侧：政策链接和技术信息 */}
-          <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-xs text-muted-foreground">
-            {/* 手机端：分两行显示，桌面端：单行显示 */}
-            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4 items-center">
-              {/* 第一行/组：隐私政策和友情链接 */}
-              <div className="flex items-center space-x-3 sm:space-x-4">
-                <Link to="/privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
-                  <Shield className="w-3 h-3" />
-                  <span>隐私政策</span>
-                </Link>
-                <span className="hidden sm:inline">•</span>
-                <Link to="/friends" className="flex items-center space-x-1 hover:text-foreground transition-colors">
-                  <Users className="w-3 h-3" />
-                  <span>友情链接</span>
-                </Link>
+
+          {/* 手机端布局 - 新的垂直堆叠布局 */}
+          <div className="flex sm:hidden flex-col items-center space-y-3 w-full text-center">
+            {/* 第一行：备案信息 */}
+            {websiteInfo?.show_icp && websiteInfo?.icp_number && (
+              <motion.a
+                href="https://beian.miit.gov.cn/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 underline-offset-4 hover:underline flex items-center gap-1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <Award className="w-3 h-3" />
+                {websiteInfo.icp_number}
+              </motion.a>
+            )}
+            
+            {/* 第二行：工具箱版本和Cookie */}
+            <div className="flex items-center justify-center space-x-4 text-xs text-muted-foreground">
+              <div className="flex items-center">
+                <AnimatedShinyText className="text-xs font-medium">
+                  ✨ 工具箱版本 · v{packageJson.version}
+                </AnimatedShinyText>
               </div>
-              
-              {/* 第二行/组：使用条款和Cookie设置 */}
-              <div className="flex items-center space-x-3 sm:space-x-4">
-                <span className="hidden sm:inline">•</span>
-                <Link to="/terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">
-                  <FileText className="w-3 h-3" />
-                  <span>使用条款</span>
-                </Link>
-                <span className="hidden sm:inline">•</span>
-                <button 
-                  onClick={() => {
-                    // 移除现有的Cookie同意记录，重新显示设置
-                    localStorage.removeItem('cookie-consent');
-                    localStorage.removeItem('cookie-consent-date');
-                    window.location.reload();
-                  }}
-                  className="flex items-center space-x-1 hover:text-foreground transition-colors text-xs"
-                >
-                  <Cookie className="w-3 h-3" />
-                  <span>Cookie设置</span>
-                </button>
-              </div>
+              <span>•</span>
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('cookie-consent');
+                  localStorage.removeItem('cookie-consent-date');
+                  window.location.reload();
+                }}
+                className="flex items-center space-x-1 hover:text-foreground transition-colors"
+              >
+                <Cookie className="w-3 h-3" />
+                <span>Cookie</span>
+              </button>
+            </div>
+            
+            {/* 第三行：隐私政策、友情链接、使用条款 */}
+            <div className="flex items-center justify-center space-x-4 text-xs text-muted-foreground">
+              <Link to="/privacy" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                <Shield className="w-3 h-3" />
+                <span>隐私政策</span>
+              </Link>
+              <span>•</span>
+              <Link to="/friends" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                <Users className="w-3 h-3" />
+                <span>友情链接</span>
+              </Link>
+              <span>•</span>
+              <Link to="/terms" className="flex items-center space-x-1 hover:text-foreground transition-colors">
+                <FileText className="w-3 h-3" />
+                <span>使用条款</span>
+              </Link>
+            </div>
+            
+            {/* 第四行：版权信息 */}
+            <div className="text-sm text-muted-foreground">
+              © {currentYear} {websiteInfo?.site_name || 'AiQiji工具箱'}. All rights reserved.
             </div>
           </div>
         </div>

@@ -388,14 +388,14 @@ export function AdminSystemSettings() {
       className="space-y-6"
     >
       {/* 页面标题 */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
             <Settings className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <h2 className="text-2xl font-bold">系统设置</h2>
-            <p className="text-muted-foreground">管理网站基本信息和显示设置</p>
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold">系统设置</h2>
+            <p className="text-muted-foreground text-sm sm:text-base">管理网站基本信息和显示设置</p>
           </div>
         </div>
         
@@ -404,19 +404,21 @@ export function AdminSystemSettings() {
             variant="outline"
             onClick={handleReset}
             className="flex items-center space-x-2"
+            size="sm"
           >
             <RefreshCw className="w-4 h-4" />
-            <span>重置表单</span>
+            <span className="hidden sm:inline">重置表单</span>
+            <span className="sm:hidden">重置</span>
           </Button>
         </div>
       </div>
 
       {/* 设置表单 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* 网站基本信息 */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <CardTitle className="flex items-center space-x-2">
                 <Globe className="w-5 h-5" />
                 <span>网站基本信息</span>
@@ -426,7 +428,7 @@ export function AdminSystemSettings() {
                 onClick={handleSaveWebsite}
                 disabled={savingWebsite}
                 size="sm"
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 w-full sm:w-auto"
               >
                 {savingWebsite && <Loader2 className="w-4 h-4 animate-spin" />}
                 <Save className="w-4 h-4" />
@@ -470,7 +472,7 @@ export function AdminSystemSettings() {
         {/* 备案信息设置 */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <CardTitle className="flex items-center space-x-2">
                 <Info className="w-5 h-5" />
                 <span>备案信息</span>
@@ -480,7 +482,7 @@ export function AdminSystemSettings() {
                 onClick={handleSaveIcp}
                 disabled={savingIcp}
                 size="sm"
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 w-full sm:w-auto"
               >
                 {savingIcp && <Loader2 className="w-4 h-4 animate-spin" />}
                 <Save className="w-4 h-4" />
@@ -555,9 +557,9 @@ export function AdminSystemSettings() {
         </Card>
 
         {/* 友情链接设置 */}
-        <Card className="lg:col-span-2">
+        <Card className="xl:col-span-2">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <CardTitle className="flex items-center space-x-2">
                 <Globe className="w-5 h-5" />
                 <span>友情链接</span>
@@ -571,7 +573,7 @@ export function AdminSystemSettings() {
                     variant="blackWhite" 
                     size="sm"
                     onClick={handleFriendLinkAdd}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 w-full sm:w-auto"
                   >
                     <Plus className="w-4 h-4" />
                     新增友链

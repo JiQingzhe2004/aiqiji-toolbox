@@ -90,9 +90,119 @@ export function AdminToolsList({
   };
 
   return (
-    <div className="rounded-md border overflow-hidden">
-      <div className="overflow-x-auto">
-        <Table className="table-fixed w-full">
+    <>
+      {/* 移动端简化布局 - 减少嵌套 */}
+      <div className="block md:hidden space-y-3">
+        {tools.map((tool) => (
+          <div key={tool.id} className="bg-card border rounded-lg p-3">
+            <div className="flex gap-3 mb-3">
+              {getToolIconUrl(tool) ? (
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center p-1 flex-shrink-0">
+                  <img
+                    src={getToolIconUrl(tool)}
+                    alt={tool.name || '工具图标'}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-medium text-blue-800">{tool.name?.charAt(0) || '?'}</span>
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-medium text-base truncate">{tool.name || '未命名工具'}</h3>
+                  {tool.featured && (
+                    <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                  {tool.description || '暂无描述'}
+                </p>
+                {/* 状态和分类一行 */}
+                <div className="flex items-center gap-2 mb-2 overflow-x-auto scrollbar-hide">
+                  <Badge className={cn(getStatusColor(tool.status), "text-xs flex-shrink-0")}>
+                    {tool.status === 'active' ? '正常' : 
+                     tool.status === 'inactive' ? '停用' : '维护'}
+                  </Badge>
+                  {(Array.isArray(tool.category) ? tool.category : [tool.category]).map((cat, index) => (
+                    <Badge key={`${tool.id}-cat-${index}`} className={cn(getCategoryColor(cat), "text-xs flex-shrink-0")}>
+                      {cat}
+                    </Badge>
+                  ))}
+                </div>
+                {/* 标签单独一行 */}
+                {tool.tags && tool.tags.length > 0 && (
+                  <div className="flex gap-1 mb-2 overflow-x-auto scrollbar-hide">
+                    {tool.tags.map((tag, index) => (
+                      <Badge key={`${tool.id}-tag-${index}`} variant="secondary" className="text-xs flex-shrink-0">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                {/* 创建时间 */}
+                <p className="text-xs text-muted-foreground">
+                  {tool.created_at ? new Date(tool.created_at).toLocaleDateString('zh-CN') : '未知时间'}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(tool)}
+                className="flex-1"
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                编辑
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(tool.url, '_blank')}
+                className="flex-1"
+              >
+                <ExternalLink className="w-4 h-4 mr-1" />
+                访问
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive-foreground hover:bg-destructive px-3"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>确认删除</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      确定要删除工具 "{tool.name || '未命名工具'}" 吗？此操作无法撤销。
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>取消</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => onDelete(tool.id)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      删除
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 桌面端表格布局 */}
+      <div className="hidden md:block border rounded-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow>
             {onSelectAll && (
@@ -247,8 +357,9 @@ export function AdminToolsList({
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+        </Table>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

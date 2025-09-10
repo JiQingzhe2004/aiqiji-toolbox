@@ -107,7 +107,21 @@ const getDeviceTypeIcon = () => {
  */
 export function HeroBanner() {
   const [showDeviceInfo, setShowDeviceInfo] = useState(false);
+  const [isMobileScreen, setIsMobileScreen] = useState(false);
+  const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const deviceInfoRef = useRef<HTMLDivElement>(null);
+  
+  // 检测屏幕大小
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobileScreen(window.innerWidth < 640); // sm 断点
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
   
   // 点击任意位置关闭弹出框
   useEffect(() => {
@@ -257,7 +271,10 @@ export function HeroBanner() {
               pauseDuration={3000}
               deleteDuration={40}
             >
-              为开发者、设计师和效率工具爱好者精心收集的工具导航站点
+              {isMobileScreen 
+                ? "好物精挑，工具亦有好看模样" 
+                : "为你择取的工具，不单能解需求之需，更以好看模样添使用之悦"
+              }
             </TypingAnimation>
             <br />
             <div className="text-lg opacity-80 inline-block mt-2">
@@ -272,34 +289,6 @@ export function HeroBanner() {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="mt-4 md:mt-8 space-y-4 md:space-y-6"
           >
-            {/* 第一行：主要统计信息 */}
-            <div className="flex flex-wrap justify-center gap-8">
-              {[
-                { label: '精选工具', value: '20+' },
-                { label: '工具分类', value: '5+' },
-                { label: '持续更新', value: '持续中' }
-              ].map((stat, index) => (
-                <div key={stat.label} className="text-center">
-                  <div
-                    className={cn(
-                      "text-2xl md:text-3xl font-bold bg-clip-text text-transparent",
-                      // 暗色主题：石板色渐变
-                      "dark:bg-gradient-to-r dark:from-slate-300 dark:to-slate-400",
-                      // 浅色主题：橙黄色渐变
-                      "bg-gradient-to-r from-orange-500 to-yellow-500"
-                    )}
-                  >
-                    {stat.value}
-                  </div>
-                  <div className={cn(
-                    "text-sm mt-1",
-                    "dark:text-slate-400 text-gray-500"
-                  )}>
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
 
             {/* 第二行：设备信息 */}
             <div className="flex justify-center relative" ref={deviceInfoRef}>

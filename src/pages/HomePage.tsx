@@ -57,6 +57,17 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
         className="relative z-10 bg-background dark:bg-black min-h-screen pt-8 md:pt-12 pb-8 md:pb-12"
       >
         <div className="container mx-auto px-4 max-w-7xl">
+          {/* 平板端分类标签 - 在md到xl之间显示 */}
+          {!isLoading && (
+            <div className="hidden md:block xl:hidden sticky top-16 z-40 bg-background/80 backdrop-blur-md border-b border-muted-foreground/10 mb-8 -mx-4 px-4 py-4">
+              <CategoryTabs
+                categories={categories}
+                activeCategory={activeCategory}
+                onChange={(category: string) => setActiveCategory(category as any)}
+                className="flex"
+              />
+            </div>
+          )}
 
           {/* 工具网格 */}
           <motion.section

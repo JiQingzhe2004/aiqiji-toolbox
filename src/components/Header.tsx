@@ -25,6 +25,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
   const { isAuthenticated, isAdmin } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [hideBorder, setHideBorder] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -51,6 +52,40 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
       }, 200);
     }
   }, [showMobileSearch]);
+
+  // 监听滚动，检测分类栏是否与顶部栏接触
+  useEffect(() => {
+    const handleScroll = () => {
+      // 只在平板端（md到xl之间）检测
+      const isTablet = window.innerWidth >= 768 && window.innerWidth < 1280;
+      if (!isTablet || location.pathname !== '/') {
+        setHideBorder(false);
+        return;
+      }
+
+      // 检测滚动位置
+      // 当滚动超过工具区域开始位置时，分类栏就会贴到顶部栏下方
+      const toolsSection = document.getElementById('tools-section');
+      if (toolsSection) {
+        const rect = toolsSection.getBoundingClientRect();
+        // 当工具区域顶部到达顶部栏底部位置时，分类栏就贴住了顶部栏
+        const shouldHideBorder = rect.top <= 64; // 64px是顶部栏的高度
+        setHideBorder(shouldHideBorder);
+      }
+    };
+
+    // 初始检查
+    handleScroll();
+
+    // 添加滚动和窗口大小变化监听
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [location.pathname]);
 
   // ESC键关闭移动端搜索
   useEffect(() => {
@@ -94,11 +129,18 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="sticky top-0 z-50 w-full border-b border-muted-foreground/10 bg-background/80 backdrop-blur-md"
+      className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md relative"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
       }}
     >
+      {/* 动态边框 */}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-px bg-muted-foreground/10"
+        initial={{ opacity: 1 }}
+        animate={{ opacity: hideBorder ? 0 : 1 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+      />
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* Logo区域 - 在搜索模式下有动画隐藏 */}
         <motion.div

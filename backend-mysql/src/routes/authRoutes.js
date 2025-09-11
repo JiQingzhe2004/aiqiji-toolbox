@@ -3,7 +3,7 @@
  */
 
 import express from 'express';
-import { login, register, validateToken, logout } from '../controllers/authController.js';
+import { login, register, validateToken, logout, changePassword, updateProfile, getProfile } from '../controllers/authController.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -27,5 +27,14 @@ router.get('/me', authenticateToken, (req, res) => {
     data: req.user
   });
 });
+
+// 获取个人详细信息
+router.get('/profile', authenticateToken, getProfile);
+
+// 更新个人信息
+router.put('/profile', authenticateToken, updateProfile);
+
+// 修改密码
+router.post('/change-password', authenticateToken, changePassword);
 
 export default router;

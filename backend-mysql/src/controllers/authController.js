@@ -4,6 +4,7 @@
 
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { Op } from 'sequelize';
 import User from '../models/User.js';
 
 // JWT配置
@@ -25,12 +26,14 @@ export const login = async (req, res) => {
       });
     }
 
-    // 查找用户
+    // 查找用户 - 支持用户名或邮箱登录
+    const isEmail = username.includes('@');
+    const whereCondition = isEmail 
+      ? { email: username.toLowerCase().trim(), status: 'active' }
+      : { username: username.toLowerCase().trim(), status: 'active' };
+    
     const user = await User.findOne({
-      where: { 
-        username: username.toLowerCase().trim(),
-        status: 'active'
-      }
+      where: whereCondition
     });
 
     if (!user) {
@@ -268,4 +271,193 @@ export const logout = async (req, res) => {
     success: true,
     message: '登出成功'
   });
+};
+
+/**
+ * 修改密码
+ */
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    // 验证输入
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: '当前密码和新密码不能为空'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: '新密码长度至少为6位'
+      });
+    }
+
+    // 查找用户
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在'
+      });
+    }
+
+    // 验证当前密码
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(400).json({
+        success: false,
+        message: '当前密码错误'
+      });
+    }
+
+    // 检查新密码是否与当前密码相同
+    const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        message: '新密码不能与当前密码相同'
+      });
+    }
+
+    // 加密新密码
+    const saltRounds = 12;
+    const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    // 更新密码
+    await user.update({
+      password_hash: newPasswordHash
+    });
+
+    res.json({
+      success: true,
+      message: '密码修改成功'
+    });
+
+  } catch (error) {
+    console.error('Change password error:', error instanceof Error ? error.message : String(error));
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+/**
+ * 更新个人信息
+ */
+export const updateProfile = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const userId = req.user.id;
+
+    // 查找用户
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在'
+      });
+    }
+
+    // 验证邮箱格式（如果提供了邮箱）
+    if (email !== undefined) {
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: '邮箱格式不正确'
+        });
+      }
+
+      // 检查邮箱是否已被其他用户使用
+      if (email && email !== user.email) {
+        const existingUser = await User.findOne({
+          where: { 
+            email: email.toLowerCase().trim(),
+            id: { [Op.ne]: userId }
+          }
+        });
+
+        if (existingUser) {
+          return res.status(409).json({
+            success: false,
+            message: '该邮箱已被其他用户使用'
+          });
+        }
+      }
+    }
+
+    // 更新用户信息
+    const updateData = {};
+    if (email !== undefined) {
+      updateData.email = email ? email.toLowerCase().trim() : null;
+    }
+
+    await user.update(updateData);
+
+    // 返回更新后的用户信息
+    const userInfo = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      createdAt: user.created_at
+    };
+
+    res.json({
+      success: true,
+      data: userInfo,
+      message: '个人信息更新成功'
+    });
+
+  } catch (error) {
+    console.error('Update profile error:', error instanceof Error ? error.message : String(error));
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+/**
+ * 获取个人信息
+ */
+export const getProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // 查找用户
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在'
+      });
+    }
+
+    // 返回用户信息
+    const userInfo = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      createdAt: user.created_at,
+      lastLoginAt: user.last_login_at
+    };
+
+    res.json({
+      success: true,
+      data: userInfo
+    });
+
+  } catch (error) {
+    console.error('Get profile error:', error instanceof Error ? error.message : String(error));
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
 };

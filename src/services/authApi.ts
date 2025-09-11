@@ -2,8 +2,8 @@
  * 身份验证API服务
  */
 
-import { apiPost } from '@/lib/api';
-import type { LoginRequest, LoginResponse, User } from '@/types/auth';
+import { apiPost, apiGet, apiPut } from '@/lib/api';
+import type { LoginRequest, LoginResponse, User, ChangePasswordRequest, UpdateProfileRequest } from '@/types/auth';
 
 export class AuthApi {
   /**
@@ -73,6 +73,82 @@ export class AuthApi {
       await apiPost('/auth/logout');
     } catch (error) {
       console.error('Logout API error:', error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  /**
+   * 获取个人详细信息
+   */
+  static async getProfile(): Promise<{ success: boolean; data?: User; message?: string }> {
+    try {
+      const response = await apiGet('/auth/profile');
+      
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data,
+          message: response.message
+        };
+      }
+      
+      return {
+        success: false,
+        message: response.message || '获取个人信息失败'
+      };
+    } catch (error) {
+      console.error('Get profile API error:', error instanceof Error ? error.message : String(error));
+      return {
+        success: false,
+        message: '网络错误，请稍后重试'
+      };
+    }
+  }
+
+  /**
+   * 更新个人信息
+   */
+  static async updateProfile(data: UpdateProfileRequest): Promise<{ success: boolean; data?: User; message?: string }> {
+    try {
+      const response = await apiPut('/auth/profile', data);
+      
+      if (response.success && response.data) {
+        return {
+          success: true,
+          data: response.data,
+          message: response.message
+        };
+      }
+      
+      return {
+        success: false,
+        message: response.message || '更新个人信息失败'
+      };
+    } catch (error) {
+      console.error('Update profile API error:', error instanceof Error ? error.message : String(error));
+      return {
+        success: false,
+        message: '网络错误，请稍后重试'
+      };
+    }
+  }
+
+  /**
+   * 修改密码
+   */
+  static async changePassword(data: ChangePasswordRequest): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await apiPost('/auth/change-password', data);
+      
+      return {
+        success: response.success,
+        message: response.message || (response.success ? '密码修改成功' : '密码修改失败')
+      };
+    } catch (error) {
+      console.error('Change password API error:', error instanceof Error ? error.message : String(error));
+      return {
+        success: false,
+        message: '网络错误，请稍后重试'
+      };
     }
   }
 }

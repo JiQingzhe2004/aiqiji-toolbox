@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home, FileSpreadsheet, RefreshCw, ExternalLink } from 'lucide-react';
+import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home, FileSpreadsheet, RefreshCw, ExternalLink, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import { AdminToolForm } from '@/components/admin/AdminToolForm';
 import { AdminSystemSettings } from '@/components/admin/AdminSystemSettings';
 import { AdminExcelImport } from '@/components/admin/AdminExcelImport';
 import { AdminFriendLinkApplications } from '@/components/admin/AdminFriendLinkApplications';
+import { AdminProfileSettings } from '@/components/admin/AdminProfileSettings';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { toolsApi } from '@/services/toolsApi';
 import { useAuth } from '@/contexts/AuthContext';
@@ -352,11 +353,18 @@ function AdminPage() {
                 <Settings className="w-4 h-4" />
                 设置
               </TabsTrigger>
+              <TabsTrigger 
+                value="profile" 
+                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
+              >
+                <User className="w-4 h-4" />
+                个人
+              </TabsTrigger>
             </div>
           </div>
           
           {/* 桌面端使用网格布局 */}
-          <TabsList className="hidden md:grid w-full grid-cols-6">
+          <TabsList className="hidden md:grid w-full grid-cols-7">
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
               工具管理
@@ -380,6 +388,10 @@ function AdminPage() {
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               系统设置
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              个人设置
             </TabsTrigger>
           </TabsList>
 
@@ -632,6 +644,11 @@ function AdminPage() {
           {/* 系统设置 */}
           <TabsContent value="settings">
             <AdminSystemSettings />
+          </TabsContent>
+
+          {/* 个人设置 */}
+          <TabsContent value="profile">
+            <AdminProfileSettings />
           </TabsContent>
         </Tabs>
       </main>

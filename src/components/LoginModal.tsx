@@ -25,7 +25,7 @@ interface LoginModalProps {
 
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const [formData, setFormData] = useState({
-    username: '',
+    username: '', // 支持用户名或邮箱
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -113,14 +113,14 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
           <div className="space-y-2">
             <Label htmlFor="username" className="text-sm font-semibold text-foreground flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-primary" />
-              用户名
+              用户名/邮箱
             </Label>
             <Input
               id="username"
               type="text"
               value={formData.username}
               onChange={(e) => handleInputChange('username', e.target.value)}
-              placeholder="请输入用户名"
+              placeholder="请输入用户名或邮箱地址"
               disabled={isLoading}
               autoComplete="username"
               required

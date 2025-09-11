@@ -31,6 +31,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { apiGet, apiPost, apiDelete } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 interface FriendLinkApplication {
@@ -94,22 +95,17 @@ export function AdminFriendLinkApplications() {
   const fetchApplications = async (page = 1) => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({
+      const params = {
         page: page.toString(),
         limit: '20',
         status: filters.status,
         search: filters.search,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder
-      });
+      };
 
-      const response = await fetch(`/api/v1/friend-links/applications?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
-
-      const result = await response.json();
+      const result = await apiGet('/friend-links/applications', params);
+      
       if (result.success) {
         setApplications(result.data.applications);
         setCurrentPage(result.data.pagination.current_page);
@@ -128,13 +124,8 @@ export function AdminFriendLinkApplications() {
   // 获取统计信息
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/v1/friend-links/applications/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
-
-      const result = await response.json();
+      const result = await apiGet('/friend-links/applications/stats');
+      
       if (result.success) {
         setStats(result.data);
       }
@@ -147,19 +138,11 @@ export function AdminFriendLinkApplications() {
   const handleProcessApplication = async (id: string, action: 'approve' | 'reject', note?: string, addToLinks = false) => {
     try {
       const endpoint = action === 'approve' ? 'approve' : 'reject';
-      const response = await fetch(`/api/v1/friend-links/applications/${id}/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify({
-          note,
-          ...(action === 'approve' && { addToFriendLinks: addToLinks })
-        })
+      const result = await apiPost(`/friend-links/applications/${id}/${endpoint}`, {
+        note,
+        ...(action === 'approve' && { addToFriendLinks: addToLinks })
       });
 
-      const result = await response.json();
       if (result.success) {
         toast.success(`申请已${action === 'approve' ? '批准' : '拒绝'}`);
         fetchApplications(currentPage);
@@ -184,20 +167,12 @@ export function AdminFriendLinkApplications() {
     }
 
     try {
-      const response = await fetch('/api/v1/friend-links/applications/batch', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify({
-          ids: selectedApplications,
-          action,
-          note: processNote
-        })
+      const result = await apiPost('/friend-links/applications/batch', {
+        ids: selectedApplications,
+        action,
+        note: processNote
       });
 
-      const result = await response.json();
       if (result.success) {
         toast.success(`批量${action === 'approve' ? '批准' : '拒绝'}处理完成`);
         setSelectedApplications([]);
@@ -215,14 +190,8 @@ export function AdminFriendLinkApplications() {
   // 删除申请
   const handleDeleteApplication = async (id: string) => {
     try {
-      const response = await fetch(`/api/v1/friend-links/applications/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
+      const result = await apiDelete(`/friend-links/applications/${id}`);
 
-      const result = await response.json();
       if (result.success) {
         toast.success('申请已删除');
         fetchApplications(currentPage);
@@ -239,14 +208,8 @@ export function AdminFriendLinkApplications() {
   // 清理过期申请
   const handleCleanupExpired = async () => {
     try {
-      const response = await fetch('/api/v1/friend-links/cleanup-expired', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
+      const result = await apiPost('/friend-links/cleanup-expired');
 
-      const result = await response.json();
       if (result.success) {
         toast.success(`已清理 ${result.data.expired_count} 个过期申请`);
         fetchApplications(currentPage);

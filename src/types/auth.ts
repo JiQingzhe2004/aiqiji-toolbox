@@ -21,8 +21,23 @@ export interface User {
  * 登录请求接口
  */
 export interface LoginRequest {
-  username: string;
+  username: string; // 支持用户名或邮箱
   password: string;
+}
+
+/**
+ * 修改密码请求接口
+ */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/**
+ * 更新个人信息请求接口
+ */
+export interface UpdateProfileRequest {
+  email?: string;
 }
 
 /**

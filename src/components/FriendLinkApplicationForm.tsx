@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CopyButton } from '@/components/CopyButton';
 import { settingsApi, type WebsiteInfo } from '@/services/settingsApi';
+import { apiPost } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 interface FormData {
@@ -122,15 +123,7 @@ export function FriendLinkApplicationForm({ onSuccess }: FriendLinkApplicationFo
     setLoading(true);
 
     try {
-      const response = await fetch('/api/v1/friend-links/apply', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const result = await response.json();
+      const result = await apiPost('/friend-links/apply', formData);
 
       if (result.success) {
         setSubmitted(true);

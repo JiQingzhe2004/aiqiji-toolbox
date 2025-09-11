@@ -16,6 +16,8 @@ export interface SystemSetting {
 
 export interface WebsiteInfo {
   site_name: string;
+  site_url: string;
+  site_icon: string;
   site_description: string;
   icp_number: string;
   show_icp: boolean;
@@ -109,6 +111,34 @@ export class SettingsApi {
       return response;
     } catch (error) {
       console.error('删除系统设置失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取公开的网站信息
+   */
+  async getPublicWebsiteInfo(): Promise<WebsiteInfo> {
+    try {
+      const response = await fetch('/api/v1/settings/public');
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const settings = result.data;
+        return {
+          site_name: settings.site_name || '',
+          site_url: settings.site_url || '',
+          site_icon: settings.site_icon || '',
+          site_description: settings.site_description || '',
+          icp_number: settings.icp_number || '',
+          show_icp: settings.show_icp || false,
+          friend_links: settings.friend_links || []
+        };
+      }
+      
+      throw new Error('获取网站信息失败');
+    } catch (error) {
+      console.error('获取公开网站信息失败:', error);
       throw error;
     }
   }

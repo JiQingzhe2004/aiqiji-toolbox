@@ -34,6 +34,8 @@ export function AdminSystemSettings() {
   const [savingIcp, setSavingIcp] = useState(false);
   const [formData, setFormData] = useState({
     site_name: '',
+    site_url: '',
+    site_icon: '',
     site_description: '',
     icp_number: '',
     show_icp: false,
@@ -65,6 +67,8 @@ export function AdminSystemSettings() {
         // console.log('AdminSystemSettings - 网站设置:', websiteSettings); // 调试日志
         setFormData({
           site_name: websiteSettings.site_name?.value || '',
+          site_url: websiteSettings.site_url?.value || '',
+          site_icon: websiteSettings.site_icon?.value || '',
           site_description: websiteSettings.site_description?.value || '',
           icp_number: websiteSettings.icp_number?.value || '',
           show_icp: websiteSettings.show_icp?.value || false,
@@ -91,6 +95,16 @@ export function AdminSystemSettings() {
           setting_type: 'string'
         },
         {
+          setting_key: 'site_url',
+          setting_value: formData.site_url,
+          setting_type: 'string'
+        },
+        {
+          setting_key: 'site_icon',
+          setting_value: formData.site_icon,
+          setting_type: 'string'
+        },
+        {
           setting_key: 'site_description',
           setting_value: formData.site_description,
           setting_type: 'string'
@@ -107,6 +121,8 @@ export function AdminSystemSettings() {
             website: {
               ...prev!.website,
               site_name: { ...prev!.website.site_name, value: formData.site_name },
+              site_url: { ...prev!.website.site_url, value: formData.site_url },
+              site_icon: { ...prev!.website.site_icon, value: formData.site_icon },
               site_description: { ...prev!.website.site_description, value: formData.site_description }
             }
           }));
@@ -177,6 +193,16 @@ export function AdminSystemSettings() {
           setting_type: 'string'
         },
         {
+          setting_key: 'site_url',
+          setting_value: formData.site_url,
+          setting_type: 'string'
+        },
+        {
+          setting_key: 'site_icon',
+          setting_value: formData.site_icon,
+          setting_type: 'string'
+        },
+        {
           setting_key: 'site_description',
           setting_value: formData.site_description,
           setting_type: 'string'
@@ -219,6 +245,8 @@ export function AdminSystemSettings() {
       const websiteSettings = settings.website;
       setFormData({
         site_name: websiteSettings.site_name?.value || '',
+        site_url: websiteSettings.site_url?.value || '',
+        site_icon: websiteSettings.site_icon?.value || '',
         site_description: websiteSettings.site_description?.value || '',
         icp_number: websiteSettings.icp_number?.value || '',
         show_icp: websiteSettings.show_icp?.value || false,
@@ -448,7 +476,39 @@ export function AdminSystemSettings() {
                 disabled={savingWebsite}
               />
               <p className="text-xs text-muted-foreground">
-                网站的显示名称，将在页面标题和Footer中显示
+                网站的显示名称，将在页面标题和友链申请中显示
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="site_url">网站地址</Label>
+              <Input
+                id="site_url"
+                type="url"
+                value={formData.site_url}
+                onChange={(e) => setFormData(prev => ({ ...prev, site_url: e.target.value }))}
+                placeholder="https://example.com"
+                className="w-full"
+                disabled={savingWebsite}
+              />
+              <p className="text-xs text-muted-foreground">
+                网站的完整URL地址，将在友链申请中显示
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="site_icon">网站图标</Label>
+              <Input
+                id="site_icon"
+                type="url"
+                value={formData.site_icon}
+                onChange={(e) => setFormData(prev => ({ ...prev, site_icon: e.target.value }))}
+                placeholder="https://example.com/favicon.ico"
+                className="w-full"
+                disabled={savingWebsite}
+              />
+              <p className="text-xs text-muted-foreground">
+                网站图标的URL地址，将在友链申请中显示
               </p>
             </div>
 
@@ -463,7 +523,7 @@ export function AdminSystemSettings() {
                 disabled={savingWebsite}
               />
               <p className="text-xs text-muted-foreground">
-                网站的简短描述，将在首页和Footer中显示
+                网站的简短描述，将在首页和友链申请中显示
               </p>
             </div>
           </CardContent>

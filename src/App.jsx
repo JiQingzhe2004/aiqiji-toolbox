@@ -17,6 +17,7 @@ const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const FriendLinksPage = lazy(() => import('./pages/FriendLinksPage'));
+const FriendLinkApplicationPage = lazy(() => import('./pages/FriendLinkApplicationPage'));
 
 
 /**
@@ -123,6 +124,11 @@ function App() {
                       <Route path="/friends" element={
                         <Suspense fallback={<LoadingSpinner />}>
                           <FriendLinksPage />
+                        </Suspense>
+                      } />
+                      <Route path="/friend-link-apply" element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <FriendLinkApplicationPage />
                         </Suspense>
                       } />
                       <Route path="*" element={

@@ -7,6 +7,7 @@ import { AnimatedThemeToggler } from './magicui/animated-theme-toggler';
 import { Button } from '@/components/ui/button';
 import { LoginModal } from './LoginModal';
 import { useAuth } from '@/contexts/AuthContext';
+import { settingsApi, type WebsiteInfo } from '@/services/settingsApi';
 
 /**
  * Header组件属性接口
@@ -26,8 +27,32 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [hideBorder, setHideBorder] = useState(false);
+  const [websiteInfo, setWebsiteInfo] = useState<WebsiteInfo | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 获取网站信息
+  useEffect(() => {
+    const fetchWebsiteInfo = async () => {
+      try {
+        const info = await settingsApi.getPublicWebsiteInfo();
+        setWebsiteInfo(info);
+      } catch (error) {
+        console.error('获取网站信息失败:', error);
+        // 设置默认值
+        setWebsiteInfo({
+          site_name: 'AiQiji工具箱',
+          site_url: 'https://aiqiji.com',
+          site_icon: '/favicon.ico',
+          site_description: '专业的AI工具导航平台，发现最新最好用的AI工具',
+          icp_number: '',
+          show_icp: false
+        });
+      }
+    };
+
+    fetchWebsiteInfo();
+  }, []);
 
   // 处理标题点击事件
   const handleTitleClick = () => {
@@ -159,8 +184,8 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           {/* Logo图标 */}
           <div className="relative">
             <img 
-              src="/logo.png" 
-              alt="AiQiji工具箱"
+              src={websiteInfo?.site_icon || "/logo.png"} 
+              alt={websiteInfo?.site_name || "AiQiji工具箱"}
               className="w-10 h-10 object-contain"
               onError={(e) => {
                 // 如果图片加载失败，显示默认图标
@@ -174,10 +199,10 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           {/* 站点名称 - 移动端隐藏 */}
           <div className="flex-col hidden sm:flex">
             <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              AiQiji·工具箱
+              {websiteInfo?.site_name || "AiQiji·工具箱"}
             </h1>
             <span className="text-xs text-muted-foreground">
-              效率工具导航站
+              {websiteInfo?.site_description || "效率工具导航站"}
             </span>
           </div>
         </motion.div>

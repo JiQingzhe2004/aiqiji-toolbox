@@ -30,7 +30,7 @@ async function initializeDatabase() {
     
     if (isFirstRun) {
       console.log('📋 首次运行，创建数据表...');
-      // 创建表结构
+        // 创建表结构
       await createTables(sequelize);
     } else {
       console.log('📋 数据表已存在，跳过创建...');
@@ -38,6 +38,9 @@ async function initializeDatabase() {
     
     // 自动升级数据库结构（每次启动都检查）
     await upgradeDatabase(sequelize);
+    
+    // 检查并创建友链申请表
+    await ensureFriendLinkApplicationsTable(sequelize);
     
     if (isFirstRun) {
       // 初始化管理员账户
@@ -56,6 +59,7 @@ async function initializeDatabase() {
 - ✅ 创建 users 表
 - ✅ 创建 tools 表 (支持多分类)
 - ✅ 创建 system_settings 表
+- ✅ 创建 friend_link_applications 表
 - ✅ 创建管理员账户
 - ✅ 初始化系统设置
 
@@ -229,6 +233,55 @@ async function upgradeDatabase(sequelize) {
 
 }
 
+// 确保友链申请表存在
+async function ensureFriendLinkApplicationsTable(sequelize) {
+  try {
+    console.log('🔄 检查友链申请表...');
+    
+    // 检查表是否存在
+    const [tables] = await sequelize.query("SHOW TABLES LIKE 'friend_link_applications'");
+    
+    if (tables.length === 0) {
+      console.log('  ➕ 创建 friend_link_applications 表...');
+      
+      // 创建 friend_link_applications 表
+      await sequelize.query(`
+        CREATE TABLE IF NOT EXISTS \`friend_link_applications\` (
+          \`id\` varchar(36) NOT NULL,
+          \`site_name\` varchar(100) NOT NULL,
+          \`site_url\` varchar(500) NOT NULL,
+          \`site_description\` text NOT NULL,
+          \`site_icon\` varchar(500) DEFAULT NULL,
+          \`admin_email\` varchar(100) NOT NULL,
+          \`admin_qq\` varchar(20) DEFAULT NULL,
+          \`status\` enum('pending','approved','rejected','expired') DEFAULT 'pending',
+          \`admin_note\` text DEFAULT NULL,
+          \`processed_by\` varchar(36) DEFAULT NULL,
+          \`processed_at\` datetime DEFAULT NULL,
+          \`ip_address\` varchar(45) DEFAULT NULL,
+          \`user_agent\` text DEFAULT NULL,
+          \`verification_token\` varchar(64) DEFAULT NULL,
+          \`expires_at\` datetime DEFAULT NULL,
+          \`created_at\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          \`updated_at\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (\`id\`),
+          KEY \`idx_friend_applications_status\` (\`status\`),
+          KEY \`idx_friend_applications_email\` (\`admin_email\`),
+          KEY \`idx_friend_applications_url\` (\`site_url\`),
+          KEY \`idx_friend_applications_created\` (\`created_at\`),
+          KEY \`idx_friend_applications_expires\` (\`expires_at\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+      
+      console.log('  ✅ friend_link_applications 表创建完成');
+    } else {
+      console.log('  ✅ friend_link_applications 表已存在');
+    }
+  } catch (error) {
+    console.error('  ❌ 友链申请表检查失败:', error.message);
+  }
+}
+
 async function createTables(sequelize) {
   console.log('📋 创建数据表...');
   
@@ -304,6 +357,36 @@ async function createTables(sequelize) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
   console.log('  ✅ system_settings 表创建完成');
+  
+  // 创建 friend_link_applications 表
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS \`friend_link_applications\` (
+      \`id\` varchar(36) NOT NULL,
+      \`site_name\` varchar(100) NOT NULL,
+      \`site_url\` varchar(500) NOT NULL,
+      \`site_description\` text NOT NULL,
+      \`site_icon\` varchar(500) DEFAULT NULL,
+      \`admin_email\` varchar(100) NOT NULL,
+      \`admin_qq\` varchar(20) DEFAULT NULL,
+      \`status\` enum('pending','approved','rejected','expired') DEFAULT 'pending',
+      \`admin_note\` text DEFAULT NULL,
+      \`processed_by\` varchar(36) DEFAULT NULL,
+      \`processed_at\` datetime DEFAULT NULL,
+      \`ip_address\` varchar(45) DEFAULT NULL,
+      \`user_agent\` text DEFAULT NULL,
+      \`verification_token\` varchar(64) DEFAULT NULL,
+      \`expires_at\` datetime DEFAULT NULL,
+      \`created_at\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updated_at\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`),
+      KEY \`idx_friend_applications_status\` (\`status\`),
+      KEY \`idx_friend_applications_email\` (\`admin_email\`),
+      KEY \`idx_friend_applications_url\` (\`site_url\`),
+      KEY \`idx_friend_applications_created\` (\`created_at\`),
+      KEY \`idx_friend_applications_expires\` (\`expires_at\`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+  console.log('  ✅ friend_link_applications 表创建完成');
 }
 
 async function initializeAdminUser(sequelize) {
@@ -386,6 +469,24 @@ async function initializeSystemSettings(sequelize) {
       setting_value: 'AiQiji工具箱',
       setting_type: 'string',
       description: '网站名称',
+      category: 'website',
+      is_public: 1
+    },
+    {
+      id: 'site-url-' + Date.now(),
+      setting_key: 'site_url',
+      setting_value: 'https://aiqiji.com',
+      setting_type: 'string',
+      description: '网站地址',
+      category: 'website',
+      is_public: 1
+    },
+    {
+      id: 'site-icon-' + Date.now(),
+      setting_key: 'site_icon',
+      setting_value: '/favicon.ico',
+      setting_type: 'string',
+      description: '网站图标',
       category: 'website',
       is_public: 1
     },

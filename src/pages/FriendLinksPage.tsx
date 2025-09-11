@@ -288,7 +288,14 @@ export function FriendLinksPage() {
                   <Heart className="w-8 h-8 text-red-500 mx-auto mb-4" />
                   <h2 className="text-xl font-semibold mb-4">申请友情链接</h2>
                   <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                    如果您希望与我们建立友情链接，欢迎
+                    如果您希望与我们建立友情链接，可以
+                    <Link
+                      to="/friend-link-apply"
+                      className="text-primary font-semibold hover:text-primary/80 underline underline-offset-2 transition-colors mx-1"
+                    >
+                      在线申请
+                    </Link>
+                    或者
                     <button
                       onClick={handleContactUs}
                       className="text-primary font-semibold hover:text-primary/80 underline underline-offset-2 transition-colors mx-1"
@@ -297,6 +304,14 @@ export function FriendLinksPage() {
                     </button>
                     。我们欢迎优质的网站加入我们的友链列表。
                   </p>
+                  <div className="flex justify-center mb-6">
+                    <Button asChild className="bg-primary hover:bg-primary/90">
+                      <Link to="/friend-link-apply" className="flex items-center gap-2">
+                        <ExternalLink className="w-4 h-4" />
+                        立即申请友链
+                      </Link>
+                    </Button>
+                  </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center items-center text-sm">
                     <span className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-primary rounded-full"></span>

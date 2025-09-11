@@ -23,6 +23,7 @@ export default defineConfig({
           // UI组件库
           'ui-vendor': [
             '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-tooltip', 
             '@radix-ui/react-aspect-ratio',
             '@radix-ui/react-alert-dialog',
@@ -66,6 +67,16 @@ export default defineConfig({
     chunkSizeWarningLimit: 500,
     // 启用CSS代码分割
     cssCodeSplit: true,
+  },
+  // 开发服务器配置
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   // 开发服务器优化
   optimizeDeps: {

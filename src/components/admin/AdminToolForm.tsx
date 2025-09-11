@@ -409,7 +409,7 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
               <Button
                 key={category}
                 type="button"
-                variant={formData.categories.includes(category) ? "solidCancel" : "outline"}
+                variant={formData.categories.includes(category) ? "default" : "outline"}
                 size="sm"
                 onClick={() => toggleCategory(category)}
                 className={cn(
@@ -714,7 +714,7 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
                 <Button
                   key={category}
                   type="button"
-                  variant={formData.categories.includes(category) ? "solidCancel" : "outline"}
+                  variant={formData.categories.includes(category) ? "default" : "outline"}
                   size="sm"
                   onClick={() => toggleCategory(category)}
                   className={cn(

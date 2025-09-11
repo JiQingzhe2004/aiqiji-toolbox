@@ -53,6 +53,8 @@ export function Footer() {
         // 设置默认值
         setWebsiteInfo({
           site_name: 'AiQiji工具箱',
+          site_url: 'https://aiqiji.com',
+          site_icon: '/favicon.ico',
           site_description: '为开发者、设计师和效率工具爱好者精心收集的工具导航站点',
           icp_number: '',
           show_icp: false

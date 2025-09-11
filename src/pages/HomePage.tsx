@@ -34,6 +34,44 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
   // 使用全局搜索查询，如果存在的话
   const effectiveSearchQuery = globalSearchQuery;
 
+  // 设置首页SEO（确保搜索引擎能识别）
+  React.useEffect(() => {
+    // 确保页面标题正确设置
+    if (!document.title.includes('AiQiji工具箱 - 专业开发者设计师工具导航平台')) {
+      document.title = 'AiQiji工具箱 - 专业开发者设计师工具导航平台 | AI工具 | 效率工具';
+    }
+    
+    // 添加首页特定的结构化数据
+    const existingScript = document.getElementById('homepage-structured-data');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = 'homepage-structured-data';
+      script.type = 'application/ld+json';
+      script.textContent = JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "AiQiji工具箱 - 专业开发者设计师工具导航平台",
+        "description": "专为开发者、设计师、产品经理打造的专业工具导航平台",
+        "url": "https://tools.aiqji.com/",
+        "mainEntity": {
+          "@type": "WebSite",
+          "name": "AiQiji工具箱",
+          "url": "https://tools.aiqji.com"
+        },
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [{
+            "@type": "ListItem",
+            "position": 1,
+            "name": "首页",
+            "item": "https://tools.aiqji.com/"
+          }]
+        }
+      });
+      document.head.appendChild(script);
+    }
+  }, []);
+
   return (
     <div className="relative">
       {/* 首页全屏壁纸横幅 */}

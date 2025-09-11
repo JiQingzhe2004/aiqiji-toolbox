@@ -13,6 +13,27 @@ export default function TermsPage() {
   const [showBackButton, setShowBackButton] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
+  // 设置页面SEO
+  useEffect(() => {
+    document.title = '服务条款 - AiQiji工具箱 | 用户使用协议与条款';
+    
+    // 更新meta描述
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'AiQiji工具箱服务条款，规定用户使用本网站的权利和义务，包括服务内容、用户责任、免责声明等重要条款。');
+    }
+    
+    // 更新Open Graph标签
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', '服务条款 - AiQiji工具箱');
+    
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) ogDescription.setAttribute('content', 'AiQiji工具箱服务条款，用户使用协议');
+    
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute('content', 'https://tools.aiqji.com/terms');
+  }, []);
+
   // 处理滚动时按钮显示/隐藏
   useEffect(() => {
     const handleScroll = () => {

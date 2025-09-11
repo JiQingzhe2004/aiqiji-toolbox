@@ -12,6 +12,27 @@ export default function PrivacyPage() {
   const [showBackButton, setShowBackButton] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
+  // 设置页面SEO
+  useEffect(() => {
+    document.title = '隐私政策 - AiQiji工具箱 | 用户隐私保护条款';
+    
+    // 更新meta描述
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'AiQiji工具箱隐私政策，详细说明我们如何收集、使用、存储和保护您的个人信息，确保用户隐私安全。');
+    }
+    
+    // 更新Open Graph标签
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', '隐私政策 - AiQiji工具箱');
+    
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) ogDescription.setAttribute('content', 'AiQiji工具箱隐私政策，保护用户隐私安全');
+    
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute('content', 'https://tools.aiqji.com/privacy');
+  }, []);
+
   // 处理滚动时按钮显示/隐藏
   useEffect(() => {
     const handleScroll = () => {

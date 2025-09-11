@@ -198,9 +198,9 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           
           {/* 站点名称 - 移动端隐藏 */}
           <div className="flex-col hidden sm:flex">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            <div className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
               {websiteInfo?.site_name || "AiQiji·工具箱"}
-            </h1>
+            </div>
             <span className="text-xs text-muted-foreground">
               {websiteInfo?.site_description || "效率工具导航站"}
             </span>

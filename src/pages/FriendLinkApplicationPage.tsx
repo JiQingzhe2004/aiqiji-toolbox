@@ -6,15 +6,25 @@ import { Button } from '@/components/ui/button';
 import FriendLinkApplicationForm from '@/components/FriendLinkApplicationForm';
 
 export function FriendLinkApplicationPage() {
-  // 设置页面标题
+  // 设置页面SEO
   useEffect(() => {
-    document.title = '友链申请 - AiQiji工具箱';
+    document.title = '友情链接申请 - AiQiji工具箱 | 合作伙伴申请表单';
     
-    // 添加meta描述
+    // 更新meta描述
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
-      metaDescription.setAttribute('content', '申请与AiQiji工具箱建立友情链接，共同为用户提供更好的服务。');
+      metaDescription.setAttribute('content', '申请与AiQiji工具箱建立友情链接，成为我们的合作伙伴。填写申请表单，共同为用户提供更优质的工具资源服务。');
     }
+    
+    // 更新Open Graph标签
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', '友情链接申请 - AiQiji工具箱');
+    
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) ogDescription.setAttribute('content', '申请成为AiQiji工具箱合作伙伴');
+    
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute('content', 'https://tools.aiqji.com/friend-link-apply');
   }, []);
 
   return (

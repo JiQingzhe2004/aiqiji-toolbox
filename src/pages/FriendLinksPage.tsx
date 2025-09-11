@@ -92,16 +92,82 @@ export function FriendLinksPage() {
     fetchWebsiteInfo();
   }, []);
 
-  // 设置页面标题和描述
+  // 设置页面SEO
   useEffect(() => {
-    document.title = `友情链接 - ${websiteInfo?.site_name || 'AiQiji工具箱'}`;
-    
-    // 添加meta描述
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', `${websiteInfo?.site_name || 'AiQiji工具箱'}的友情链接页面，展示我们的合作伙伴和推荐网站。`);
+    if (websiteInfo) {
+      const title = `友情链接 - ${websiteInfo.site_name}`;
+      const description = `${websiteInfo.site_name}的友情链接页面，展示我们的优质合作伙伴和推荐网站。共收录${websiteInfo.friend_links?.length || 0}个优质站点，涵盖开发工具、设计资源、技术博客等多个领域。`;
+      
+      document.title = title;
+      
+      // 更新meta描述
+      const metaDescription = document.querySelector('meta[name="description"]');
+      if (metaDescription) {
+        metaDescription.setAttribute('content', description);
+      }
+      
+      // 更新Open Graph标签
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) ogTitle.setAttribute('content', title);
+      
+      const ogDescription = document.querySelector('meta[property="og:description"]');
+      if (ogDescription) ogDescription.setAttribute('content', description);
+      
+      const ogUrl = document.querySelector('meta[property="og:url"]');
+      if (ogUrl) ogUrl.setAttribute('content', 'https://tools.aiqji.com/friends');
     }
   }, [websiteInfo]);
+
+  // 生成SEO数据
+  const seoData = websiteInfo ? {
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": `友情链接 - ${websiteInfo.site_name}`,
+      "description": `${websiteInfo.site_name}的友情链接页面`,
+      "url": "https://tools.aiqji.com/friends",
+      "inLanguage": "zh-CN",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": websiteInfo.site_name,
+        "url": "https://tools.aiqji.com"
+      },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "首页",
+            "item": "https://tools.aiqji.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "友情链接",
+            "item": "https://tools.aiqji.com/friends"
+          }
+        ]
+      },
+      "mainEntity": {
+        "@type": "ItemList",
+        "name": "友情链接列表",
+        "description": "优质合作伙伴和推荐网站",
+        "numberOfItems": websiteInfo.friend_links?.length || 0,
+        "itemListElement": (websiteInfo.friend_links || []).map((link, index) => ({
+          "@type": "ListItem",
+          "position": index + 1,
+          "item": {
+            "@type": "WebSite",
+            "name": link.name,
+            "url": link.url,
+            "description": link.description || `友情链接：${link.name}`,
+            "image": link.icon
+          }
+        }))
+      }
+    }
+  } : null;
 
   if (loading) {
     return (
@@ -115,33 +181,17 @@ export function FriendLinksPage() {
 
   return (
     <>
-      {/* SEO结构化数据 */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
-            "name": `友情链接 - ${websiteInfo?.site_name || 'AiQiji工具箱'}`,
-            "description": `${websiteInfo?.site_name || 'AiQiji工具箱'}的友情链接页面`,
-            "url": `${window.location.origin}/friends`,
-            "mainEntity": {
-              "@type": "ItemList",
-              "numberOfItems": friendLinks.length,
-              "itemListElement": friendLinks.map((link, index) => ({
-                "@type": "ListItem",
-                "position": index + 1,
-                "item": {
-                  "@type": "WebSite",
-                  "name": link.name,
-                  "url": link.url,
-                  "description": link.description || `友情链接：${link.name}`
-                }
-              }))
-            }
-          })
-        }}
-      />
+      {/* SEO优化 */}
+      {seoData && (
+        <>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(seoData.structuredData)
+            }}
+          />
+        </>
+      )}
 
       <div className="min-h-screen bg-background">
         {/* 固定返回首页按钮 - 顶部Header下方 */}
@@ -217,6 +267,8 @@ export function FriendLinksPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                itemScope
+                itemType="https://schema.org/ItemList"
               >
                 {friendLinks.map((link, index) => (
                   <motion.article
@@ -225,14 +277,18 @@ export function FriendLinksPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4, delay: 0.1 * index }}
                     className="group"
+                    itemScope
+                    itemType="https://schema.org/WebSite"
                   >
                     <a
                       href={link.url}
                       target="_blank"
-                      rel="noopener noreferrer external"
+                      rel="noopener noreferrer external nofollow"
                       className="block p-6 bg-card border border-border rounded-lg hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 group-hover:border-primary/30"
-                      title={`访问 ${link.name}`}
-                      aria-label={`访问友情链接：${link.name}`}
+                      title={`访问友情链接：${link.name} - ${link.description || '优质合作伙伴'}`}
+                      aria-label={`访问友情链接：${link.name}${link.description ? ` - ${link.description}` : ''}`}
+                      data-friend-link={link.name}
+                      itemProp="url"
                     >
                       <div className="flex items-center gap-4 mb-3">
                         {link.icon ? (
@@ -258,12 +314,18 @@ export function FriendLinksPage() {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                          <h3 
+                            className="font-semibold text-foreground group-hover:text-primary transition-colors truncate"
+                            itemProp="name"
+                          >
                             {link.name}
                           </h3>
                           <p className="text-sm text-muted-foreground truncate">
                             {new URL(link.url).hostname}
                           </p>
+                          {link.description && (
+                            <meta itemProp="description" content={link.description} />
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center justify-between">

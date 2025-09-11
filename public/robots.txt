@@ -1,23 +1,61 @@
+# AiQiji工具箱 - 机器人访问规则
+# 网站: https://tools.aiqji.com
+# 更新时间: 2025-09-11
+
 User-agent: *
 Allow: /
 
 # 网站地图位置
 Sitemap: https://tools.aiqji.com/sitemap.xml
 
-# 禁止爬取的目录
+# 禁止爬取的目录和文件
 Disallow: /admin/
 Disallow: /api/
 Disallow: /private/
-Disallow: /*.json$
 Disallow: /node_modules/
 Disallow: /src/
 Disallow: /dist/assets/
+Disallow: /uploads/
+Disallow: /*.json$
+Disallow: /*?utm_*
+Disallow: /*?ref=*
+Disallow: /external-link*
 
-# 允许爬取的重要页面
+# 允许爬取的重要页面和参数
 Allow: /
-Allow: /tool/
-Allow: /?category=*
-Allow: /?featured=*
+Allow: /friends
+Allow: /friend-link-apply
+Allow: /privacy
+Allow: /terms
+Allow: /?search=*
+Allow: /favicon.ico
+Allow: /robots.txt
+Allow: /sitemap.xml
+Allow: /manifest.json
+Allow: /logo.png
 
-# 爬取延迟（可选，单位：秒）
+# 针对不同搜索引擎的特殊规则
+User-agent: Googlebot
 Crawl-delay: 1
+
+User-agent: Bingbot
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Crawl-delay: 2
+
+User-agent: 360Spider
+Crawl-delay: 2
+
+User-agent: Sogou web spider
+Crawl-delay: 2
+
+# 阻止恶意爬虫
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /

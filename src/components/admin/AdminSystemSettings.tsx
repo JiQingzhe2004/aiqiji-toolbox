@@ -596,22 +596,6 @@ export function AdminSystemSettings() {
                   </p>
                 </div>
               )}
-              
-              {formData.show_icp && formData.icp_number && (
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <p className="text-sm text-green-800 dark:text-green-200">
-                    ✅ 备案号将在网站底部显示：
-                    <a
-                      href="https://beian.miit.gov.cn/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-1 underline"
-                    >
-                      {formData.icp_number}
-                    </a>
-                  </p>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>

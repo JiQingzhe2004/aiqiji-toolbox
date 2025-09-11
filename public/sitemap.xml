@@ -1,37 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd
+        http://www.google.com/schemas/sitemap-image/1.1
+        http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd">
         
   <!-- 主页 -->
   <url>
     <loc>https://tools.aiqji.com/</loc>
-    <lastmod>2025-09-08</lastmod>
+    <lastmod>2025-09-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://tools.aiqji.com/logo.png</image:loc>
+      <image:title>AiQiji工具箱</image:title>
+      <image:caption>专业工具导航平台</image:caption>
+    </image:image>
   </url>
   
-  <!-- 友情链接页面 -->
+  
+  <!-- 友情链接相关页面 -->
   <url>
     <loc>https://tools.aiqji.com/friends</loc>
-    <lastmod>2025-09-10</lastmod>
+    <lastmod>2025-09-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
-  <!-- 隐私政策 -->
+  <url>
+    <loc>https://tools.aiqji.com/friend-link-apply</loc>
+    <lastmod>2025-09-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <!-- 法律页面 -->
   <url>
     <loc>https://tools.aiqji.com/privacy</loc>
-    <lastmod>2025-09-08</lastmod>
+    <lastmod>2025-09-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   
-  <!-- 服务条款 -->
   <url>
     <loc>https://tools.aiqji.com/terms</loc>
-    <lastmod>2025-09-08</lastmod>
+    <lastmod>2025-09-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>

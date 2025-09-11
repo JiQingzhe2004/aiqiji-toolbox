@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ExternalLink, Globe, Users, Heart, ArrowLeft, Home } from 'lucide-react';
+import { ExternalLink, Globe, Users, Heart, ArrowLeft, Home, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { settingsApi } from '@/services/settingsApi';
 import toast from 'react-hot-toast';
 
@@ -292,24 +293,26 @@ export function FriendLinksPage() {
                     >
                       <div className="flex items-center gap-4 mb-3">
                         {link.icon ? (
-                          <img
-                            src={link.icon}
-                            alt={link.name}
-                            className="w-12 h-12 object-contain rounded-lg bg-muted/30 p-2"
+                          <div className="w-12 h-12 bg-muted/30 rounded-xl p-2 flex items-center justify-center overflow-hidden">
+                            <img
+                              src={link.icon}
+                              alt={link.name}
+                              className="w-8 h-8 object-contain rounded-lg"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
-                              const parent = target.parentElement;
-                              if (parent) {
+                              const container = target.parentElement;
+                              if (container) {
                                 const fallback = document.createElement('div');
-                                fallback.className = 'w-12 h-12 bg-muted/50 rounded-lg flex items-center justify-center';
-                                fallback.innerHTML = '<svg class="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>';
-                                parent.appendChild(fallback);
+                                fallback.className = 'w-6 h-6 text-muted-foreground';
+                                fallback.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>';
+                                container.appendChild(fallback);
                               }
                             }}
-                          />
+                            />
+                          </div>
                         ) : (
-                          <div className="w-12 h-12 bg-muted/50 rounded-lg flex items-center justify-center">
+                          <div className="w-12 h-12 bg-muted/50 rounded-xl flex items-center justify-center">
                             <ExternalLink className="w-6 h-6 text-muted-foreground" />
                           </div>
                         )}
@@ -328,6 +331,60 @@ export function FriendLinksPage() {
                           )}
                         </div>
                       </div>
+                      
+                      {/* 网站描述 - 固定高度 */}
+                      {link.description && (
+                        <div className="mt-3 mb-3">
+                          <p className="text-sm text-muted-foreground h-5 overflow-hidden leading-5 truncate">
+                            {link.description}
+                          </p>
+                          {link.description.length > 50 && (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <button 
+                                  className="text-xs text-primary hover:underline mt-1 flex items-center gap-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Info className="w-3 h-3" />
+                                  查看详情
+                                </button>
+                              </DialogTrigger>
+                              <DialogContent 
+                                className="max-w-md"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-2">
+                                    {link.icon ? (
+                                      <div className="w-6 h-6 bg-muted/30 rounded-lg p-1 flex items-center justify-center overflow-hidden">
+                                        <img 
+                                          src={link.icon} 
+                                          alt={link.name}
+                                          className="w-4 h-4 object-contain rounded"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <Globe className="w-6 h-6 text-muted-foreground" />
+                                    )}
+                                    {link.name}
+                                  </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-3 pt-2">
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground mb-1">网站地址</p>
+                                    <p className="text-sm break-all">{link.url}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground mb-1">网站简介</p>
+                                    <p className="text-sm leading-relaxed">{link.description}</p>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          )}
+                        </div>
+                      )}
+                      
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">
                           点击访问

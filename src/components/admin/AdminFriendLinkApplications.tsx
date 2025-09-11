@@ -648,10 +648,6 @@ export function AdminFriendLinkApplications() {
                 <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">联系人信息</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>管理员姓名</Label>
-                    <p className="text-sm mt-1">{selectedApplication.admin_email}</p>
-                  </div>
-                  <div>
                     <Label>邮箱地址</Label>
                     <p className="text-sm mt-1">
                       <a

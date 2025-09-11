@@ -38,20 +38,9 @@ export function AdminSystemSettings() {
     site_icon: '',
     site_description: '',
     icp_number: '',
-    show_icp: false,
-    friend_links: [] as Array<{ name: string; url: string; icon?: string }>
+    show_icp: false
   });
 
-  // 友情链接弹窗状态
-  const [friendLinkModal, setFriendLinkModal] = useState({
-    open: false,
-    editing: false,
-    editIndex: -1,
-    form: { name: '', url: '', icon: '' }
-  });
-  
-  // 友链操作加载状态
-  const [friendLinkLoading, setFriendLinkLoading] = useState(false);
 
   // 加载系统设置
   const loadSettings = async () => {
@@ -71,8 +60,7 @@ export function AdminSystemSettings() {
           site_icon: websiteSettings.site_icon?.value || '',
           site_description: websiteSettings.site_description?.value || '',
           icp_number: websiteSettings.icp_number?.value || '',
-          show_icp: websiteSettings.show_icp?.value || false,
-          friend_links: Array.isArray(websiteSettings.friend_links?.value) ? websiteSettings.friend_links.value : []
+          show_icp: websiteSettings.show_icp?.value || false
         });
       }
     } catch (error) {
@@ -216,11 +204,6 @@ export function AdminSystemSettings() {
           setting_key: 'show_icp',
           setting_value: formData.show_icp,
           setting_type: 'boolean'
-        },
-        {
-          setting_key: 'friend_links',
-          setting_value: formData.friend_links,
-          setting_type: 'json'
         }
       ];
       
@@ -249,136 +232,12 @@ export function AdminSystemSettings() {
         site_icon: websiteSettings.site_icon?.value || '',
         site_description: websiteSettings.site_description?.value || '',
         icp_number: websiteSettings.icp_number?.value || '',
-        show_icp: websiteSettings.show_icp?.value || false,
-        friend_links: Array.isArray(websiteSettings.friend_links?.value) ? websiteSettings.friend_links.value : []
+        show_icp: websiteSettings.show_icp?.value || false
       });
       toast.success('表单已重置');
     }
   };
 
-  // 友情链接操作函数
-  const handleFriendLinkAdd = () => {
-    setFriendLinkModal({
-      open: true,
-      editing: false,
-      editIndex: -1,
-      form: { name: '', url: '', icon: '' }
-    });
-  };
-
-  const handleFriendLinkEdit = (index: number) => {
-    const link = formData.friend_links[index];
-    setFriendLinkModal({
-      open: true,
-      editing: true,
-      editIndex: index,
-      form: { name: link.name, url: link.url, icon: link.icon || '' }
-    });
-  };
-
-  const handleFriendLinkDelete = async (index: number) => {
-    try {
-      setFriendLinkLoading(true);
-      const newLinks = formData.friend_links.filter((_, i) => i !== index);
-      
-      // 立即保存到数据库
-      const updates: SettingsUpdateData[] = [{
-        setting_key: 'friend_links',
-        setting_value: newLinks,
-        setting_type: 'json'
-      }];
-      
-      const response = await settingsApi.updateSettings(updates);
-      if (response.success) {
-        // 更新本地状态
-        setFormData(prev => ({ ...prev, friend_links: newLinks }));
-        toast.success('友链已删除');
-        
-        // 无感更新本地状态，避免重新加载
-        if (settings?.website) {
-          setSettings(prev => ({
-            ...prev!,
-            website: {
-              ...prev!.website,
-              friend_links: { ...prev!.website.friend_links, value: newLinks }
-            }
-          }));
-        }
-      } else {
-        toast.error('删除友链失败');
-      }
-    } catch (error) {
-      console.error('删除友链失败:', error);
-      toast.error('删除友链失败');
-    } finally {
-      setFriendLinkLoading(false);
-    }
-  };
-
-  const handleFriendLinkSave = async () => {
-    const { form, editing, editIndex } = friendLinkModal;
-    
-    if (!form.name.trim() || !form.url.trim()) {
-      toast.error('请填写站点名称和链接');
-      return;
-    }
-
-    try {
-      setFriendLinkLoading(true);
-      let newLinks = [...formData.friend_links];
-      
-      if (editing && editIndex !== -1) {
-        newLinks[editIndex] = { ...form };
-      } else {
-        newLinks.push({ ...form });
-      }
-      
-      // 立即保存到数据库
-      const updates: SettingsUpdateData[] = [{
-        setting_key: 'friend_links',
-        setting_value: newLinks,
-        setting_type: 'json'
-      }];
-      
-      const response = await settingsApi.updateSettings(updates);
-      if (response.success) {
-        // 更新本地状态
-        setFormData(prev => ({ ...prev, friend_links: newLinks }));
-        
-        // 关闭弹窗
-        setFriendLinkModal({
-          open: false,
-          editing: false,
-          editIndex: -1,
-          form: { name: '', url: '', icon: '' }
-        });
-        
-        if (editing && editIndex !== -1) {
-          toast.success('友链已更新');
-        } else {
-          toast.success('友链已添加');
-        }
-        
-        // 无感更新本地状态，避免重新加载
-        if (settings?.website) {
-          setSettings(prev => ({
-            ...prev!,
-            website: {
-              ...prev!.website,
-              friend_links: { ...prev!.website.friend_links, value: newLinks }
-            }
-          }));
-        }
-      } else {
-        toast.error('保存友链失败');
-      }
-    } catch (error) {
-      console.error('保存友链失败:', error);
-      toast.error('保存友链失败');
-    } finally {
-      setFriendLinkLoading(false);
-    }
-  };
 
   useEffect(() => {
     loadSettings();
@@ -600,161 +459,6 @@ export function AdminSystemSettings() {
           </CardContent>
         </Card>
 
-        {/* 友情链接设置 */}
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <CardTitle className="flex items-center space-x-2">
-                <Globe className="w-5 h-5" />
-                <span>友情链接</span>
-              </CardTitle>
-              <Dialog 
-                open={friendLinkModal.open} 
-                onOpenChange={(open) => setFriendLinkModal(prev => ({ ...prev, open }))}
-              >
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="blackWhite" 
-                    size="sm"
-                    onClick={handleFriendLinkAdd}
-                    className="flex items-center gap-2 w-full sm:w-auto"
-                  >
-                    <Plus className="w-4 h-4" />
-                    新增友链
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {friendLinkModal.editing ? '编辑友情链接' : '新增友情链接'}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="link-name">站点名称 *</Label>
-                      <Input
-                        id="link-name"
-                        value={friendLinkModal.form.name}
-                        onChange={(e) => setFriendLinkModal(prev => ({
-                          ...prev,
-                          form: { ...prev.form, name: e.target.value }
-                        }))}
-                        placeholder="如：AiQiji博客"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="link-url">站点链接 *</Label>
-                      <Input
-                        id="link-url"
-                        value={friendLinkModal.form.url}
-                        onChange={(e) => setFriendLinkModal(prev => ({
-                          ...prev,
-                          form: { ...prev.form, url: e.target.value }
-                        }))}
-                        placeholder="如：https://aiqji.com"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="link-icon">站点图标</Label>
-                      <Input
-                        id="link-icon"
-                        value={friendLinkModal.form.icon}
-                        onChange={(e) => setFriendLinkModal(prev => ({
-                          ...prev,
-                          form: { ...prev.form, icon: e.target.value }
-                        }))}
-                        placeholder="图标URL（可选）"
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2 pt-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setFriendLinkModal(prev => ({ ...prev, open: false }))}
-                        disabled={friendLinkLoading}
-                      >
-                        取消
-                      </Button>
-                      <Button 
-                        variant="blackWhite"
-                        onClick={handleFriendLinkSave} 
-                        disabled={friendLinkLoading}
-                      >
-                        {friendLinkLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {friendLinkLoading ? '保存中...' : (friendLinkModal.editing ? '更新' : '添加')}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground mb-4">
-              配置将在Footer中显示的友情链接。
-            </div>
-            {formData.friend_links.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {formData.friend_links.map((link, idx) => (
-                  <Card key={idx} className="border-2">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            {link.icon ? (
-                              <img 
-                                src={link.icon} 
-                                alt={link.name}
-                                className="w-4 h-4 object-contain"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                            )}
-                            <h4 className="font-medium text-sm truncate">{link.name}</h4>
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">{link.url}</p>
-                        </div>
-                        <div className="flex gap-1 ml-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleFriendLinkEdit(idx)}
-                            className="h-8 w-8 p-0"
-                            disabled={friendLinkLoading}
-                          >
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleFriendLinkDelete(idx)}
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                            disabled={friendLinkLoading}
-                          >
-                            {friendLinkLoading ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Trash className="w-3 h-3" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Globe className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p>暂无友情链接</p>
-                <p className="text-xs">点击右上角"新增友链"按钮添加</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* 保存提示 */}
@@ -769,7 +473,6 @@ export function AdminSystemSettings() {
               <li>• 每个设置区域都有独立的保存按钮，修改后点击对应的保存按钮即可</li>
               <li>• 网站名称和描述将在前端页面中实时更新</li>
               <li>• 备案号支持链接到工信部备案查询网站</li>
-              <li>• 友情链接添加、编辑、删除操作会立即生效</li>
               <li>• 所有设置保存后立即生效，无需重启服务</li>
             </ul>
           </div>

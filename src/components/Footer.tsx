@@ -6,8 +6,6 @@ import {
   Github,
   Mail, 
   Coffee, 
-  FileTerminal,
-  Brain,
   ExternalLink,
   Shield,
   FileText,
@@ -91,7 +89,7 @@ export function Footer() {
         </div>
         
         {/* 主要内容区 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
           {/* 关于项目 */}
           <div className="space-y-3">
             <div className="flex items-center space-x-3">
@@ -124,42 +122,22 @@ export function Footer() {
             </div>
           </div>
 
-          {/* 快速链接 */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-foreground">快速链接</h3>
-            <div className="space-y-2">
-              {[
-                { label: 'AiQiji博客', href: 'https://aiqji.com', icon: FileText },
-                { label: 'CS-Explorer', href: 'https://cs.aiqji.cn/', icon: FileTerminal },
-                { label: 'AiQiji智能博客插件', href: 'https://wpai.aiqji.com/', icon: Brain },
-              ].map((link, index) => (
-                <motion.a
-                  key={link.label}
-                  href={link.href}
-                  {...(link.href.startsWith('http') ? {
-                    target: '_blank',
-                    rel: 'noopener noreferrer'
-                  } : {})}
-                  className="flex items-center space-x-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
-                  whileHover={{ x: 4 }}
-                  transition={{ duration: 0.2 }}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  style={{ transitionDelay: `${index * 0.1}s` }}
-                >
-                  <link.icon className="w-4 h-4" />
-                  <span>{link.label}</span>
-                  <ExternalLink className="w-3 h-3 opacity-50" />
-                </motion.a>
-              ))}
-            </div>
-          </div>
-
           {/* 联系方式 */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-foreground">联系我们</h3>
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-3">
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-xl hover:bg-muted"
+                  title="请我们喝咖啡"
+                  onClick={() => setIsSponsorModalOpen(true)}
+                >
+                  <Coffee className="w-5 h-5" />
+                </Button>
+                
                 <Button
                   variant="ghost"
                   size="icon"
@@ -224,16 +202,6 @@ export function Footer() {
                   >
                     <AiOutlineZhihu className="w-5 h-5" />
                   </a>
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-xl hover:bg-muted"
-                  title="请我们喝咖啡"
-                  onClick={() => setIsSponsorModalOpen(true)}
-                >
-                  <Coffee className="w-5 h-5" />
                 </Button>
                 
                 <Button
@@ -405,7 +373,7 @@ export function Footer() {
                   <img 
                     src={link.icon} 
                     alt={link.name}
-                    className="w-4 h-4 object-contain"
+                    className="w-4 h-4 object-contain rounded-sm"
                       onError={(e) => {
                         // 如果自定义图标加载失败，使用默认外链图标
                         const target = e.target as HTMLImageElement;

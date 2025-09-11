@@ -17,6 +17,7 @@ import { AdminToolForm } from '@/components/admin/AdminToolForm';
 import { AdminSystemSettings } from '@/components/admin/AdminSystemSettings';
 import { AdminExcelImport } from '@/components/admin/AdminExcelImport';
 import { AdminFriendLinkApplications } from '@/components/admin/AdminFriendLinkApplications';
+import { AdminFriendLinkManager } from '@/components/admin/AdminFriendLinkManager';
 import { AdminProfileSettings } from '@/components/admin/AdminProfileSettings';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { toolsApi } from '@/services/toolsApi';
@@ -379,7 +380,7 @@ function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="friendlinks" className="flex items-center gap-2">
               <ExternalLink className="w-4 h-4" />
-              友链申请
+              友链管理
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -624,9 +625,15 @@ function AdminPage() {
             <AdminStats stats={stats} />
           </TabsContent>
 
-          {/* 友链申请管理 */}
-          <TabsContent value="friendlinks">
-            <AdminFriendLinkApplications />
+          {/* 友链管理 */}
+          <TabsContent value="friendlinks" className="space-y-6">
+            <div className="space-y-6">
+              {/* 友链管理 */}
+              <AdminFriendLinkManager />
+              
+              {/* 友链申请 */}
+              <AdminFriendLinkApplications />
+            </div>
           </TabsContent>
 
           {/* 用户管理 */}

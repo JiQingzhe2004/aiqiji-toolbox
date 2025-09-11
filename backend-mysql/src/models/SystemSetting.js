@@ -112,19 +112,34 @@ SystemSetting.setSetting = async function(key, value, type = 'string') {
       stringValue = String(value || '');
   }
   
+  // 根据 setting_key 确定正确的 category
+  const getCategory = (settingKey) => {
+    const websiteKeys = [
+      'site_name', 'site_url', 'site_icon', 'site_description', 
+      'icp_number', 'show_icp', 'friend_links'
+    ];
+    return websiteKeys.includes(settingKey) ? 'website' : 'general';
+  };
+  
+  const category = getCategory(key);
+  
   const [setting, created] = await this.findOrCreate({
     where: { setting_key: key },
     defaults: {
       setting_key: key,
       setting_value: stringValue,
-      setting_type: type
+      setting_type: type,
+      category: category,
+      is_public: category === 'website' ? true : true  // 网站相关设置都设为公开
     }
   });
   
   if (!created) {
     await setting.update({
       setting_value: stringValue,
-      setting_type: type
+      setting_type: type,
+      category: category,
+      is_public: category === 'website' ? true : setting.is_public  // 网站设置强制公开，其他保持原值
     });
   }
   

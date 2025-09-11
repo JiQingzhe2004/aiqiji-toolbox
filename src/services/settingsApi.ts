@@ -120,7 +120,7 @@ export class SettingsApi {
    */
   async getPublicWebsiteInfo(): Promise<WebsiteInfo> {
     try {
-      const response = await fetch('/api/v1/settings/public');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'}/settings/public`);
       const result = await response.json();
       
       if (result.success && result.data) {

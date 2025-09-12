@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronDown, Sparkles, Dot } from 'lucide-react';
+import { SEOImage, SEOImagePresets } from '@/components/SEOImage';
 import { cn } from '@/lib/utils';
 import { TypingAnimation } from '@/components/magicui/typing-animation';
 import { AuroraText } from '@/components/magicui/aurora-text';
@@ -45,10 +46,12 @@ export function HeroBannerLite() {
         <div className="space-y-6 max-w-4xl mx-auto animate-fade-in-up">
           {/* Logo图标 */}
           <div className="relative inline-block animate-logo-float">
-            <img 
-              src="/logo.png" 
-              alt="AiQiji工具箱"
-              className="w-20 h-20 mx-auto object-contain drop-shadow-lg"
+            <SEOImage 
+              {...SEOImagePresets.websiteLogo("/logo.png", "AiQiji工具箱")}
+              className="w-20 h-20 mx-auto object-contain drop-shadow-lg rounded-2xl"
+              description="AiQiji工具箱首页主图标，专业的AI工具导航平台"
+              keywords={["AiQiji", "工具箱", "AI工具", "导航", "Logo"]}
+              structuredData={true}
               onError={(e) => {
                 // 如果图片加载失败，显示默认图标
                 const target = e.target as HTMLImageElement;

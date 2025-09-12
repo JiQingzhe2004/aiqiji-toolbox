@@ -5,6 +5,7 @@ import { ExternalLink, ArrowLeft, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Highlighter } from '@/components/magicui/highlighter';
+import { useSEO, SEOPresets } from '@/hooks/useSEO';
 
 /**
  * 外链跳转提醒页面
@@ -18,6 +19,9 @@ export default function ExternalLinkPage() {
   const name = searchParams.get('name') || '外部工具';
   const iconUrl = searchParams.get('icon');
   const returnUrl = searchParams.get('return') || '/';
+
+  // 设置外部链接页SEO
+  useSEO(SEOPresets.externalLink(name));
 
   useEffect(() => {
     if (!url) {

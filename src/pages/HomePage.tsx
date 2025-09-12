@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HeroBanner } from '@/components/HeroBanner';
 import { CategoryTabs } from '@/components/CategoryTabs';
@@ -8,6 +8,7 @@ import { ToolGrid } from '@/components/ToolGrid';
 import { EmptyState } from '@/components/EmptyState';
 import { ThanksSection } from '@/components/ThanksSection';
 import { useTools } from '@/hooks/useTools';
+import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 /**
@@ -15,13 +16,14 @@ import { Loader2, AlertCircle } from 'lucide-react';
  */
 interface HomePageProps {
   searchQuery?: string;
+  onClearSearch?: () => void;
 }
 
 /**
  * 主页组件
  * 包含搜索、分类、工具展示等核心功能
  */
-const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }: HomePageProps) {
+const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', onClearSearch }: HomePageProps) {
   const {
     filteredTools,
     categories,
@@ -34,43 +36,33 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
   // 使用全局搜索查询，如果存在的话
   const effectiveSearchQuery = globalSearchQuery;
 
-  // 设置首页SEO（确保搜索引擎能识别）
-  React.useEffect(() => {
-    // 确保页面标题正确设置
-    if (!document.title.includes('AiQiji工具箱 - 专业开发者设计师工具导航平台')) {
-      document.title = 'AiQiji工具箱 - 专业开发者设计师工具导航平台 | AI工具 | 效率工具';
-    }
-    
-    // 添加首页特定的结构化数据
-    const existingScript = document.getElementById('homepage-structured-data');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.id = 'homepage-structured-data';
-      script.type = 'application/ld+json';
-      script.textContent = JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "WebPage",
-        "name": "AiQiji工具箱 - 专业开发者设计师工具导航平台",
-        "description": "专为开发者、设计师、产品经理打造的专业工具导航平台",
-        "url": "https://tools.aiqji.com/",
-        "mainEntity": {
-          "@type": "WebSite",
-          "name": "AiQiji工具箱",
-          "url": "https://tools.aiqji.com"
-        },
-        "breadcrumb": {
-          "@type": "BreadcrumbList",
-          "itemListElement": [{
-            "@type": "ListItem",
-            "position": 1,
-            "name": "首页",
-            "item": "https://tools.aiqji.com/"
-          }]
+  // 工具区域的引用
+  const toolsSectionRef = useRef<HTMLDivElement>(null);
+
+  // 设置首页SEO
+  useSEO(SEOPresets.homePage());
+
+  // 当搜索查询变化且有搜索内容时，自动滚动到工具区域
+  useEffect(() => {
+    if (effectiveSearchQuery && toolsSectionRef.current && !isLoading) {
+      // 使用setTimeout给DOM更新一些时间
+      const timer = setTimeout(() => {
+        if (toolsSectionRef.current) {
+          // 滚动到工具区域顶部，位于顶部栏下方
+          const offsetTop = toolsSectionRef.current.offsetTop;
+          // 减去顶部栏高度(约64px)
+          const scrollPosition = Math.max(0, offsetTop - 64);
+          
+          window.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth'
+          });
         }
-      });
-      document.head.appendChild(script);
+      }, 100); // 延迟100ms，等待内容更新
+      
+      return () => clearTimeout(timer);
     }
-  }, []);
+  }, [effectiveSearchQuery, isLoading]);
 
   return (
     <div className="relative">
@@ -88,6 +80,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
 
       {/* 工具区域 */}
       <motion.div
+        ref={toolsSectionRef}
         id="tools-section"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -151,6 +144,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '' }:
                   key={`${activeCategory}-${effectiveSearchQuery}`}
                   tools={filteredTools}
                   searchQuery={effectiveSearchQuery}
+                  onClearSearch={onClearSearch}
                 />
               )}
             </AnimatePresence>

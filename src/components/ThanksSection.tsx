@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, Zap } from 'lucide-react';
+import { SEOImage, SEOImagePresets } from '@/components/SEOImage';
 
 /**
  * 感谢支持组件
@@ -85,10 +86,15 @@ export function ThanksSection() {
                     group-hover:scale-110 group-hover:rotate-3 transition-all duration-300
                     p-2
                   `}>
-                    <img 
+                    <SEOImage 
                       src={supporter.iconUrl as string} 
-                      alt={supporter.name}
+                      alt={`${supporter.name} - 支持企业Logo`}
+                      title={`感谢 ${supporter.name} 的支持`}
+                      description={`${supporter.name}: ${supporter.description}`}
                       className="w-8 h-8 object-contain"
+                      keywords={[supporter.name, '支持', '企业', 'logo']}
+                      imageType="logo"
+                      loading="lazy"
                       onError={(e) => {
                         // 如果图片加载失败，显示文字备用
                         const target = e.target as HTMLImageElement;

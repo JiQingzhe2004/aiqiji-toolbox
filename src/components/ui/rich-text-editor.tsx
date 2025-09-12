@@ -66,6 +66,7 @@ export function RichTextEditor({
   const [showBadgeDialog, setShowBadgeDialog] = useState(false);
   const [showButtonDialog, setShowButtonDialog] = useState(false);
   const [showCardDialog, setShowCardDialog] = useState(false);
+  const [editingImage, setEditingImage] = useState<{src: string; element: HTMLElement} | null>(null);
 
   // 格式化HTML代码
   const formatHTML = (html: string): string => {
@@ -150,7 +151,8 @@ export function RichTextEditor({
         inline: false,
         allowBase64: true,
         HTMLAttributes: {
-          class: 'my-image',
+          class: 'my-image cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200',
+          title: '双击编辑图片',
         },
       }),
       TextAlign.configure({
@@ -197,6 +199,22 @@ export function RichTextEditor({
           'space-y-6 text-base leading-relaxed',
           disabled && 'opacity-50 cursor-not-allowed'
         ),
+      },
+      handleDOMEvents: {
+        dblclick: (view, event) => {
+          const target = event.target as HTMLElement;
+          if (target.tagName === 'IMG') {
+            // 双击图片时打开编辑对话框
+            const img = target as HTMLImageElement;
+            setEditingImage({
+              src: img.src,
+              element: img
+            });
+            setShowImageDialog(true);
+            return true;
+          }
+          return false;
+        },
       },
     },
   });
@@ -615,12 +633,69 @@ export function RichTextEditor({
       {/* 对话框 */}
       <ImageDialog
         open={showImageDialog}
-        onOpenChange={setShowImageDialog}
-        onConfirm={(url) => {
+        onOpenChange={(open) => {
+          setShowImageDialog(open);
+          if (!open) {
+            setEditingImage(null);
+          }
+        }}
+        initialData={editingImage ? {
+          url: editingImage.src,
+          size: 'medium',
+          alignment: 'center'
+        } : undefined}
+        onConfirm={(data) => {
           setTimeout(() => {
-            editor?.chain().focus().setImage({ src: url }).run();
+            // 构建包含样式的图片属性
+            const sizeClass = {
+              small: 'w-[25%] max-w-xs',
+              medium: 'w-[50%] max-w-md', 
+              large: 'w-[100%] max-w-lg'
+            }[data.size] || 'w-[50%] max-w-md';
+            
+            const alignClass = {
+              left: 'float-left mr-4 mb-2 clear-left',
+              center: 'block mb-4',
+              right: 'float-right ml-4 mb-2 clear-right'
+            }[data.alignment] || 'block mb-4';
+            
+            const containerClass = data.alignment === 'center' ? 'text-center' : '';
+            
+            if (editingImage) {
+              // 编辑现有图片
+              const img = editingImage.element as HTMLImageElement;
+              img.src = data.url;
+              img.className = `my-image cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200 ${sizeClass} ${alignClass} object-contain rounded-lg border`;
+              
+              // 如果是居中对齐，确保父容器有正确的类
+              if (data.alignment === 'center') {
+                const parent = img.parentElement;
+                if (parent && !parent.classList.contains('text-center')) {
+                  parent.classList.add('text-center');
+                }
+              }
+            } else {
+              // 插入新图片
+              if (data.alignment === 'center') {
+                // 居中图片需要包装在div中
+                const html = `<div class="text-center mb-4"><img src="${data.url}" class="my-image cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200 ${sizeClass} ${alignClass} object-contain rounded-lg border inline-block" title="双击编辑图片" /></div>`;
+                editor?.chain().focus().insertContent(html).run();
+              } else {
+                // 左对齐和右对齐直接插入图片
+                editor?.chain().focus().setImage({ src: data.url }).run();
+                
+                // 然后为图片添加样式类
+                setTimeout(() => {
+                  const img = editor?.view.dom.querySelector('img[src="' + data.url + '"]');
+                  if (img) {
+                    img.className = `my-image cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200 ${sizeClass} ${alignClass} object-contain rounded-lg border`;
+                  }
+                }, 100);
+              }
+            }
           }, 0);
           setShowImageDialog(false);
+          setEditingImage(null);
         }}
       />
 

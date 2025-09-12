@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { ImageEditor } from './ImageEditor';
 import toast from 'react-hot-toast';
 import { toolsApi } from '@/services/toolsApi';
 import type { Tool } from '@/types';
@@ -38,6 +39,8 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
     content: tool?.content || '',
     icon_url: tool?.icon_url || '',
     icon_theme: tool?.icon_theme || 'auto',
+    icon_layout: (tool as any)?.icon_layout || 'center',
+    icon_size: (tool as any)?.icon_size || 'medium',
     categories: tool?.category ? (Array.isArray(tool.category) ? tool.category : [tool.category]) : [] as string[],
     url: tool?.url || '',
     featured: tool?.featured || false,
@@ -210,35 +213,30 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
           <div className="space-y-4">
             <h3 className="text-lg font-medium">图标设置</h3>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>自定义图标链接</Label>
-                <Input
-                  value={formData.icon_url}
-                  onChange={(e) => handleInputChange('icon_url', e.target.value)}
-                  placeholder="https://example.com/icon.png"
-                  type="url"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>图标主题</Label>
-                <Select
-                  value={formData.icon_theme}
-                  onValueChange={(value) => handleInputChange('icon_theme', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择图标主题" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="auto">自动</SelectItem>
-                    <SelectItem value="auto-light">图标为浅色</SelectItem>
-                    <SelectItem value="auto-dark">图标为暗色</SelectItem>
-                    <SelectItem value="light">浅色</SelectItem>
-                    <SelectItem value="dark">深色</SelectItem>
-                    <SelectItem value="none">保持原色</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-4">
+              <ImageEditor
+                value={formData.icon_url}
+                onChange={(value) => handleInputChange('icon_url', value)}
+                theme={formData.icon_theme}
+                onThemeChange={(theme) => handleInputChange('icon_theme', theme)}
+                layout={formData.icon_layout as 'left' | 'center' | 'right'}
+                onLayoutChange={(layout) => handleInputChange('icon_layout', layout)}
+                imageSize={formData.icon_size as 'small' | 'medium' | 'large'}
+                onImageSizeChange={(size) => handleInputChange('icon_size', size)}
+                toolName={formData.name || '工具'}
+                size="lg"
+              />
+              
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <h4 className="text-sm font-medium mb-2">图标使用说明</h4>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>• 点击图标预览区域可以编辑图片链接</li>
+                  <li>• 使用"图片大小"调整图标显示尺寸</li>
+                  <li>• 使用"横向排版"调整图标在容器中的位置</li>
+                  <li>• 使用"显示主题"调整图标在不同主题下的显示效果</li>
+                  <li>• 推荐使用正方形图标，尺寸建议 200x200 像素以上</li>
+                  <li>• SVG格式图标在缩放时效果最佳</li>
+                </ul>
               </div>
             </div>
           </div>

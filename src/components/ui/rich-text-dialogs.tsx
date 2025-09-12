@@ -20,32 +20,96 @@ import {
 interface ImageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (url: string) => void;
+  onConfirm: (data: { url: string; size: string; alignment: string }) => void;
+  initialData?: { url: string; size: string; alignment: string };
 }
 
-export function ImageDialog({ open, onOpenChange, onConfirm }: ImageDialogProps) {
+export function ImageDialog({ open, onOpenChange, onConfirm, initialData }: ImageDialogProps) {
   const [url, setUrl] = useState('');
+  const [alignment, setAlignment] = useState('center');
+  const [size, setSize] = useState('medium');
+  const [imageError, setImageError] = useState(false);
+
+  // 当对话框打开且有初始数据时，设置初始值
+  React.useEffect(() => {
+    if (open && initialData) {
+      setUrl(initialData.url);
+      setAlignment(initialData.alignment);
+      setSize(initialData.size);
+      setImageError(false);
+    }
+  }, [open, initialData]);
 
   const handleConfirm = () => {
     if (url.trim()) {
-      onConfirm(url.trim());
+      onConfirm({
+        url: url.trim(),
+        size,
+        alignment
+      });
       setUrl('');
+      setAlignment('center');
+      setSize('medium');
+      setImageError(false);
     }
   };
 
+  const handleClose = () => {
+    onOpenChange(false);
+    setUrl('');
+    setAlignment('center');
+    setSize('medium');
+    setImageError(false);
+  };
+
+  // 图片尺寸配置（使用宽度百分比）
+  const sizeConfig = {
+    small: 'w-[25%] max-w-xs',
+    medium: 'w-[50%] max-w-md', 
+    large: 'w-[100%] max-w-lg'
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>插入图片</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="space-y-6 py-4">
+          {/* 图片预览区域 */}
+          {url && (
+            <div className="space-y-3">
+              <Label>图片预览</Label>
+              <div className={`border-2 border-dashed border-muted-foreground/20 rounded-lg p-4 flex ${
+                alignment === 'left' ? 'justify-start' : 
+                alignment === 'center' ? 'justify-center' : 'justify-end'
+              }`}>
+                {!imageError ? (
+                  <img
+                    src={url}
+                    alt="图片预览"
+                    className={`${sizeConfig[size as keyof typeof sizeConfig]} object-contain rounded-lg border bg-background`}
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className={`${sizeConfig[size as keyof typeof sizeConfig]} border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center bg-muted/30`}>
+                    <span className="text-muted-foreground text-sm">图片加载失败</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* URL输入 */}
           <div className="space-y-2">
             <Label htmlFor="image-url">图片URL</Label>
             <Input
               id="image-url"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setImageError(false);
+              }}
               placeholder="https://example.com/image.jpg"
               type="url"
               onKeyDown={(e) => {
@@ -55,12 +119,46 @@ export function ImageDialog({ open, onOpenChange, onConfirm }: ImageDialogProps)
               }}
             />
           </div>
+
+          {/* 图片设置 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 图片大小 */}
+            <div className="space-y-2">
+              <Label>图片大小</Label>
+              <Select value={size} onValueChange={setSize}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="small">小 (25%宽度)</SelectItem>
+                  <SelectItem value="medium">中 (50%宽度)</SelectItem>
+                  <SelectItem value="large">大 (100%宽度)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 对齐方式 */}
+            <div className="space-y-2">
+              <Label>对齐方式</Label>
+              <Select value={alignment} onValueChange={setAlignment}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">左对齐</SelectItem>
+                  <SelectItem value="center">居中</SelectItem>
+                  <SelectItem value="right">右对齐</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={handleClose}>
               取消
             </Button>
             <Button onClick={handleConfirm} disabled={!url.trim()}>
-              插入
+              插入图片
             </Button>
           </div>
         </div>

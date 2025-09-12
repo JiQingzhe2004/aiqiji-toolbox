@@ -5,10 +5,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import { Home, ArrowLeft, FileQuestion } from 'lucide-react';
 
 export default function NotFoundPage() {
   const navigate = useNavigate();
+
+  // 设置404页面SEO
+  useSEO(SEOPresets.notFound());
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

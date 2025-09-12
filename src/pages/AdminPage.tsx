@@ -21,6 +21,7 @@ import { AdminFriendLinkManager } from '@/components/admin/AdminFriendLinkManage
 import { AdminProfileSettings } from '@/components/admin/AdminProfileSettings';
 import { ToolSubmissionManagement } from '@/components/admin/ToolSubmissionManagement';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import { toolsApi } from '@/services/toolsApi';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,9 @@ import type { Tool } from '@/types';
 function AdminPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // 设置管理页面SEO
+  useSEO(SEOPresets.adminPanel());
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

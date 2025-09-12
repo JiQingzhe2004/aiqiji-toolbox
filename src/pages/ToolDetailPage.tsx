@@ -25,6 +25,8 @@ import { QRCodeModal } from '@/components/QRCodeModal';
 // import { DetailFloatingActions } from '@/components/DetailFloatingActions'; // 已整合到 FloatingSubmitButton
 import { RichTextDisplay } from '@/components/ui/rich-text-display';
 import { FloatingSubmitButton } from '@/components/FloatingSubmitButton';
+import { SEOImage, SEOImagePresets } from '@/components/SEOImage';
+import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import type { ConfettiRef } from '@/components/magicui/confetti';
 import { toolsApi } from '@/services/toolsApi';
 import { settingsApi } from '@/services/settingsApi';
@@ -139,109 +141,12 @@ function ToolDetailPage() {
     navigate(-1);
   };
 
-  // 设置页面标题和SEO元数据
-  useEffect(() => {
-    if (tool) {
-      // 设置页面标题
-      document.title = `${tool.name || '工具'} - 工具详情 | AiQiji工具箱`;
-      
-      // 设置meta描述
-      const metaDescription = document.querySelector('meta[name="description"]') || document.createElement('meta');
-      metaDescription.setAttribute('name', 'description');
-      metaDescription.setAttribute('content', `${tool.description || '工具详情'} - 在AiQiji工具箱发现更多优质工具。`);
-      if (!document.querySelector('meta[name="description"]')) {
-        document.head.appendChild(metaDescription);
-      }
-      
-      // 设置Open Graph标签
-      const setOGMeta = (property: string, content: string) => {
-        let meta = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.setAttribute('property', property);
-          document.head.appendChild(meta);
-        }
-        meta.setAttribute('content', content);
-      };
-      
-      setOGMeta('og:title', `${tool.name || '工具'} - 工具详情`);
-      setOGMeta('og:description', tool.description || '工具详情');
-      setOGMeta('og:url', window.location.href);
-      setOGMeta('og:type', 'website');
-      
-      const iconUrl = getToolIconUrl(tool);
-      if (iconUrl) {
-        setOGMeta('og:image', iconUrl);
-      }
-      
-      // 设置Twitter Card
-      const setTwitterMeta = (name: string, content: string) => {
-        let meta = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.setAttribute('name', name);
-          document.head.appendChild(meta);
-        }
-        meta.setAttribute('content', content);
-      };
-      
-      setTwitterMeta('twitter:card', 'summary');
-      setTwitterMeta('twitter:title', `${tool.name || '工具'} - 工具详情`);
-      setTwitterMeta('twitter:description', tool.description || '工具详情');
-      if (iconUrl) {
-        setTwitterMeta('twitter:image', iconUrl);
-      }
-      
-      // 添加结构化数据
-      const structuredData = {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": tool.name || "",
-        "description": tool.description || "",
-        "url": tool.url || "",
-        "applicationCategory": Array.isArray(tool.category) 
-          ? tool.category.join(', ') 
-          : (tool.category || ""),
-        "operatingSystem": "Web",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        ...(tool.rating_count && tool.rating_count > 0 && tool.rating_sum ? {
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": (tool.rating_sum / tool.rating_count).toFixed(1),
-            "reviewCount": tool.rating_count
-          }
-        } : {})
-      };
-      
-      // 移除旧的结构化数据
-      const existingScript = document.querySelector('script[type="application/ld+json"]#tool-structured-data');
-      if (existingScript) {
-        existingScript.remove();
-      }
-      
-      // 添加新的结构化数据
-      const script = document.createElement('script');
-      script.type = 'application/ld+json';
-      script.id = 'tool-structured-data';
-      script.textContent = JSON.stringify(structuredData, null, 2);
-      document.head.appendChild(script);
-    }
-    
-    return () => {
-      // 清理页面标题
-      document.title = 'AiQiji工具箱';
-      
-      // 清理结构化数据
-      const script = document.querySelector('script[type="application/ld+json"]#tool-structured-data');
-      if (script) {
-        script.remove();
-      }
-    };
-  }, [tool]);
+  // 设置工具详情页SEO
+  useSEO(tool ? SEOPresets.toolDetail(
+    tool.name || '工具',
+    tool.description || '工具详情',
+    getToolIconUrl(tool)
+  ) : SEOPresets.notFound());
 
   if (loading) {
     return (
@@ -289,9 +194,12 @@ function ToolDetailPage() {
               <div className="flex-shrink-0">
                 <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-background/5 via-muted/30 to-muted/60 flex items-center justify-center shadow-2xl">
                   {getToolIconUrl(tool) ? (
-                    <img 
-                      src={getToolIconUrl(tool)} 
-                      alt={`${tool.name || '工具'} logo`}
+                    <SEOImage
+                      {...SEOImagePresets.toolIcon(
+                        getToolIconUrl(tool) || '', 
+                        tool.name || '工具',
+                        tool.description || ''
+                      )}
                       className={cn(
                         "w-20 h-20 object-contain rounded-xl",
                         (tool.icon_theme === 'auto-dark' || tool.icon_theme === 'auto' || tool.icon_theme === 'dark' || !tool.icon_theme) && "dark:invert",

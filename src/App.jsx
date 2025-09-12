@@ -112,7 +112,10 @@ function AppContent() {
                   <main className="flex-1">
                     <Routes>
                       <Route path="/" element={
-                        <HomePage searchQuery={globalSearchQuery} />
+                        <HomePage 
+                          searchQuery={globalSearchQuery} 
+                          onClearSearch={() => setGlobalSearchQuery('')}
+                        />
                       } />
                       <Route path="/privacy" element={
                         <Suspense fallback={<LoadingSpinner />}>

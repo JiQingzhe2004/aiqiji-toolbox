@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { LoginModal } from './LoginModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { settingsApi, type WebsiteInfo } from '@/services/settingsApi';
+import { SEOImage, SEOImagePresets } from '@/components/SEOImage';
 
 /**
  * Header组件属性接口
@@ -183,10 +184,14 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
         >
           {/* Logo图标 */}
           <div className="relative">
-            <img 
-              src={websiteInfo?.site_icon || "/logo.png"} 
-              alt={websiteInfo?.site_name || "AiQiji工具箱"}
-              className="w-10 h-10 object-contain"
+            <SEOImage
+              {...SEOImagePresets.websiteLogo(
+                websiteInfo?.site_icon || "/logo.png",
+                websiteInfo?.site_name || "AiQiji工具箱"
+              )}
+              className="w-10 h-10 object-contain rounded-lg"
+              description={`${websiteInfo?.site_name || 'AiQiji工具箱'}网站主页Logo`}
+              structuredData={true}
               onError={(e) => {
                 // 如果图片加载失败，显示默认图标
                 const target = e.target as HTMLImageElement;

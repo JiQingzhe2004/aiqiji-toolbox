@@ -2,11 +2,15 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ToolSubmissionForm } from '@/components/ToolSubmissionForm';
+import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function ToolSubmissionPage() {
   const navigate = useNavigate();
+
+  // 设置工具提交页SEO
+  useSEO(SEOPresets.toolSubmission());
 
   return (
     <div className="min-h-screen bg-background">

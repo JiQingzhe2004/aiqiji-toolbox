@@ -16,6 +16,7 @@ import {
 import { isMobile, BrowserView, MobileView } from 'react-device-detect';
 import { ComicText } from "./magicui/comic-text";
 import { AnimatedShinyText } from "./magicui/animated-shiny-text";
+import { SEOImage, SEOImagePresets } from '@/components/SEOImage';
 // 按需导入社交媒体图标以减少打包体积
 import { AiOutlineX, AiOutlineZhihu } from "react-icons/ai";
 import { TbBrandWechat } from "react-icons/tb";
@@ -115,9 +116,11 @@ export function Footer() {
           {/* 关于项目 */}
           <div className="space-y-3">
             <div className="flex items-center space-x-3">
-              <img 
-                src="/logo.png" 
-                alt="AiQiji工具箱"
+              <SEOImage 
+                {...SEOImagePresets.websiteLogo(
+                  websiteInfo?.site_icon || "/logo.png", 
+                  websiteInfo?.site_name || "AiQiji工具箱"
+                )}
                 className="w-8 h-8 object-contain"
                 onError={(e) => {
                   // 如果图片加载失败，显示备用图标
@@ -396,21 +399,21 @@ export function Footer() {
                   aria-label={`访问友情链接：${link.name}`}
                 >
                 {link.icon ? (
-                  <img 
-                    src={link.icon} 
-                    alt={link.name}
+                  <SEOImage 
+                    {...SEOImagePresets.friendLinkIcon(link.icon, link.name)}
                     className="w-4 h-4 object-contain rounded-sm"
-                      onError={(e) => {
-                        // 如果自定义图标加载失败，使用默认外链图标
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const parent = target.parentElement;
-                        if (parent) {
-                          const fallback = document.createElement('div');
-                          fallback.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>';
-                          parent.appendChild(fallback);
-                        }
-                      }}
+                    description={`友情链接：${link.name}的网站图标`}
+                    onError={(e) => {
+                      // 如果自定义图标加载失败，使用默认外链图标
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        const fallback = document.createElement('div');
+                        fallback.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>';
+                        parent.appendChild(fallback);
+                      }
+                    }}
                   />
                 ) : (
                   <ExternalLink className="w-4 h-4" />

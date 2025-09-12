@@ -4,6 +4,7 @@ import { ExternalLink, Globe, Users, Heart, ArrowLeft, Home, Info } from 'lucide
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import { settingsApi } from '@/services/settingsApi';
 import toast from 'react-hot-toast';
 
@@ -25,6 +26,9 @@ export function FriendLinksPage() {
   const [loading, setLoading] = useState(true);
   const [showBackButton, setShowBackButton] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+
+  // 设置友情链接页SEO
+  useSEO(SEOPresets.friendLinks());
 
   // 处理滚动时按钮显示/隐藏
   useEffect(() => {

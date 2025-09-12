@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CopyButton } from '@/components/CopyButton';
+import { SEOImage, SEOImagePresets } from '@/components/SEOImage';
 import { settingsApi, type WebsiteInfo } from '@/services/settingsApi';
 import { apiPost } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -207,10 +208,12 @@ export function FriendLinkApplicationForm({ onSuccess }: FriendLinkApplicationFo
                     <Label className="text-sm font-medium">网站图标</Label>
                     <div className="flex items-center gap-2 mt-1">
                       {websiteInfo?.site_icon && (
-                        <img 
-                          src={websiteInfo.site_icon} 
-                          alt="网站图标" 
-                          className="w-4 h-4 rounded"
+                        <SEOImage 
+                          {...SEOImagePresets.websiteLogo(
+                            websiteInfo.site_icon,
+                            websiteInfo.site_name || 'AiQiji工具箱'
+                          )}
+                          className="w-4 h-4 rounded object-contain"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
                           }}

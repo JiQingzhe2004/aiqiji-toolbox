@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-button';
 import { Confetti, type ConfettiRef } from '@/components/magicui/confetti';
 import { QRCodeModal } from './QRCodeModal';
+import { SEOImage, SEOImagePresets } from '@/components/SEOImage';
 import * as AspectRatio from '@radix-ui/react-aspect-ratio';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -350,9 +351,12 @@ export const MagicCard = memo(function MagicCard({
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative p-4 rounded-2xl bg-background/70 backdrop-blur-md border border-border/50 shadow-lg group-hover:scale-105 group-hover:shadow-xl transition-all duration-300">
               {getToolIconUrl(tool) ? (
-                <img 
-                  src={getToolIconUrl(tool)} 
-                  alt={`${tool.name} logo`}
+                <SEOImage 
+                  {...SEOImagePresets.toolIcon(
+                    getToolIconUrl(tool)!,
+                    tool.name,
+                    tool.description || tool.desc
+                  )}
                   className={cn(
                     "h-8 w-8 object-contain rounded-sm",
                     // 主题适配逻辑：根据图标原始颜色类型进行适配
@@ -360,6 +364,7 @@ export const MagicCard = memo(function MagicCard({
                     (tool.logoTheme === 'auto-light' || tool.logoTheme === 'light') && "invert dark:invert-0", // 浅色图标
                     // none: 不添加任何样式，保持原色
                   )}
+                  keywords={tool.tags || []}
                   onError={(e) => {
                     // 如果logo加载失败，显示备用图标
                     e.currentTarget.style.display = 'none';

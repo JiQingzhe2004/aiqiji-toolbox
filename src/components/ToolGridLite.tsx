@@ -14,6 +14,7 @@ interface ToolGridProps {
   tools: Tool[];
   searchQuery?: string;
   className?: string;
+  onClearSearch?: () => void;
 }
 
 /**
@@ -24,7 +25,8 @@ interface ToolGridProps {
 export const ToolGridLite = memo(function ToolGridLite({ 
   tools, 
   searchQuery, 
-  className 
+  className,
+  onClearSearch 
 }: ToolGridProps) {
   const [showVpnIndicator, setShowVpnIndicator] = useState(true);
 
@@ -92,7 +94,11 @@ export const ToolGridLite = memo(function ToolGridLite({
       {searchQuery && (
         <button
           className="mt-4 px-4 py-2 text-sm text-violet-600 dark:text-violet-400 hover:underline transition-colors"
-          onClick={() => window.location.href = '/'}
+          onClick={() => {
+            if (onClearSearch) {
+              onClearSearch();
+            }
+          }}
         >
           清空搜索
         </button>

@@ -18,6 +18,7 @@ import authRoutes from './routes/authRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import importRoutes from './routes/importRoutes.js';
 import friendLinkRoutes from './routes/friendLinkRoutes.js';
+import toolSubmissionRoutes from './routes/toolSubmissionRoutes.js';
 
 // 加载环境变量
 dotenv.config();
@@ -204,6 +205,9 @@ class Server {
     
     // 友链申请路由
     this.app.use(`${this.apiPrefix}/friend-links`, friendLinkRoutes);
+    
+    // 工具提交路由
+    this.app.use(`${this.apiPrefix}/tool-submissions`, toolSubmissionRoutes);
 
     // 根路径
     this.app.get('/', (req, res) => {

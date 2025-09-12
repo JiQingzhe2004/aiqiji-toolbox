@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Github, Sparkles, Search, LogIn, Settings, MailCheck, X } from 'lucide-react';
+import { Github, Sparkles, Search, LogIn, Settings, MailCheck, X, Send } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SearchBar } from './SearchBar';
 import { AnimatedThemeToggler } from './magicui/animated-theme-toggler';
@@ -280,6 +280,7 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
               <LogIn className="w-5 h-5" />
             </Button>
           )}
+
 
           {/* 动画主题切换器 */}
           <AnimatedThemeToggler />

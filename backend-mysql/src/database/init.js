@@ -42,6 +42,9 @@ async function initializeDatabase() {
     // 检查并创建友链申请表
     await ensureFriendLinkApplicationsTable(sequelize);
     
+    // 检查并创建工具提交表
+    await ensureToolSubmissionsTable(sequelize);
+    
     if (isFirstRun) {
       // 初始化管理员账户
       await initializeAdminUser(sequelize);
@@ -60,6 +63,7 @@ async function initializeDatabase() {
 - ✅ 创建 tools 表 (支持多分类)
 - ✅ 创建 system_settings 表
 - ✅ 创建 friend_link_applications 表
+- ✅ 创建 tool_submissions 表
 - ✅ 创建管理员账户
 - ✅ 初始化系统设置
 
@@ -282,6 +286,62 @@ async function ensureFriendLinkApplicationsTable(sequelize) {
   }
 }
 
+// 确保工具提交表存在
+async function ensureToolSubmissionsTable(sequelize) {
+  try {
+    console.log('🔄 检查工具提交表...');
+    
+    // 检查表是否存在
+    const [tables] = await sequelize.query("SHOW TABLES LIKE 'tool_submissions'");
+    
+    if (tables.length === 0) {
+      console.log('  ➕ 创建 tool_submissions 表...');
+      
+      // 创建 tool_submissions 表
+      await sequelize.query(`
+        CREATE TABLE IF NOT EXISTS \`tool_submissions\` (
+          \`id\` int NOT NULL AUTO_INCREMENT,
+          \`tool_id\` varchar(50) NOT NULL,
+          \`name\` varchar(100) NOT NULL,
+          \`description\` text NOT NULL,
+          \`url\` varchar(500) NOT NULL,
+          \`category\` json NOT NULL,
+          \`tags\` json DEFAULT NULL,
+          \`icon\` varchar(50) DEFAULT 'Tool',
+          \`icon_url\` varchar(500) DEFAULT NULL,
+          \`icon_file\` varchar(255) DEFAULT NULL,
+          \`icon_theme\` enum('auto','auto-light','auto-dark','light','dark','none') DEFAULT 'auto-dark',
+          \`submitter_name\` varchar(100) DEFAULT NULL,
+          \`submitter_email\` varchar(255) DEFAULT NULL,
+          \`submitter_contact\` varchar(255) DEFAULT NULL,
+          \`status\` enum('pending','approved','rejected','processing') DEFAULT 'pending',
+          \`reviewer_id\` varchar(36) DEFAULT NULL,
+          \`review_comment\` text DEFAULT NULL,
+          \`reviewed_at\` datetime DEFAULT NULL,
+          \`priority\` int DEFAULT '0',
+          \`source\` varchar(50) DEFAULT 'user_submit',
+          \`additional_info\` json DEFAULT NULL,
+          \`created_at\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          \`updated_at\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (\`id\`),
+          UNIQUE KEY \`tool_submissions_tool_id_unique\` (\`tool_id\`),
+          KEY \`idx_tool_submissions_status\` (\`status\`),
+          KEY \`idx_tool_submissions_email\` (\`submitter_email\`),
+          KEY \`idx_tool_submissions_reviewer\` (\`reviewer_id\`),
+          KEY \`idx_tool_submissions_created\` (\`created_at\`),
+          KEY \`idx_tool_submissions_priority_created\` (\`priority\`, \`created_at\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+      
+      console.log('  ✅ tool_submissions 表创建完成');
+    } else {
+      console.log('  ✅ tool_submissions 表已存在');
+    }
+  } catch (error) {
+    console.error('  ❌ 工具提交表检查失败:', error.message);
+  }
+}
+
 async function createTables(sequelize) {
   console.log('📋 创建数据表...');
   
@@ -387,6 +447,43 @@ async function createTables(sequelize) {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
   console.log('  ✅ friend_link_applications 表创建完成');
+  
+  // 创建 tool_submissions 表
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS \`tool_submissions\` (
+      \`id\` int NOT NULL AUTO_INCREMENT,
+      \`tool_id\` varchar(50) NOT NULL,
+      \`name\` varchar(100) NOT NULL,
+      \`description\` text NOT NULL,
+      \`url\` varchar(500) NOT NULL,
+      \`category\` json NOT NULL,
+      \`tags\` json DEFAULT NULL,
+      \`icon\` varchar(50) DEFAULT 'Tool',
+      \`icon_url\` varchar(500) DEFAULT NULL,
+      \`icon_file\` varchar(255) DEFAULT NULL,
+      \`icon_theme\` enum('auto','auto-light','auto-dark','light','dark','none') DEFAULT 'auto-dark',
+      \`submitter_name\` varchar(100) DEFAULT NULL,
+      \`submitter_email\` varchar(255) DEFAULT NULL,
+      \`submitter_contact\` varchar(255) DEFAULT NULL,
+      \`status\` enum('pending','approved','rejected','processing') DEFAULT 'pending',
+      \`reviewer_id\` varchar(36) DEFAULT NULL,
+      \`review_comment\` text DEFAULT NULL,
+      \`reviewed_at\` datetime DEFAULT NULL,
+      \`priority\` int DEFAULT '0',
+      \`source\` varchar(50) DEFAULT 'user_submit',
+      \`additional_info\` json DEFAULT NULL,
+      \`created_at\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updated_at\` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`),
+      UNIQUE KEY \`tool_submissions_tool_id_unique\` (\`tool_id\`),
+      KEY \`idx_tool_submissions_status\` (\`status\`),
+      KEY \`idx_tool_submissions_email\` (\`submitter_email\`),
+      KEY \`idx_tool_submissions_reviewer\` (\`reviewer_id\`),
+      KEY \`idx_tool_submissions_created\` (\`created_at\`),
+      KEY \`idx_tool_submissions_priority_created\` (\`priority\`, \`created_at\`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+  console.log('  ✅ tool_submissions 表创建完成');
 }
 
 async function initializeAdminUser(sequelize) {

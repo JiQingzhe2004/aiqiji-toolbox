@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home, FileSpreadsheet, RefreshCw, ExternalLink, User } from 'lucide-react';
+import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home, FileSpreadsheet, RefreshCw, ExternalLink, User, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import { AdminExcelImport } from '@/components/admin/AdminExcelImport';
 import { AdminFriendLinkApplications } from '@/components/admin/AdminFriendLinkApplications';
 import { AdminFriendLinkManager } from '@/components/admin/AdminFriendLinkManager';
 import { AdminProfileSettings } from '@/components/admin/AdminProfileSettings';
+import { ToolSubmissionManagement } from '@/components/admin/ToolSubmissionManagement';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { toolsApi } from '@/services/toolsApi';
 import { useAuth } from '@/contexts/AuthContext';
@@ -334,6 +335,13 @@ function AdminPage() {
                 统计
               </TabsTrigger>
               <TabsTrigger 
+                value="submissions" 
+                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
+              >
+                <Send className="w-4 h-4" />
+                提交
+              </TabsTrigger>
+              <TabsTrigger 
                 value="friendlinks" 
                 className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
               >
@@ -365,7 +373,7 @@ function AdminPage() {
           </div>
           
           {/* 桌面端使用网格布局 */}
-          <TabsList className="hidden md:grid w-full grid-cols-7">
+          <TabsList className="hidden md:grid w-full grid-cols-8">
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
               工具管理
@@ -377,6 +385,10 @@ function AdminPage() {
             <TabsTrigger value="stats" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               统计数据
+            </TabsTrigger>
+            <TabsTrigger value="submissions" className="flex items-center gap-2">
+              <Send className="w-4 h-4" />
+              工具提交
             </TabsTrigger>
             <TabsTrigger value="friendlinks" className="flex items-center gap-2">
               <ExternalLink className="w-4 h-4" />
@@ -623,6 +635,11 @@ function AdminPage() {
           {/* 统计数据 */}
           <TabsContent value="stats">
             <AdminStats stats={stats} />
+          </TabsContent>
+
+          {/* 工具提交管理 */}
+          <TabsContent value="submissions">
+            <ToolSubmissionManagement />
           </TabsContent>
 
           {/* 友链管理 */}

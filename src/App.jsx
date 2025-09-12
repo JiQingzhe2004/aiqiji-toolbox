@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { FloatingSubmitButton } from './components/FloatingSubmitButton';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -18,6 +19,7 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const FriendLinksPage = lazy(() => import('./pages/FriendLinksPage'));
 const FriendLinkApplicationPage = lazy(() => import('./pages/FriendLinkApplicationPage'));
+const ToolSubmissionPage = lazy(() => import('./pages/ToolSubmissionPage'));
 
 
 /**
@@ -131,6 +133,11 @@ function App() {
                           <FriendLinkApplicationPage />
                         </Suspense>
                       } />
+                      <Route path="/submit-tool" element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ToolSubmissionPage />
+                        </Suspense>
+                      } />
                       <Route path="*" element={
                         <Suspense fallback={<LoadingSpinner />}>
                           <NotFoundPage />
@@ -140,6 +147,9 @@ function App() {
                   </main>
                   
                   <Footer />
+                  
+                  {/* 悬浮提交工具按钮 */}
+                  <FloatingSubmitButton />
                 </div>
               } />
             </Routes>

@@ -63,6 +63,28 @@ export function Footer() {
     fetchWebsiteInfo();
   }, []);
 
+  // 加载51.la数据统计脚本
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.id = 'LA-DATA-WIDGET';
+    script.crossOrigin = 'anonymous';
+    script.charset = 'UTF-8';
+    script.src = 'https://v6-widget.51.la/v6/3NQ4sGiyrhidvRH8/quote.js?theme=0&f=12&display=0,1,0,0,0,0,0,1';
+    
+    const container = document.getElementById('la-data-widget-container');
+    if (container) {
+      container.appendChild(script);
+    }
+
+    // 清理函数
+    return () => {
+      const existingScript = document.getElementById('LA-DATA-WIDGET');
+      if (existingScript && existingScript.parentNode) {
+        existingScript.parentNode.removeChild(existingScript);
+      }
+    };
+  }, []);
+
   return (
     <>
     <motion.footer
@@ -311,9 +333,13 @@ export function Footer() {
                 </BrowserView>
               </div>
               
-              <p className="text-xs text-muted-foreground">
-                有好的工具推荐或技术交流？欢迎通过以上方式联系我们！
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-muted-foreground">
+                  有好的工具推荐或技术交流？欢迎通过以上方式联系我们！
+                </p>
+                {/* 51.la数据统计 */}
+                <div id="la-data-widget-container"></div>
+              </div>
             </div>
           </div>
         </div>

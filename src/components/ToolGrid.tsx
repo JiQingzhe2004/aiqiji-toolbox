@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { LazyMagicCard } from './LazyMagicCard';
@@ -6,6 +6,7 @@ import { useVirtualizedGrid } from '@/hooks/useVirtualizedGrid';
 import type { Tool } from '@/types';
 import { cn } from '@/lib/utils';
 import { Database, Search } from 'lucide-react';
+import { settingsApi } from '@/services/settingsApi';
 
 /**
  * ToolGrid组件属性接口
@@ -26,6 +27,24 @@ export const ToolGrid = memo(function ToolGrid({
   searchQuery = '', 
   className 
 }: ToolGridProps) {
+  const [showVpnIndicator, setShowVpnIndicator] = useState(true);
+
+  // 获取VPN设置
+  useEffect(() => {
+    const fetchVpnSetting = async () => {
+      try {
+        const response = await settingsApi.getPublicSettings();
+        if (response.success && response.data) {
+          setShowVpnIndicator(response.data.show_vpn_indicator ?? true);
+        }
+      } catch (error) {
+        console.error('获取VPN设置失败:', error);
+      }
+    };
+    
+    fetchVpnSetting();
+  }, []);
+
   // 使用虚拟化网格 Hook
   const {
     visibleItems,
@@ -154,6 +173,7 @@ export const ToolGrid = memo(function ToolGrid({
                 <LazyMagicCard 
                   tool={tool} 
                   searchQuery={searchQuery}
+                  showVpnIndicator={showVpnIndicator}
                 />
               </motion.div>
             ))}

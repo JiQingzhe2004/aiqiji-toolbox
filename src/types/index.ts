@@ -9,6 +9,8 @@ export interface Tool {
   name: string;
   /** 简短描述 */
   description: string;
+  /** 详细说明内容，支持富文本格式 */
+  content?: string;
   /** lucide-react 图标名 */
   icon?: string;
   /** 图标URL链接 */
@@ -33,6 +35,8 @@ export interface Tool {
   rating_count: number;
   /** 排序权重 */
   sort_order: number;
+  /** 是否需要VPN访问 */
+  needs_vpn: boolean;
   /** 创建时间 */
   created_at: string;
   /** 更新时间 */

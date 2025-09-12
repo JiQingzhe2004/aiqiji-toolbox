@@ -86,7 +86,7 @@ export const getToolById = async (req, res) => {
     const { id } = req.params;
     
     const tool = await Tool.findOne({
-      where: { id, status: 'active' }
+      where: { id }
     });
     
     if (!tool) {
@@ -130,7 +130,8 @@ export const createTool = async (req, res) => {
       tags,
       url,
       featured,
-      sort_order
+      sort_order,
+      needs_vpn
     } = req.body;
 
     // 检查ID是否已存在
@@ -154,7 +155,8 @@ export const createTool = async (req, res) => {
       tags,
       url,
       featured,
-      sort_order
+      sort_order,
+      needs_vpn
     };
     
     const cleanedData = cleanToolData(rawData);
@@ -179,7 +181,8 @@ export const createTool = async (req, res) => {
       tags: cleanTagsData(cleanedData.tags),
       url: cleanedData.url,
       featured: cleanedData.featured === true || cleanedData.featured === 'true',
-      sort_order: cleanedData.sort_order || 0
+      sort_order: cleanedData.sort_order || 0,
+      needs_vpn: cleanedData.needs_vpn === true || cleanedData.needs_vpn === 'true'
     };
 
     // 如果有上传的图标文件
@@ -241,6 +244,11 @@ export const updateTool = async (req, res) => {
     // 处理featured
     if (updateData.featured !== undefined) {
       updateData.featured = updateData.featured === true || updateData.featured === 'true';
+    }
+
+    // 处理needs_vpn
+    if (updateData.needs_vpn !== undefined) {
+      updateData.needs_vpn = updateData.needs_vpn === true || updateData.needs_vpn === 'true';
     }
 
     // 如果有新的图标文件

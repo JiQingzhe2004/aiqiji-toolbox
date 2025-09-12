@@ -36,7 +36,13 @@ export default function ExternalLinkPage() {
 
   // 取消跳转
   const handleCancel = () => {
-    window.close();
+    if (returnUrl && returnUrl !== '/') {
+      // 如果有返回URL，跳转回去
+      navigate(returnUrl);
+    } else {
+      // 否则关闭窗口
+      window.close();
+    }
   };
 
   // 如果没有URL，显示错误

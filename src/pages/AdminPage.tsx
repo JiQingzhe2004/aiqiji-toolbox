@@ -162,6 +162,13 @@ function AdminPage() {
   };
 
   // 处理工具删除
+  const handleToolUpdate = (updatedTool: Tool) => {
+    // 无感更新：直接更新本地状态
+    setTools(prev => prev.map(tool => 
+      tool.id === updatedTool.id ? updatedTool : tool
+    ));
+  };
+
   const handleToolDelete = async (toolId: string) => {
     try {
       const response = await toolsApi.deleteTool(toolId);
@@ -505,6 +512,7 @@ function AdminPage() {
                     setShowForm(true);
                   }}
                   onDelete={handleToolDelete}
+                  onUpdate={handleToolUpdate}
                   selectedTools={selectedTools}
                   onSelectTool={(toolId) => {
                     setSelectedTools(prev => 
@@ -576,6 +584,7 @@ function AdminPage() {
                   setShowForm(true);
                 }}
                 onDelete={handleToolDelete}
+                onUpdate={handleToolUpdate}
               />
             </div>
             

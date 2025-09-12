@@ -9,6 +9,7 @@ interface LazyMagicCardProps {
   tool: Tool;
   searchQuery?: string;
   className?: string;
+  showVpnIndicator?: boolean;
 }
 
 /**
@@ -18,7 +19,8 @@ interface LazyMagicCardProps {
 export const LazyMagicCard = memo(function LazyMagicCard({ 
   tool, 
   searchQuery = '', 
-  className 
+  className,
+  showVpnIndicator = true
 }: LazyMagicCardProps) {
   const { ref, inView } = useInView({
     triggerOnce: true,  // 只触发一次，一旦加载就不再卸载
@@ -40,6 +42,7 @@ export const LazyMagicCard = memo(function LazyMagicCard({
           <MagicCard 
             tool={tool} 
             searchQuery={searchQuery}
+            showVpnIndicator={showVpnIndicator}
           />
         </motion.div>
       ) : (

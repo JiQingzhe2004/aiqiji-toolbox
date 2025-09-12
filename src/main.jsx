@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './lib/fontawesome' // 导入 Font Awesome 配置
 import App from './App.jsx'
+import { suppressFlushSyncWarnings } from './utils/reactErrorSuppressor'
+
+// 临时抑制 React 19 与 TipTap 的兼容性警告
+suppressFlushSyncWarnings();
 
 // 初始化主题
 const initializeTheme = () => {

@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { FloatingSubmitButton } from './components/FloatingSubmitButton';
+import { useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -20,6 +21,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const FriendLinksPage = lazy(() => import('./pages/FriendLinksPage'));
 const FriendLinkApplicationPage = lazy(() => import('./pages/FriendLinkApplicationPage'));
 const ToolSubmissionPage = lazy(() => import('./pages/ToolSubmissionPage'));
+const ToolDetailPage = lazy(() => import('./pages/ToolDetailPage'));
 
 
 /**
@@ -72,18 +74,17 @@ class ErrorBoundary extends React.Component {
 }
 
 /**
- * 主应用组件
- * 包含路由、主题、错误边界等核心功能
+ * 应用内容组件 - 需要在 Router 内部使用 useLocation
  */
-function App() {
+function AppContent() {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const location = useLocation();
+  
+  // 检测是否在工具详情页面
+  const isToolDetailPage = location.pathname.startsWith('/tool/');
 
   return (
-    <AuthProvider>
-        <ErrorBoundary>
-          <Router>
-            <ScrollToTop />
-            <Routes>
+    <Routes>
               {/* 外链提醒页面 - 独立布局，无Header和Footer */}
               <Route path="/external-link" element={
                 <Suspense fallback={<LoadingSpinner />}>
@@ -138,6 +139,11 @@ function App() {
                           <ToolSubmissionPage />
                         </Suspense>
                       } />
+                      <Route path="/tool/:toolId" element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                          <ToolDetailPage />
+                        </Suspense>
+                      } />
                       <Route path="*" element={
                         <Suspense fallback={<LoadingSpinner />}>
                           <NotFoundPage />
@@ -148,11 +154,26 @@ function App() {
                   
                   <Footer />
                   
-                  {/* 悬浮提交工具按钮 */}
-                  <FloatingSubmitButton />
+                  {/* 悬浮提交工具按钮 - 工具详情页面有自己的按钮 */}
+                  {!isToolDetailPage && <FloatingSubmitButton />}
                 </div>
               } />
             </Routes>
+  );
+}
+
+/**
+ * 主应用组件
+ * 包含路由、主题、错误边界等核心功能
+ */
+function App() {
+  return (
+    <AuthProvider>
+      <ErrorBoundary>
+        <Router>
+          <ScrollToTop />
+          <AppContent />
+        </Router>
         
         {/* Toast 提示组件 */}
         <Toaster
@@ -170,7 +191,6 @@ function App() {
         
         {/* Cookie同意横幅 */}
         <CookieConsent />
-        </Router>
       </ErrorBoundary>
     </AuthProvider>
   );

@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
-import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone, ShieldBan, ShieldAlert, X } from 'lucide-react';
+import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone, ShieldBan, ShieldAlert, X, Shield } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import * as AspectRatio from '@radix-ui/react-aspect-ratio';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { isMobile } from 'react-device-detect';
+import { useNavigate } from 'react-router-dom';
 import type { Tool } from '@/types';
 import { cn, openExternalLinkWithWarning, formatDate } from '@/lib/utils';
 import { getToolIconUrl } from '@/utils/imageUtils';
@@ -21,6 +22,7 @@ interface MagicCardProps {
   tool: Tool;
   searchQuery?: string;
   className?: string;
+  showVpnIndicator?: boolean;
 }
 
 /**
@@ -214,9 +216,11 @@ const SmartTags = memo(function SmartTags({ tags }: { tags: string[] }) {
 export const MagicCard = memo(function MagicCard({ 
   tool, 
   searchQuery = '', 
-  className 
+  className,
+  showVpnIndicator = true
 }: MagicCardProps) {
   const confettiRef = React.useRef<ConfettiRef>(null);
+  const navigate = useNavigate();
   const [showQRModal, setShowQRModal] = useState(false);
   const [showDescModal, setShowDescModal] = useState(false);
 
@@ -295,13 +299,12 @@ export const MagicCard = memo(function MagicCard({
     }
   }, [tool.url, tool.name]);
 
-  // 打开工具链接
-  const openTool = useCallback((e: React.MouseEvent) => {
+  // 跳转到工具详情页面
+  const goToToolDetail = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const iconUrl = getToolIconUrl(tool);
-    openExternalLinkWithWarning(tool.url, tool.name, iconUrl);
-  }, [tool.url, tool.name, tool.icon_url, tool.logoUrl]);
+    navigate(`/tool/${tool.id}`);
+  }, [tool.id, navigate]);
 
   // 高亮匹配文本
   const highlightedName = useMemo(() => {
@@ -374,6 +377,13 @@ export const MagicCard = memo(function MagicCard({
               <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/90 backdrop-blur-sm text-yellow-50 rounded-full text-xs font-medium shadow-sm">
                 <Star className="w-3 h-3 fill-current" />
                 推荐
+              </div>
+            )}
+            {/* VPN标识 */}
+            {showVpnIndicator && tool.needs_vpn && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/90 backdrop-blur-sm text-blue-50 rounded-full text-xs font-medium shadow-sm">
+                <Shield className="w-3 h-3" />
+                VPN
               </div>
             )}
             {/* 状态标识 */}
@@ -460,47 +470,35 @@ export const MagicCard = memo(function MagicCard({
         <div className="flex gap-2 pt-2">
           <div className="flex-1 group/button">
             <InteractiveHoverButton 
-              className={cn(
-                "w-full",
-                tool.status === 'inactive' && "opacity-50 cursor-not-allowed"
-              )}
+              className="w-full"
               hoverText={
                 tool.status === 'active' 
-                  ? `打开${tool.name}` 
+                  ? `查看${tool.name}详情` 
                   : tool.status === 'inactive' 
                     ? '工具已停用' 
-                    : `打开${tool.name}（维护）`
+                    : `查看${tool.name}详情`
               }
               onClick={(e) => {
                 e.stopPropagation();
                 if (tool.status === 'inactive') {
-                  // 只有停用的工具禁止访问
-                  toast.error('该工具已停用', {
+                  // 停用的工具仍然可以查看详情，但会显示提示
+                  toast('该工具已停用', {
                     duration: 2000,
-                    position: 'bottom-center'
+                    position: 'bottom-center',
+                    style: {
+                      background: 'hsl(var(--background))',
+                      color: 'hsl(var(--foreground))',
+                      border: '1px solid hsl(var(--destructive))',
+                      borderLeft: '4px solid hsl(var(--destructive))'
+                    },
+                    icon: '⚠️'
                   });
-                } else {
-                  // 正常和维护的工具都可以访问
-                  if (tool.status === 'maintenance') {
-                    // 维护工具给予提示但仍可访问
-                    toast('该工具正在维护，可能存在功能不稳定', {
-                      duration: 3000,
-                      position: 'bottom-center',
-                      style: {
-                        background: 'hsl(var(--background))',
-                        color: 'hsl(var(--foreground))',
-                        border: '1px solid hsl(var(--warning))',
-                        borderLeft: '4px solid hsl(var(--warning))'
-                      },
-                      icon: '⚠️'
-                    });
-                  }
-                  openTool(e);
                 }
+                goToToolDetail(e);
               }}
             >
-              {tool.status === 'active' ? '打开工具' : 
-               tool.status === 'inactive' ? '已停用' : '打开工具'}
+              {tool.status === 'active' ? '查看详情' : 
+               tool.status === 'inactive' ? '查看详情' : '查看详情'}
             </InteractiveHoverButton>
           </div>
           

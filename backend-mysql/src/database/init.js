@@ -112,12 +112,28 @@ async function upgradeDatabase(sequelize) {
     const currentType = columns[0].Type;
     console.log(`  📊 当前 category 字段类型: ${currentType}`);
     
-    // 如果已经是 JSON 类型，跳过升级
+    // 如果已经是 JSON 类型，跳过category字段升级
     if (currentType.toLowerCase().includes('json')) {
       console.log('  ✅ category 字段已经是 JSON 类型，无需升级');
-      return;
+    } else {
+      // 执行category字段升级逻辑
+      await upgradeCategoryField(sequelize);
     }
     
+    // 检查并添加 content 字段
+    await ensureContentField(sequelize);
+    
+    // 升级友情链接设置
+    await upgradeFriendLinksSettings(sequelize);
+    
+  } catch (error) {
+    console.error('❌ 数据库升级失败:', error);
+    throw error;
+  }
+}
+
+async function upgradeCategoryField(sequelize) {
+  try {
     console.log('  🚀 开始自动升级 category 字段以支持多分类...');
     
     // 备份现有数据
@@ -202,7 +218,37 @@ async function upgradeDatabase(sequelize) {
     console.error('  ❌ 数据库升级失败:', error.message);
     console.log('  ⚠️  继续使用现有结构...');
   }
+}
 
+async function ensureContentField(sequelize) {
+  console.log('🔄 检查工具内容字段...');
+  
+  try {
+    // 检查 content 字段是否存在
+    const [contentColumns] = await sequelize.query(`
+      SHOW COLUMNS FROM tools LIKE 'content'
+    `);
+    
+    if (contentColumns.length === 0) {
+      console.log('  🚀 添加 content 字段以支持富文本内容...');
+      
+      await sequelize.query(`
+        ALTER TABLE tools 
+        ADD COLUMN content LONGTEXT DEFAULT NULL COMMENT '工具详细说明内容，支持富文本格式'
+        AFTER description
+      `);
+      
+      console.log('  ✅ content 字段添加成功');
+    } else {
+      console.log('  ✅ content 字段已存在，无需添加');
+    }
+  } catch (error) {
+    console.error('  ❌ 添加 content 字段失败:', error.message);
+    console.log('  ⚠️  继续使用现有结构...');
+  }
+}
+
+async function upgradeFriendLinksSettings(sequelize) {
   // 升级：确保存在 friend_links 设置（用于友情链接）
   try {
     console.log('🔄 检查系统设置：friend_links ...');
@@ -235,6 +281,49 @@ async function upgradeDatabase(sequelize) {
     console.error('  ❌ 升级 friend_links 设置失败:', error.message);
   }
 
+  // 升级：确保存在 needs_vpn 字段（用于VPN标识）
+  try {
+    console.log('🔄 检查 needs_vpn 字段...');
+    const [vpnColumns] = await sequelize.query(`
+      SHOW COLUMNS FROM tools LIKE 'needs_vpn'
+    `);
+    
+    if (vpnColumns.length === 0) {
+      console.log('  ➕ 添加 needs_vpn 字段');
+      await sequelize.query(`
+        ALTER TABLE tools 
+        ADD COLUMN needs_vpn BOOLEAN DEFAULT FALSE COMMENT '是否需要VPN访问'
+      `);
+      console.log('  ✅ needs_vpn 字段添加成功');
+    } else {
+      console.log('  ✅ needs_vpn 字段已存在');
+    }
+  } catch (error) {
+    console.error('  ❌ 升级 needs_vpn 字段失败:', error.message);
+  }
+
+  // 升级：确保存在 show_vpn_indicator 系统设置（用于控制VPN标识显示）
+  try {
+    console.log('🔄 检查系统设置：show_vpn_indicator ...');
+    const [existsRows] = await sequelize.query(`
+      SELECT COUNT(*) as count FROM system_settings WHERE setting_key = 'show_vpn_indicator'
+    `);
+    if (existsRows[0].count === 0) {
+      console.log('  ➕ 新增 show_vpn_indicator 设置（默认启用）');
+      const id = 'show-vpn-indicator-' + Date.now();
+      await sequelize.query(`
+        INSERT INTO system_settings (
+          id, setting_key, setting_value, setting_type, description, category, is_public, created_at, updated_at
+        ) VALUES (
+          :id, 'show_vpn_indicator', 'true', 'boolean', '是否显示VPN标识', 'general', 1, NOW(), NOW()
+        )
+      `, { replacements: { id } });
+    } else {
+      console.log('  ✅ show_vpn_indicator 设置已存在');
+    }
+  } catch (error) {
+    console.error('  ❌ 升级 show_vpn_indicator 设置失败:', error.message);
+  }
 }
 
 // 确保友链申请表存在
@@ -374,6 +463,7 @@ async function createTables(sequelize) {
       \`id\` varchar(255) NOT NULL,
       \`name\` varchar(255) NOT NULL,
       \`description\` text NOT NULL,
+      \`content\` longtext DEFAULT NULL COMMENT '工具详细说明内容，支持富文本格式',
       \`icon\` varchar(100) DEFAULT NULL,
       \`icon_url\` varchar(500) DEFAULT NULL,
       \`icon_file\` varchar(255) DEFAULT NULL,

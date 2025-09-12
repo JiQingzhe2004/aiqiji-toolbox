@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, RefreshCw, Settings, Globe, Info, Eye, EyeOff, Plus, Edit, Trash, ExternalLink, Loader2 } from 'lucide-react';
+import { Save, RefreshCw, Settings, Globe, Info, Eye, EyeOff, Plus, Edit, Trash, ExternalLink, Loader2, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,14 @@ interface SystemSettings {
       is_public: boolean;
     };
   };
+  general: {
+    [key: string]: {
+      value: any;
+      description: string;
+      type: string;
+      is_public: boolean;
+    };
+  };
 }
 
 export function AdminSystemSettings() {
@@ -32,13 +40,15 @@ export function AdminSystemSettings() {
   const [saving, setSaving] = useState(false);
   const [savingWebsite, setSavingWebsite] = useState(false);
   const [savingIcp, setSavingIcp] = useState(false);
+  const [savingVpn, setSavingVpn] = useState(false);
   const [formData, setFormData] = useState({
     site_name: '',
     site_url: '',
     site_icon: '',
     site_description: '',
     icp_number: '',
-    show_icp: false
+    show_icp: false,
+    show_vpn_indicator: true
   });
 
 
@@ -60,7 +70,8 @@ export function AdminSystemSettings() {
           site_icon: websiteSettings.site_icon?.value || '',
           site_description: websiteSettings.site_description?.value || '',
           icp_number: websiteSettings.icp_number?.value || '',
-          show_icp: websiteSettings.show_icp?.value || false
+          show_icp: websiteSettings.show_icp?.value || false,
+          show_vpn_indicator: response.data.general?.show_vpn_indicator?.value ?? true
         });
       }
     } catch (error) {
@@ -169,6 +180,48 @@ export function AdminSystemSettings() {
     }
   };
 
+  // 保存VPN设置
+  const handleSaveVpn = async () => {
+    try {
+      setSavingVpn(true);
+      
+      const updates: SettingsUpdateData[] = [
+        {
+          setting_key: 'show_vpn_indicator',
+          setting_value: formData.show_vpn_indicator,
+          setting_type: 'boolean'
+        }
+      ];
+      
+      const response = await settingsApi.updateSettings(updates);
+      if (response.success) {
+        toast.success('VPN设置保存成功');
+        // 无感更新本地状态，避免重新加载
+        if (settings) {
+          setSettings(prev => ({
+            ...prev!,
+            general: {
+              ...prev!.general,
+              show_vpn_indicator: { 
+                value: formData.show_vpn_indicator, 
+                description: '是否显示VPN标识',
+                type: 'boolean',
+                is_public: true
+              }
+            }
+          }));
+        }
+      } else {
+        toast.error('保存VPN设置失败');
+      }
+    } catch (error) {
+      console.error('保存VPN设置失败:', error);
+      toast.error('保存VPN设置失败');
+    } finally {
+      setSavingVpn(false);
+    }
+  };
+
   // 保存所有设置（保留作为备用）
   const handleSave = async () => {
     try {
@@ -224,15 +277,17 @@ export function AdminSystemSettings() {
 
   // 重置表单
   const handleReset = () => {
-    if (settings?.website) {
-      const websiteSettings = settings.website;
+    if (settings) {
+      const websiteSettings = settings.website || {};
+      const generalSettings = settings.general || {};
       setFormData({
         site_name: websiteSettings.site_name?.value || '',
         site_url: websiteSettings.site_url?.value || '',
         site_icon: websiteSettings.site_icon?.value || '',
         site_description: websiteSettings.site_description?.value || '',
         icp_number: websiteSettings.icp_number?.value || '',
-        show_icp: websiteSettings.show_icp?.value || false
+        show_icp: websiteSettings.show_icp?.value || false,
+        show_vpn_indicator: generalSettings.show_vpn_indicator?.value ?? true
       });
       toast.success('表单已重置');
     }
@@ -301,7 +356,7 @@ export function AdminSystemSettings() {
       </div>
 
       {/* 设置表单 */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* 网站基本信息 */}
         <Card>
           <CardHeader>
@@ -459,6 +514,62 @@ export function AdminSystemSettings() {
           </CardContent>
         </Card>
 
+        {/* VPN设置 */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className="w-5 h-5" />
+                <span>VPN标识</span>
+              </CardTitle>
+              <Button
+                variant="blackWhite"
+                onClick={handleSaveVpn}
+                disabled={savingVpn}
+                size="sm"
+                className="flex items-center space-x-2 w-full sm:w-auto"
+              >
+                {savingVpn && <Loader2 className="w-4 h-4 animate-spin" />}
+                <Save className="w-4 h-4" />
+                <span>{savingVpn ? '保存中...' : '保存'}</span>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="show_vpn_indicator" className="flex items-center space-x-2">
+                    {formData.show_vpn_indicator ? (
+                      <Eye className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <EyeOff className="w-4 h-4 text-gray-400" />
+                    )}
+                    <span>显示VPN标识</span>
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    控制是否在工具卡片上显示VPN标识
+                  </p>
+                </div>
+                <Switch
+                  id="show_vpn_indicator"
+                  checked={formData.show_vpn_indicator}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, show_vpn_indicator: checked }))}
+                  disabled={savingVpn}
+                />
+              </div>
+              
+              {formData.show_vpn_indicator && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    💡 启用后，需要VPN才能访问的工具将显示VPN标识，帮助用户了解访问要求
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
 
       {/* 保存提示 */}
@@ -473,6 +584,7 @@ export function AdminSystemSettings() {
               <li>• 每个设置区域都有独立的保存按钮，修改后点击对应的保存按钮即可</li>
               <li>• 网站名称和描述将在前端页面中实时更新</li>
               <li>• 备案号支持链接到工信部备案查询网站</li>
+              <li>• VPN标识帮助用户了解工具的访问要求</li>
               <li>• 所有设置保存后立即生效，无需重启服务</li>
             </ul>
           </div>

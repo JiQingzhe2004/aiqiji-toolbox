@@ -33,6 +33,12 @@ const Tool = sequelize.define('Tool', {
     }
   },
   
+  content: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true,
+    comment: '工具详细说明内容，支持富文本格式'
+  },
+  
   icon: {
     type: DataTypes.STRING(50),
     allowNull: true,
@@ -178,6 +184,12 @@ const Tool = sequelize.define('Tool', {
   sort_order: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  
+  needs_vpn: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    comment: '是否需要VPN访问'
   }
 }, {
   tableName: 'tools',

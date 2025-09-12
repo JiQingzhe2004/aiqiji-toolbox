@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { EmptyState } from '@/components/EmptyState';
+import { ToolContentEditor } from './ToolContentEditor';
 import {
   Table,
   TableBody,
@@ -36,6 +37,7 @@ interface AdminToolsListProps {
   loading: boolean;
   onEdit: (tool: Tool) => void;
   onDelete: (toolId: string) => void;
+  onUpdate?: (tool: Tool) => void;
   selectedTools?: string[];
   onSelectTool?: (toolId: string) => void;
   onSelectAll?: () => void;
@@ -46,6 +48,7 @@ export function AdminToolsList({
   loading, 
   onEdit, 
   onDelete, 
+  onUpdate,
   selectedTools = [], 
   onSelectTool, 
   onSelectAll 
@@ -148,6 +151,13 @@ export function AdminToolsList({
               </div>
             </div>
             <div className="flex gap-2">
+              {onUpdate && (
+                <ToolContentEditor
+                  tool={tool}
+                  onUpdate={onUpdate}
+                  iconOnly={false}
+                />
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -171,7 +181,7 @@ export function AdminToolsList({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-destructive hover:text-destructive-foreground hover:bg-destructive px-3"
+                    className="text-destructive hover:text-destructive-foreground hover:bg-destructive flex-1"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -214,9 +224,9 @@ export function AdminToolsList({
               </TableHead>
             )}
             <TableHead className="w-1/2">工具信息</TableHead>
-            <TableHead className="w-1/8">分类</TableHead>
+            <TableHead className="w-20">分类</TableHead>
             <TableHead className="w-20">状态</TableHead>
-            <TableHead className="w-1/8">创建时间</TableHead>
+            <TableHead className="w-24">创建时间</TableHead>
             <TableHead className="flex-1">操作</TableHead>
           </TableRow>
         </TableHeader>
@@ -273,7 +283,7 @@ export function AdminToolsList({
                   </div>
                 </div>
               </TableCell>
-              <TableCell className="w-1/8">
+              <TableCell className="w-20">
                 <div className="flex flex-wrap gap-1">
                   {(Array.isArray(tool.category) ? tool.category : [tool.category]).map((cat, index) => (
                     <Badge key={`${tool.id}-cat-${index}`} className={cn(getCategoryColor(cat), "text-xs")}>
@@ -288,7 +298,7 @@ export function AdminToolsList({
                    tool.status === 'inactive' ? '停用' : '维护'}
                 </Badge>
               </TableCell>
-              <TableCell className="w-1/8">
+              <TableCell className="w-24">
                 <div className="text-xs text-muted-foreground">
                   {(() => {
                     const dateString = tool.created_at || tool.createdAt;
@@ -321,6 +331,13 @@ export function AdminToolsList({
                   >
                     <ExternalLink className="w-4 h-4" />
                   </Button>
+                  {onUpdate && (
+                    <ToolContentEditor
+                      tool={tool}
+                      onUpdate={onUpdate}
+                      iconOnly={true}
+                    />
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"

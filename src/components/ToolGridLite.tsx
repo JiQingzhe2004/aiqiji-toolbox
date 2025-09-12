@@ -1,10 +1,11 @@
-import React, { memo, useEffect } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { LazyMagicCard } from './LazyMagicCard';
 import { useVirtualizedGrid } from '@/hooks/useVirtualizedGrid';
 import type { Tool } from '@/types';
 import { cn } from '@/lib/utils';
 import { Database } from 'lucide-react';
+import { settingsApi } from '@/services/settingsApi';
 
 /**
  * ToolGrid组件属性接口
@@ -25,6 +26,24 @@ export const ToolGridLite = memo(function ToolGridLite({
   searchQuery, 
   className 
 }: ToolGridProps) {
+  const [showVpnIndicator, setShowVpnIndicator] = useState(true);
+
+  // 获取VPN设置
+  useEffect(() => {
+    const fetchVpnSetting = async () => {
+      try {
+        const response = await settingsApi.getPublicSettings();
+        if (response.success && response.data) {
+          setShowVpnIndicator(response.data.show_vpn_indicator ?? true);
+        }
+      } catch (error) {
+        console.error('获取VPN设置失败:', error);
+      }
+    };
+    
+    fetchVpnSetting();
+  }, []);
+
   // 使用虚拟化网格提升性能
   const {
     visibleItems,
@@ -101,6 +120,7 @@ export const ToolGridLite = memo(function ToolGridLite({
                   tool={tool} 
                   searchQuery={searchQuery}
                   className="h-full"
+                  showVpnIndicator={showVpnIndicator}
                 />
               </div>
             ))}

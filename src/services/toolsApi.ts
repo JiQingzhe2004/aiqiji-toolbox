@@ -54,6 +54,7 @@ export interface ToolFormData {
   id: string;
   name: string;
   description: string;
+  content?: string;
   icon?: string;
   icon_url?: string;
   icon_theme?: 'auto' | 'auto-light' | 'auto-dark' | 'light' | 'dark' | 'none';
@@ -100,6 +101,13 @@ export class ToolsApiService {
    */
   static async getTool(id: string): Promise<ApiResponse<Tool>> {
     return apiWithRetry(() => apiGet<Tool>(`/tools/${id}`));
+  }
+
+  /**
+   * 获取单个工具详情（别名）
+   */
+  static async getToolById(id: string): Promise<ApiResponse<{ tool: Tool }>> {
+    return apiWithRetry(() => apiGet<{ tool: Tool }>(`/tools/${id}`));
   }
 
   /**

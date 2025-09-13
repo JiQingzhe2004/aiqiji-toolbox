@@ -81,7 +81,6 @@ export function AdminSystemSettings() {
     try {
       setLoading(true);
       const response = await settingsApi.getAllSettings();
-      console.log('AdminSystemSettings - 系统设置API响应:', response); // 调试日志
       if (response.success) {
         setSettings(response.data);
         
@@ -90,9 +89,6 @@ export function AdminSystemSettings() {
         // 邮箱设置可能在 email 分类或 general 分类中
         const emailSettings = response.data.email || {};
         const generalSettings = response.data.general || {};
-        console.log('AdminSystemSettings - 网站设置:', websiteSettings); // 调试日志
-        console.log('AdminSystemSettings - 邮箱设置:', emailSettings); // 调试日志
-        console.log('AdminSystemSettings - 通用设置:', generalSettings); // 调试日志
         setFormData({
           site_name: websiteSettings.site_name?.value || '',
           site_url: websiteSettings.site_url?.value || '',

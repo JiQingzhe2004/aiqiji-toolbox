@@ -94,7 +94,7 @@ export class SettingsApi {
    */
   async updateSettings(settings: SettingsUpdateData[]) {
     try {
-      const response = await apiPut(`${this.baseUrl}/batch`, { settings });
+      const response = await apiPut(`${this.baseUrl}/batch`, settings);
       return response;
     } catch (error) {
       console.error('批量更新系统设置失败:', error);

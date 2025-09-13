@@ -175,7 +175,7 @@ export function RichTextEditor({
         allowBase64: true,
         HTMLAttributes: {
           class: 'my-image cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200',
-          title: '双击编辑图片',
+          title: '图片',
         },
       }),
       TextAlign.configure({

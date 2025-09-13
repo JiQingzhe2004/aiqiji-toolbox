@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { TextStyle } from '@tiptap/extension-text-style';
@@ -14,6 +14,7 @@ import { BadgeExtension } from './rich-text-extensions/BadgeExtension';
 import { ButtonExtension } from './rich-text-extensions/ButtonExtension';
 import { CardExtension } from './rich-text-extensions/CardExtension';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface RichTextDisplayProps {
   content: string;
@@ -21,6 +22,8 @@ interface RichTextDisplayProps {
 }
 
 export function RichTextDisplay({ content, className }: RichTextDisplayProps) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   // 创建只读编辑器实例
   const editor = useEditor({
     extensions: [
@@ -104,6 +107,17 @@ export function RichTextDisplay({ content, className }: RichTextDisplayProps) {
           '[&_.my-button]:inline-flex [&_.my-button]:items-center [&_.my-button]:justify-center [&_.my-button]:bg-primary [&_.my-button]:text-primary-foreground [&_.my-button]:border-0 [&_.my-button]:rounded-md [&_.my-button]:px-4 [&_.my-button]:py-2 [&_.my-button]:text-sm [&_.my-button]:font-medium [&_.my-button]:cursor-pointer [&_.my-button]:m-1 [&_.my-button]:transition-colors',
         ),
       },
+      handleClick(view, pos, event) {
+        const target = event.target as HTMLElement | null;
+        if (target && target.tagName === 'IMG') {
+          const img = target as HTMLImageElement;
+          // 打开灯箱
+          setLightboxSrc(img.src);
+          setLightboxOpen(true);
+          return true;
+        }
+        return false;
+      },
     },
   });
 
@@ -156,6 +170,18 @@ export function RichTextDisplay({ content, className }: RichTextDisplayProps) {
   return (
     <div className={cn('rich-text-display', className)}>
       <EditorContent editor={editor} />
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-5xl p-0 bg-transparent border-0 shadow-none">
+          {lightboxSrc && (
+            <img
+              src={lightboxSrc}
+              alt="预览图片"
+              className="w-full h-auto object-contain rounded-lg"
+              onClick={() => setLightboxOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

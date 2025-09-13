@@ -64,6 +64,14 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
     }
   }, [effectiveSearchQuery, isLoading]);
 
+  // 分类切换后滚动到工具区域顶部（与搜索一致）
+  const scrollToToolsSection = () => {
+    if (!toolsSectionRef.current) return;
+    const offsetTop = toolsSectionRef.current.offsetTop;
+    const scrollPosition = Math.max(0, offsetTop - 64);
+    window.scrollTo({ top: scrollPosition, behavior: 'smooth' });
+  };
+
   return (
     <div className="relative">
       {/* 首页全屏壁纸横幅 */}
@@ -74,7 +82,11 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
         <SidebarCategoryTabs
           categories={categories}
           activeCategory={activeCategory}
-          onChange={(category: string) => setActiveCategory(category as any)}
+          onChange={(category: string) => {
+            setActiveCategory(category as any);
+            // 分类切换后滚动到工具网格顶部
+            scrollToToolsSection();
+          }}
         />
       )}
 
@@ -94,7 +106,11 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
               <CategoryTabs
                 categories={categories}
                 activeCategory={activeCategory}
-                onChange={(category: string) => setActiveCategory(category as any)}
+                onChange={(category: string) => {
+                  setActiveCategory(category as any);
+                  // 分类切换后滚动到工具网格顶部
+                  scrollToToolsSection();
+                }}
                 className="flex"
               />
             </div>
@@ -197,7 +213,11 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
         <BottomNavigation
           categories={categories}
           activeCategory={activeCategory}
-          onChange={setActiveCategory}
+          onChange={(category) => {
+            setActiveCategory(category as any);
+            // 分类切换后滚动到工具网格顶部
+            scrollToToolsSection();
+          }}
           className="md:hidden"
         />
       )}

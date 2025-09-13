@@ -80,7 +80,7 @@ export const ImageAlignExtension = TiptapImage.extend({
       'img',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
         class: computedClass,
-        title: HTMLAttributes?.title ?? '双击编辑图片',
+        title: HTMLAttributes?.title ?? '图片',
       }),
     ];
   },

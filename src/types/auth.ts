@@ -14,6 +14,9 @@ export interface User {
   username: string;
   role: UserRole;
   email?: string;
+  display_name?: string;
+  avatar_url?: string;
+  avatar_file?: string;
   createdAt: string;
 }
 
@@ -62,5 +65,6 @@ export interface AuthContextType {
   isAdmin: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateUser: (updatedUser: Partial<User>) => void;
   loading: boolean;
 }

@@ -117,7 +117,7 @@ export function SidebarCategoryTabs({
 
   const sidebarVariants = {
     hidden: {
-      x: -100,
+      x: 100,
       opacity: 0,
     },
     visible: {
@@ -131,7 +131,7 @@ export function SidebarCategoryTabs({
       }
     },
     exit: {
-      x: -100,
+      x: 100,
       opacity: 0,
       transition: {
         duration: 0.2
@@ -148,9 +148,11 @@ export function SidebarCategoryTabs({
           animate="visible"
           exit="exit"
           className={cn(
-            'fixed left-6 z-40',
+            'fixed right-6 z-40',
             'top-[35vh]', // 直接设置距离顶部35%的位置，视觉上更居中
             'hidden xl:flex flex-col items-center justify-center',
+            // 确保在有侧边栏时调整位置
+            'xl:right-8', // 在大屏时稍微远离右边缘
             className
           )}
         >
@@ -249,7 +251,7 @@ export function SidebarCategoryTabs({
                           )}
                         </motion.div>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="ml-2">
+                      <TooltipContent side="left" className="mr-2">
                         <p className="font-medium">{categoryName}</p>
                         {categoryCount > 0 && (
                           <p className="text-xs text-muted-foreground mt-1">

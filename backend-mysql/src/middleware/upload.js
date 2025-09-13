@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 // 确保上传目录存在
 const uploadDir = process.env.UPLOAD_DIR || 'uploads';
 const iconDir = path.join(uploadDir, 'icons');
+const avatarDir = path.join(uploadDir, 'avatars');
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -18,6 +19,10 @@ if (!fs.existsSync(uploadDir)) {
 
 if (!fs.existsSync(iconDir)) {
   fs.mkdirSync(iconDir, { recursive: true });
+}
+
+if (!fs.existsSync(avatarDir)) {
+  fs.mkdirSync(avatarDir, { recursive: true });
 }
 
 // 文件存储配置
@@ -53,10 +58,37 @@ const upload = multer({
   }
 });
 
+// 头像存储配置
+const avatarStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, avatarDir);
+  },
+  filename: (req, file, cb) => {
+    const fileExtension = path.extname(file.originalname);
+    const fileName = `avatar_${uuidv4()}${fileExtension}`;
+    cb(null, fileName);
+  }
+});
+
+// 头像上传配置
+const avatarUpload = multer({
+  storage: avatarStorage,
+  fileFilter,
+  limits: {
+    fileSize: parseInt(process.env.MAX_AVATAR_SIZE) || 2 * 1024 * 1024, // 2MB
+    files: 1
+  }
+});
+
 /**
  * 图标上传中间件
  */
 export const uploadIcon = upload.single('iconFile');
+
+/**
+ * 头像上传中间件
+ */
+export const uploadAvatar = avatarUpload.single('avatar');
 
 /**
  * 图像处理中间件
@@ -106,6 +138,61 @@ export const processImage = async (req, res, next) => {
 };
 
 /**
+ * 头像图像处理中间件
+ */
+export const processAvatar = async (req, res, next) => {
+  if (!req.file) {
+    return next();
+  }
+  
+  try {
+    const { filename } = req.file;
+    const inputPath = path.join(avatarDir, filename);
+    
+    // 如果是SVG文件，跳过处理
+    if (req.file.mimetype === 'image/svg+xml') {
+      return next();
+    }
+    
+    // 只生成一张200px的头像，压缩到200KB以内
+    const outputFilename = `${path.parse(filename).name}_avatar.jpg`;
+    const outputPath = path.join(avatarDir, outputFilename);
+    
+    let quality = 85;
+    let buffer;
+    
+    // 逐步降低质量直到文件大小在200KB以内
+    do {
+      buffer = await sharp(inputPath)
+        .resize(200, 200, {
+          fit: 'cover',
+          position: 'center'
+        })
+        .jpeg({ quality })
+        .toBuffer();
+      
+      if (buffer.length <= 200 * 1024) break; // 200KB
+      quality -= 5;
+    } while (quality > 30); // 最低质量30%
+    
+    // 写入文件
+    await fs.promises.writeFile(outputPath, buffer);
+    
+    // 删除原始文件
+    await fs.promises.unlink(inputPath);
+    
+    // 保存处理后的文件信息
+    req.processedFiles = { avatar: outputFilename };
+    req.originalFile = filename;
+    
+    next();
+  } catch (error) {
+    console.error('头像处理失败:', error);
+    next(error);
+  }
+};
+
+/**
  * 删除文件
  */
 export const deleteFile = (filename) => {
@@ -128,12 +215,32 @@ export const deleteFile = (filename) => {
 };
 
 /**
+ * 删除头像文件
+ */
+export const deleteAvatarFile = (filename) => {
+  const filePath = path.join(avatarDir, filename);
+  
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+};
+
+/**
  * 获取文件URL
  */
 export const getFileUrl = (filename) => {
   if (!filename) return null;
   const staticUrl = process.env.STATIC_URL || '/static';
   return `${staticUrl}/icons/${filename}`;
+};
+
+/**
+ * 获取头像URL
+ */
+export const getAvatarUrl = (filename) => {
+  if (!filename) return null;
+  const staticUrl = process.env.STATIC_URL || '/static';
+  return `${staticUrl}/avatars/${filename}`;
 };
 
 /**

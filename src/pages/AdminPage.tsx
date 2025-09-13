@@ -4,9 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, BarChart3, Settings, Users, Database, LogOut, Home, FileSpreadsheet, RefreshCw, ExternalLink, User, Send } from 'lucide-react';
+import { Plus, Search, Filter, BarChart3, Settings, Users, Database, FileSpreadsheet, RefreshCw, ExternalLink, User, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,6 @@ import { AdminFriendLinkApplications } from '@/components/admin/AdminFriendLinkA
 import { AdminFriendLinkManager } from '@/components/admin/AdminFriendLinkManager';
 import { AdminProfileSettings } from '@/components/admin/AdminProfileSettings';
 import { ToolSubmissionManagement } from '@/components/admin/ToolSubmissionManagement';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import { toolsApi } from '@/services/toolsApi';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,6 +29,7 @@ import type { Tool } from '@/types';
 function AdminPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 设置管理页面SEO
   useSEO(SEOPresets.adminPanel());
@@ -39,7 +39,16 @@ function AdminPage() {
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [stats, setStats] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('tools');
+  // 从URL获取当前tab参数
+  const urlParams = new URLSearchParams(location.search);
+  const activeTab = urlParams.get('tab') || 'tools';
+
+  // 处理Tab切换
+  const handleTabChange = (value: string) => {
+    const newParams = new URLSearchParams(location.search);
+    newParams.set('tab', value);
+    navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
+  };
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -257,169 +266,28 @@ function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* 固定顶部栏 */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        {/* PWA安全区适配 */}
-        <div className="h-safe-top bg-background/95"></div>
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/')}
-                className="rounded-xl hover:bg-muted flex-shrink-0"
-                aria-label="返回首页"
-                title="返回首页"
-              >
-                <Home className="w-5 h-5" />
-              </Button>
-              {/* 只在桌面端显示标题 */}
-              <div className="min-w-0 hidden sm:block">
-                <h1 className="text-xl sm:text-2xl font-bold truncate">工具箱管理</h1>
-                <p className="text-muted-foreground text-sm">管理工具、查看统计数据</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* 只在桌面端显示管理员信息 */}
-              <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-                <span>欢迎，{user?.username}</span>
-                <span className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">
-                  {user?.role === 'admin' ? '管理员' : '用户'}
-                </span>
-              </div>
-              <ThemeToggle />
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setSelectedTool(null);
-                  setShowForm(true);
-                }}
-                className="flex items-center gap-2 !bg-black !text-white hover:!bg-gray-800 dark:!bg-white dark:!text-black dark:hover:!bg-gray-200 flex-shrink-0"
-                size="sm"
-              >
-                <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">添加工具</span>
-                <span className="sm:hidden">添加</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  await logout();
-                  navigate('/');
-                }}
-                className="flex items-center gap-2 border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black flex-shrink-0"
-                size="sm"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">退出登录</span>
-                <span className="sm:hidden">退出</span>
-              </Button>
-            </div>
+      {/* 主要内容 */}
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+        {/* 页面标题和操作按钮 */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">工具箱管理</h1>
+            <p className="text-muted-foreground">管理工具、查看统计数据</p>
           </div>
+          <Button
+            onClick={() => {
+              setSelectedTool(null);
+              setShowForm(true);
+            }}
+            className="flex items-center gap-2"
+            size="sm"
+          >
+            <Plus className="w-4 h-4" />
+            添加工具
+          </Button>
         </div>
-      </header>
 
-      {/* 主要内容 - 添加顶部边距以避免被固定顶部栏遮挡，包含PWA安全区 */}
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 pt-20 sm:pt-24">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* 手机端使用滚动标签，桌面端使用网格 */}
-          <div className="md:hidden sticky top-16 bg-background/95 backdrop-blur-sm border-b z-40 pb-3 -mt-2 mb-6">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 pt-2">
-              <TabsTrigger 
-                value="tools" 
-                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
-              >
-                <Database className="w-4 h-4" />
-                工具
-              </TabsTrigger>
-              <TabsTrigger 
-                value="import" 
-                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                导入
-              </TabsTrigger>
-              <TabsTrigger 
-                value="stats" 
-                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
-              >
-                <BarChart3 className="w-4 h-4" />
-                统计
-              </TabsTrigger>
-              <TabsTrigger 
-                value="submissions" 
-                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
-              >
-                <Send className="w-4 h-4" />
-                提交
-              </TabsTrigger>
-              <TabsTrigger 
-                value="friendlinks" 
-                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
-              >
-                <ExternalLink className="w-4 h-4" />
-                友链
-              </TabsTrigger>
-              <TabsTrigger 
-                value="users" 
-                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
-              >
-                <Users className="w-4 h-4" />
-                用户
-              </TabsTrigger>
-              <TabsTrigger 
-                value="settings" 
-                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
-              >
-                <Settings className="w-4 h-4" />
-                设置
-              </TabsTrigger>
-              <TabsTrigger 
-                value="profile" 
-                className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
-              >
-                <User className="w-4 h-4" />
-                个人
-              </TabsTrigger>
-            </div>
-          </div>
-          
-          {/* 桌面端使用网格布局 */}
-          <TabsList className="hidden md:grid w-full grid-cols-8 sticky top-20 bg-background/95 backdrop-blur-sm border-b z-40 -mt-2 mb-6">
-            <TabsTrigger value="tools" className="flex items-center gap-2">
-              <Database className="w-4 h-4" />
-              工具管理
-            </TabsTrigger>
-            <TabsTrigger value="import" className="flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4" />
-              批量导入
-            </TabsTrigger>
-            <TabsTrigger value="stats" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              统计数据
-            </TabsTrigger>
-            <TabsTrigger value="submissions" className="flex items-center gap-2">
-              <Send className="w-4 h-4" />
-              工具提交
-            </TabsTrigger>
-            <TabsTrigger value="friendlinks" className="flex items-center gap-2">
-              <ExternalLink className="w-4 h-4" />
-              友链管理
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              用户管理
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              系统设置
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              个人设置
-            </TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
 
           {/* 工具管理 */}
           <TabsContent value="tools" className="space-y-4">

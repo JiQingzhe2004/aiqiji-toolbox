@@ -300,6 +300,9 @@ async function upgradeFriendLinksSettings(sequelize) {
 
   // 升级：确保用户表包含 display_name 字段
   await ensureUserDisplayNameField(sequelize);
+  
+  // 升级：确保用户表包含头像字段
+  await ensureUserAvatarFields(sequelize);
 }
 
 // 确保友链申请表存在
@@ -399,6 +402,8 @@ async function createTables(sequelize) {
       \`username\` varchar(50) NOT NULL,
       \`email\` varchar(100) NOT NULL,
       \`display_name\` varchar(100) DEFAULT NULL COMMENT '用户昵称/显示名',
+      \`avatar_url\` varchar(500) DEFAULT NULL COMMENT '用户头像链接',
+      \`avatar_file\` varchar(255) DEFAULT NULL COMMENT '用户头像文件名',
       \`password_hash\` varchar(255) NOT NULL,
       \`role\` enum('admin','user') DEFAULT 'user',
       \`status\` enum('active','inactive','banned') DEFAULT 'active',
@@ -884,6 +889,40 @@ async function ensureUserDisplayNameField(sequelize) {
     }
   } catch (error) {
     // 静默处理错误，继续执行
+  }
+}
+
+/**
+ * 确保用户表包含头像字段
+ */
+async function ensureUserAvatarFields(sequelize) {
+  try {
+    // 检查 avatar_url 字段是否存在
+    const [avatarUrlColumns] = await sequelize.query(`
+      SHOW COLUMNS FROM users LIKE 'avatar_url'
+    `);
+    
+    if (avatarUrlColumns.length === 0) {
+      await sequelize.query(`
+        ALTER TABLE users 
+        ADD COLUMN avatar_url VARCHAR(500) DEFAULT NULL COMMENT '用户头像链接' AFTER display_name
+      `);
+    }
+    
+    // 检查 avatar_file 字段是否存在
+    const [avatarFileColumns] = await sequelize.query(`
+      SHOW COLUMNS FROM users LIKE 'avatar_file'
+    `);
+    
+    if (avatarFileColumns.length === 0) {
+      await sequelize.query(`
+        ALTER TABLE users 
+        ADD COLUMN avatar_file VARCHAR(255) DEFAULT NULL COMMENT '用户头像文件名' AFTER avatar_url
+      `);
+    }
+  } catch (error) {
+    // 静默处理错误，继续执行
+    console.error('添加用户头像字段失败:', error.message);
   }
 }
 

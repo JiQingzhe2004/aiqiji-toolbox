@@ -53,12 +53,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.success && response.data) {
         const { user: userData, token: userToken } = response.data;
         
+        
         setUser(userData);
         setToken(userToken);
         
         // 保存到localStorage
         localStorage.setItem('auth_token', userToken);
         localStorage.setItem('auth_user', JSON.stringify(userData));
+        
         
         return true;
       }
@@ -85,6 +87,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const updateUser = (updatedUser: Partial<User>) => {
+    if (user) {
+      const newUser = { ...user, ...updatedUser };
+      setUser(newUser);
+      localStorage.setItem('auth_user', JSON.stringify(newUser));
+    }
+  };
+
   const isAuthenticated = !!user && !!token;
   const isAdmin = user?.role === ('admin' as UserRole);
 
@@ -95,6 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAdmin,
     login,
     logout,
+    updateUser,
     loading
   };
 

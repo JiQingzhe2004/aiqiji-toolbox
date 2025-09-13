@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // MantineProvider已移除，减少打包体积
 import { Toaster } from 'react-hot-toast';
-import { Header } from './components/Header';
+import { AppSidebar } from './components/sidebar/AppSidebar';
 import { Footer } from './components/Footer';
 import { FloatingSubmitButton } from './components/FloatingSubmitButton';
 import { useLocation } from 'react-router-dom';
@@ -90,89 +90,93 @@ function AppContent() {
   
   // 检测是否在工具详情页面
   const isToolDetailPage = location.pathname.startsWith('/tool/');
+  // 检测是否在管理员页面
+  const isAdminPage = location.pathname.startsWith('/admin');
+  // 检测是否在用户页面
+  const isUserPage = location.pathname.startsWith('/user');
 
   return (
     <Routes>
-              {/* 外链提醒页面 - 独立布局，无Header和Footer */}
-              <Route path="/external-link" element={
-                <Suspense fallback={<LoadingSpinner />}>
-                  <ExternalLinkPage />
-                </Suspense>
-              } />
-              
-              {/* 管理页面 - 需要管理员权限 */}
-              <Route path="/admin" element={
-                <Suspense fallback={<LoadingSpinner />}>
-                  <ProtectedRoute requireAdmin={true}>
-                    <AdminPage />
-                  </ProtectedRoute>
-                </Suspense>
-              } />
-              
-              {/* 用户页面 - 独立布局，使用专用顶部栏 */}
-              <Route path="/user" element={<UserPageWrapper />} />
-              
-              {/* 主站页面 - 带Header和Footer */}
-              <Route path="/*" element={
-                <div className="min-h-screen flex flex-col">
-                  <Header 
-                    searchValue={globalSearchQuery}
-                    onSearchChange={setGlobalSearchQuery}
+      {/* 外链提醒页面 - 独立布局，无侧边栏 */}
+      <Route path="/external-link" element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <ExternalLinkPage />
+        </Suspense>
+      } />
+      
+      
+      {/* 其他页面使用 Sidebar 布局 */}
+      <Route path="*" element={
+        <AppSidebar>
+          <div className="flex flex-col min-h-full">
+            <main className="flex-1">
+              <Routes>
+                <Route path="/" element={
+                  <HomePage 
+                    searchQuery={globalSearchQuery} 
+                    onClearSearch={() => setGlobalSearchQuery('')}
                   />
-                  
-                  <main className="flex-1">
-                    <Routes>
-                      <Route path="/" element={
-                        <HomePage 
-                          searchQuery={globalSearchQuery} 
-                          onClearSearch={() => setGlobalSearchQuery('')}
-                        />
-                      } />
-                      <Route path="/privacy" element={
-                        <Suspense fallback={<LoadingSpinner />}>
-                          <PrivacyPage />
-                        </Suspense>
-                      } />
-                      <Route path="/terms" element={
-                        <Suspense fallback={<LoadingSpinner />}>
-                          <TermsPage />
-                        </Suspense>
-                      } />
-                      <Route path="/friends" element={
-                        <Suspense fallback={<LoadingSpinner />}>
-                          <FriendLinksPage />
-                        </Suspense>
-                      } />
-                      <Route path="/friend-link-apply" element={
-                        <Suspense fallback={<LoadingSpinner />}>
-                          <FriendLinkApplicationPage />
-                        </Suspense>
-                      } />
-                      <Route path="/submit-tool" element={
-                        <Suspense fallback={<LoadingSpinner />}>
-                          <ToolSubmissionPage />
-                        </Suspense>
-                      } />
-                      <Route path="/tool/:toolId" element={
-                        <Suspense fallback={<LoadingSpinner />}>
-                          <ToolDetailPage />
-                        </Suspense>
-                      } />
-                      <Route path="*" element={
-                        <Suspense fallback={<LoadingSpinner />}>
-                          <NotFoundPage />
-                        </Suspense>
-                      } />
-                    </Routes>
-                  </main>
-                  
-                  <Footer />
-                  
-                  {/* 悬浮提交工具按钮 - 工具详情页面有自己的按钮 */}
-                  {!isToolDetailPage && <FloatingSubmitButton />}
-                </div>
-              } />
-            </Routes>
+                } />
+                
+                {/* 用户页面 - 现在使用侧边栏布局 */}
+                <Route path="/user" element={<UserPageWrapper />} />
+                
+                {/* 管理页面 - 需要管理员权限 */}
+                <Route path="/admin" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ProtectedRoute requireAdmin={true}>
+                      <AdminPage />
+                    </ProtectedRoute>
+                  </Suspense>
+                } />
+                
+                <Route path="/privacy" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PrivacyPage />
+                  </Suspense>
+                } />
+                <Route path="/terms" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <TermsPage />
+                  </Suspense>
+                } />
+                <Route path="/friends" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <FriendLinksPage />
+                  </Suspense>
+                } />
+                <Route path="/friend-link-apply" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <FriendLinkApplicationPage />
+                  </Suspense>
+                } />
+                <Route path="/submit-tool" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ToolSubmissionPage />
+                  </Suspense>
+                } />
+                <Route path="/tool/:toolId" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ToolDetailPage />
+                  </Suspense>
+                } />
+                <Route path="*" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <NotFoundPage />
+                  </Suspense>
+                } />
+              </Routes>
+            </main>
+            
+            {/* Footer - 管理员页面和用户页面不显示 */}
+            {!isAdminPage && !isUserPage && <Footer />}
+            
+            {/* 悬浮提交工具按钮 - 工具详情页面有自己的按钮 */}
+            {!isToolDetailPage && <FloatingSubmitButton />}
+          </div>
+        </AppSidebar>
+      } />
+    </Routes>
   );
 }
 

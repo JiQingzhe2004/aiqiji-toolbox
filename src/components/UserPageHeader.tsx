@@ -8,20 +8,25 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Home, Settings, User, LogIn, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AnimatedThemeToggler } from './magicui/animated-theme-toggler';
 import { LoginModal } from './LoginModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { settingsApi, type WebsiteInfo } from '@/services/settingsApi';
 import { SEOImage, SEOImagePresets } from '@/components/SEOImage';
+import { getAvatarUrl } from '@/services/avatarService';
 
 interface UserPageHeaderProps {
   currentUsername?: string;
+  userInfo?: {
+    display_name?: string;
+    avatar_url?: string;
+  };
 }
 
-export function UserPageHeader({ currentUsername }: UserPageHeaderProps) {
+export function UserPageHeader({ currentUsername, userInfo }: UserPageHeaderProps) {
   const navigate = useNavigate();
-  const { isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [websiteInfo, setWebsiteInfo] = useState<WebsiteInfo | null>(null);
 
@@ -160,13 +165,14 @@ export function UserPageHeader({ currentUsername }: UserPageHeaderProps) {
                 ) : (
                   // 普通用户显示头像和昵称
                   (() => {
-                    const userData = JSON.parse(localStorage.getItem('auth_user') || 'null');
-                    const displayName = userData?.display_name || userData?.username || '用户';
+                    const displayName = user?.display_name || user?.username || '用户';
                     const avatarInitial = displayName.charAt(0).toUpperCase();
+                    const avatarUrl = userInfo?.avatar_url ? getAvatarUrl(userInfo.avatar_url) : user?.avatar_url ? getAvatarUrl(user.avatar_url) : undefined;
                     
                     return (
                       <div className="hidden sm:flex items-center gap-2">
                         <Avatar className="w-6 h-6">
+                          <AvatarImage src={avatarUrl} />
                           <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
                             {avatarInitial}
                           </AvatarFallback>
@@ -200,9 +206,8 @@ export function UserPageHeader({ currentUsername }: UserPageHeaderProps) {
                     if (isAdmin) {
                       window.location.href = '/admin';
                     } else {
-                      const userData = JSON.parse(localStorage.getItem('auth_user') || 'null');
-                      if (userData?.username) {
-                        window.location.href = `/user?username=${userData.username}`;
+                      if (user?.username) {
+                        window.location.href = `/user?username=${user.username}`;
                       }
                     }
                   }}

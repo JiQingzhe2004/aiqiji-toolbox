@@ -1,4 +1,4 @@
-import React, { memo, useRef, useEffect } from 'react';
+import React, { memo, useRef, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HeroBanner } from '@/components/HeroBanner';
@@ -8,6 +8,7 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { ToolGrid } from '@/components/ToolGrid';
 import { EmptyState } from '@/components/EmptyState';
 import { ThanksSection } from '@/components/ThanksSection';
+import { SearchBar } from '@/components/SearchBar';
 import { useTools } from '@/hooks/useTools';
 import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -25,8 +26,13 @@ interface HomePageProps {
  * 包含搜索、分类、工具展示等核心功能
  */
 const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', onClearSearch }: HomePageProps) {
+  // 内部搜索状态管理
+  const [internalSearchQuery, setInternalSearchQuery] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get('category') || '全部';
+
+  // 使用内部搜索或全局搜索查询
+  const effectiveSearchQuery = internalSearchQuery || globalSearchQuery;
 
   const {
     filteredTools,
@@ -35,10 +41,20 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
     isLoading,
     error,
     setActiveCategory,
-  } = useTools(globalSearchQuery);
+  } = useTools(effectiveSearchQuery);
 
-  // 使用全局搜索查询，如果存在的话
-  const effectiveSearchQuery = globalSearchQuery;
+  // 处理搜索查询变化
+  const handleSearchChange = (value: string) => {
+    setInternalSearchQuery(value);
+  };
+
+  // 清除搜索
+  const handleClearSearch = () => {
+    setInternalSearchQuery('');
+    if (onClearSearch) {
+      onClearSearch();
+    }
+  };
 
   // 工具区域的引用
   const toolsSectionRef = useRef<HTMLDivElement>(null);
@@ -112,6 +128,34 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
       {/* 首页全屏壁纸横幅 */}
       <HeroBanner />
 
+      {/* Sticky 搜索栏 - 滚动时停在顶部 */}
+      <div className="sticky top-0 z-40 bg-background/95 dark:bg-black/95 backdrop-blur-md border-b border-border/30 shadow-sm">
+        <div className="container mx-auto px-4 py-3 md:py-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="max-w-2xl mx-auto"
+          >
+            <SearchBar
+              value={effectiveSearchQuery}
+              onChange={handleSearchChange}
+              className="w-full h-12 text-base"
+              placeholder="搜索你需要的工具..."
+            />
+            {effectiveSearchQuery && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mt-3 text-sm text-center text-muted-foreground"
+              >
+                搜索 "<span className="font-medium text-primary">{effectiveSearchQuery}</span>" 找到 {filteredTools.length} 个工具
+              </motion.p>
+            )}
+          </motion.div>
+        </div>
+      </div>
+
       {/* 侧边栏分类 - 桌面端滚动显示 */}
       {!isLoading && (
         <SidebarCategoryTabs
@@ -131,12 +175,31 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
         className="relative z-10 bg-background dark:bg-black min-h-screen pt-8 md:pt-12 pb-8 md:pb-12"
       >
         <div className="container mx-auto px-4 max-w-7xl">
+          {/* 平板端分类标签 */}
+          {!isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="hidden md:block xl:hidden mb-8"
+            >
+              <div className="flex justify-center">
+                <CategoryTabs
+                  categories={categories}
+                  activeCategory={activeCategory}
+                  onChange={handleCategoryChange}
+                  className="flex-wrap justify-center"
+                />
+              </div>
+            </motion.div>
+          )}
+
           {/* 动态页面标题 - 当有分类参数时显示 */}
           {currentCategory && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
               className="text-center mb-8"
             >
               <h1 className="text-3xl md:text-4xl font-bold mb-4">
@@ -150,17 +213,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
             </motion.div>
           )}
 
-          {/* 平板端分类标签 - 在md到xl之间显示 */}
-          {!isLoading && (
-            <div className="hidden md:block xl:hidden sticky top-16 z-40 bg-background/80 backdrop-blur-md border-b border-muted-foreground/10 mb-8 -mx-4 px-4 py-4">
-              <CategoryTabs
-                categories={categories}
-                activeCategory={activeCategory}
-                onChange={handleCategoryChange}
-                className="flex"
-              />
-            </div>
-          )}
+          {/* 平板端分类标签已移动到搜索框下方 */}
 
           {/* 工具网格 */}
           <motion.section
@@ -206,7 +259,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
                   key={`${activeCategory}-${effectiveSearchQuery}`}
                   tools={filteredTools}
                   searchQuery={effectiveSearchQuery}
-                  onClearSearch={onClearSearch}
+                  onClearSearch={handleClearSearch}
                 />
               )}
             </AnimatePresence>

@@ -36,6 +36,26 @@ const User = sequelize.define('User', {
     },
     field: 'display_name',
   },
+  avatar_url: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    validate: {
+      isValidUrl: function(value) {
+        if (!value) return;
+        // 允许相对路径（/static/...）或完整URL
+        if (value.startsWith('/')) return;
+        if (value.startsWith('http://') || value.startsWith('https://')) return;
+        if (value.startsWith('data:image/')) return; // SVG data URLs
+        throw new Error('头像链接格式不正确');
+      }
+    },
+    field: 'avatar_url',
+  },
+  avatar_file: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'avatar_file',
+  },
   password_hash: {
     type: DataTypes.STRING(255),
     allowNull: false,

@@ -431,50 +431,6 @@ export function HeroBanner() {
         </motion.div>
       </div>
 
-      {/* 滚动提示 */}
-      <div className="absolute bottom-20 left-0 right-0 flex justify-center z-30">
-        <motion.button
-          className="group cursor-pointer p-4 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-          onClick={scrollToTools}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1 }}
-          whileHover={{ y: -2 }}
-          aria-label="滚动到工具区域"
-          style={{ zIndex: 1000 }}
-        >
-          <div className="flex flex-col items-center justify-center space-y-3">
-            <span className={cn(
-              "text-sm font-medium text-center whitespace-nowrap",
-              "dark:text-slate-400 text-gray-600",
-              "dark:group-hover:text-slate-300 group-hover:text-orange-500 transition-colors duration-200"
-            )}>
-              探索工具
-            </span>
-            <motion.div
-              animate={{ y: [0, 5, 0] }}
-              transition={{ 
-                duration: 1.5,
-                repeat: Infinity,
-                ease: 'easeInOut'
-              }}
-              className={cn(
-                "p-2 rounded-full border transition-colors duration-200 flex items-center justify-center",
-                // 暗色主题：石板色边框
-                "dark:border-slate-600/30 dark:group-hover:border-slate-400/50",
-                // 浅色主题：橙色边框
-                "border-orange-300/30 group-hover:border-orange-500/50"
-              )}
-            >
-              <ChevronDown className={cn(
-                "w-5 h-5",
-                "dark:text-slate-400 text-gray-600",
-                "dark:group-hover:text-slate-300 group-hover:text-orange-500 transition-colors duration-200"
-              )} />
-            </motion.div>
-          </div>
-        </motion.button>
-      </div>
 
     </section>
   );

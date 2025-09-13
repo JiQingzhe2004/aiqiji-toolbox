@@ -3,8 +3,9 @@
  */
 
 import express from 'express';
-import { login, register, validateToken, logout, changePassword, updateProfile, getProfile, getUserByUsername, checkEmailExists, checkUsernameExists } from '../controllers/authController.js';
+import { login, register, validateToken, logout, changePassword, updateProfile, getProfile, getUserByUsername, checkEmailExists, checkUsernameExists, requestPasswordChangeCode, uploadUserAvatar, requestEmailChangeCode, changeEmail } from '../controllers/authController.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { uploadAvatar, processAvatar, handleUploadError } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -34,8 +35,20 @@ router.get('/profile', authenticateToken, getProfile);
 // 更新个人信息
 router.put('/profile', authenticateToken, updateProfile);
 
+// 上传头像
+router.post('/upload-avatar', authenticateToken, uploadAvatar, processAvatar, uploadUserAvatar, handleUploadError);
+
+// 请求修改密码验证码
+router.post('/request-password-change-code', authenticateToken, requestPasswordChangeCode);
+
 // 修改密码
 router.post('/change-password', authenticateToken, changePassword);
+
+// 请求邮箱修改验证码
+router.post('/request-email-change-code', authenticateToken, requestEmailChangeCode);
+
+// 修改邮箱
+router.post('/change-email', authenticateToken, changeEmail);
 
 // 根据用户名获取公开用户信息（无需登录）
 router.get('/user/:username', getUserByUsername);

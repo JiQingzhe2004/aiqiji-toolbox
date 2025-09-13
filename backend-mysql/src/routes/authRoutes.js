@@ -3,7 +3,7 @@
  */
 
 import express from 'express';
-import { login, register, validateToken, logout, changePassword, updateProfile, getProfile } from '../controllers/authController.js';
+import { login, register, validateToken, logout, changePassword, updateProfile, getProfile, getUserByUsername, checkEmailExists, checkUsernameExists } from '../controllers/authController.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -17,8 +17,8 @@ router.post('/logout', logout);
 // 验证token
 router.get('/validate', validateToken);
 
-// 用户注册（需要管理员权限）
-router.post('/register', authenticateToken, requireAdmin, register);
+// 用户注册（公开注册）
+router.post('/register', register);
 
 // 获取当前用户信息
 router.get('/me', authenticateToken, (req, res) => {
@@ -36,5 +36,14 @@ router.put('/profile', authenticateToken, updateProfile);
 
 // 修改密码
 router.post('/change-password', authenticateToken, changePassword);
+
+// 根据用户名获取公开用户信息（无需登录）
+router.get('/user/:username', getUserByUsername);
+
+// 检查邮箱是否已存在（无需登录）
+router.post('/check-email', checkEmailExists);
+
+// 检查用户名是否已存在（无需登录）
+router.post('/check-username', checkUsernameExists);
 
 export default router;

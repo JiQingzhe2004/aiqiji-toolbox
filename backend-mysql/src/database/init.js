@@ -45,6 +45,9 @@ async function initializeDatabase() {
     // 检查并创建工具提交表
     await ensureToolSubmissionsTable(sequelize);
     
+    // 检查并创建验证码表
+    await ensureVerificationCodesTable(sequelize);
+    
     if (isFirstRun) {
       // 初始化管理员账户
       await initializeAdminUser(sequelize);
@@ -96,8 +99,6 @@ async function initializeDatabase() {
 }
 
 async function upgradeDatabase(sequelize) {
-  console.log('🔄 检查数据库升级...');
-  
   try {
     // 检查 category 字段类型
     const [columns] = await sequelize.query(`
@@ -105,17 +106,13 @@ async function upgradeDatabase(sequelize) {
     `);
     
     if (columns.length === 0) {
-      console.log('  ⚠️  tools 表中没有 category 字段，跳过升级');
       return;
     }
     
     const currentType = columns[0].Type;
-    console.log(`  📊 当前 category 字段类型: ${currentType}`);
     
     // 如果已经是 JSON 类型，跳过category字段升级
-    if (currentType.toLowerCase().includes('json')) {
-      console.log('  ✅ category 字段已经是 JSON 类型，无需升级');
-    } else {
+    if (!currentType.toLowerCase().includes('json')) {
       // 执行category字段升级逻辑
       await upgradeCategoryField(sequelize);
     }
@@ -221,8 +218,6 @@ async function upgradeCategoryField(sequelize) {
 }
 
 async function ensureContentField(sequelize) {
-  console.log('🔄 检查工具内容字段...');
-  
   try {
     // 检查 content 字段是否存在
     const [contentColumns] = await sequelize.query(`
@@ -230,33 +225,24 @@ async function ensureContentField(sequelize) {
     `);
     
     if (contentColumns.length === 0) {
-      console.log('  🚀 添加 content 字段以支持富文本内容...');
-      
       await sequelize.query(`
         ALTER TABLE tools 
         ADD COLUMN content LONGTEXT DEFAULT NULL COMMENT '工具详细说明内容，支持富文本格式'
         AFTER description
       `);
-      
-      console.log('  ✅ content 字段添加成功');
-    } else {
-      console.log('  ✅ content 字段已存在，无需添加');
     }
   } catch (error) {
-    console.error('  ❌ 添加 content 字段失败:', error.message);
-    console.log('  ⚠️  继续使用现有结构...');
+    // 静默处理错误，继续执行
   }
 }
 
 async function upgradeFriendLinksSettings(sequelize) {
   // 升级：确保存在 friend_links 设置（用于友情链接）
   try {
-    console.log('🔄 检查系统设置：friend_links ...');
     const [existsRows] = await sequelize.query(`
       SELECT COUNT(*) as count FROM system_settings WHERE setting_key = 'friend_links'
     `);
     if (existsRows[0].count === 0) {
-      console.log('  ➕ 新增 friend_links 设置（默认空数组）');
       const id = 'friend-links-' + Date.now();
       await sequelize.query(`
         INSERT INTO system_settings (
@@ -266,50 +252,39 @@ async function upgradeFriendLinksSettings(sequelize) {
         )
       `, { replacements: { id } });
     } else {
-      console.log('  ✅ friend_links 设置已存在，检查 category...');
       // 确保 category 是 'website'
-      const [updateResult] = await sequelize.query(`
+      await sequelize.query(`
         UPDATE system_settings 
         SET category = 'website' 
         WHERE setting_key = 'friend_links' AND category != 'website'
       `);
-      if (updateResult.affectedRows > 0) {
-        console.log('  🔧 已修正 friend_links 的 category 为 website');
-      }
     }
   } catch (error) {
-    console.error('  ❌ 升级 friend_links 设置失败:', error.message);
+    // 静默处理错误
   }
 
   // 升级：确保存在 needs_vpn 字段（用于VPN标识）
   try {
-    console.log('🔄 检查 needs_vpn 字段...');
     const [vpnColumns] = await sequelize.query(`
       SHOW COLUMNS FROM tools LIKE 'needs_vpn'
     `);
     
     if (vpnColumns.length === 0) {
-      console.log('  ➕ 添加 needs_vpn 字段');
       await sequelize.query(`
         ALTER TABLE tools 
         ADD COLUMN needs_vpn BOOLEAN DEFAULT FALSE COMMENT '是否需要VPN访问'
       `);
-      console.log('  ✅ needs_vpn 字段添加成功');
-    } else {
-      console.log('  ✅ needs_vpn 字段已存在');
     }
   } catch (error) {
-    console.error('  ❌ 升级 needs_vpn 字段失败:', error.message);
+    // 静默处理错误
   }
 
   // 升级：确保存在 show_vpn_indicator 系统设置（用于控制VPN标识显示）
   try {
-    console.log('🔄 检查系统设置：show_vpn_indicator ...');
     const [existsRows] = await sequelize.query(`
       SELECT COUNT(*) as count FROM system_settings WHERE setting_key = 'show_vpn_indicator'
     `);
     if (existsRows[0].count === 0) {
-      console.log('  ➕ 新增 show_vpn_indicator 设置（默认启用）');
       const id = 'show-vpn-indicator-' + Date.now();
       await sequelize.query(`
         INSERT INTO system_settings (
@@ -318,25 +293,22 @@ async function upgradeFriendLinksSettings(sequelize) {
           :id, 'show_vpn_indicator', 'true', 'boolean', '是否显示VPN标识', 'general', 1, NOW(), NOW()
         )
       `, { replacements: { id } });
-    } else {
-      console.log('  ✅ show_vpn_indicator 设置已存在');
     }
   } catch (error) {
-    console.error('  ❌ 升级 show_vpn_indicator 设置失败:', error.message);
+    // 静默处理错误
   }
+
+  // 升级：确保用户表包含 display_name 字段
+  await ensureUserDisplayNameField(sequelize);
 }
 
 // 确保友链申请表存在
 async function ensureFriendLinkApplicationsTable(sequelize) {
   try {
-    console.log('🔄 检查友链申请表...');
-    
     // 检查表是否存在
     const [tables] = await sequelize.query("SHOW TABLES LIKE 'friend_link_applications'");
     
     if (tables.length === 0) {
-      console.log('  ➕ 创建 friend_link_applications 表...');
-      
       // 创建 friend_link_applications 表
       await sequelize.query(`
         CREATE TABLE IF NOT EXISTS \`friend_link_applications\` (
@@ -365,27 +337,19 @@ async function ensureFriendLinkApplicationsTable(sequelize) {
           KEY \`idx_friend_applications_expires\` (\`expires_at\`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
-      
-      console.log('  ✅ friend_link_applications 表创建完成');
-    } else {
-      console.log('  ✅ friend_link_applications 表已存在');
     }
   } catch (error) {
-    console.error('  ❌ 友链申请表检查失败:', error.message);
+    // 静默处理错误
   }
 }
 
 // 确保工具提交表存在
 async function ensureToolSubmissionsTable(sequelize) {
   try {
-    console.log('🔄 检查工具提交表...');
-    
     // 检查表是否存在
     const [tables] = await sequelize.query("SHOW TABLES LIKE 'tool_submissions'");
     
     if (tables.length === 0) {
-      console.log('  ➕ 创建 tool_submissions 表...');
-      
       // 创建 tool_submissions 表
       await sequelize.query(`
         CREATE TABLE IF NOT EXISTS \`tool_submissions\` (
@@ -421,25 +385,20 @@ async function ensureToolSubmissionsTable(sequelize) {
           KEY \`idx_tool_submissions_priority_created\` (\`priority\`, \`created_at\`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
-      
-      console.log('  ✅ tool_submissions 表创建完成');
-    } else {
-      console.log('  ✅ tool_submissions 表已存在');
     }
   } catch (error) {
-    console.error('  ❌ 工具提交表检查失败:', error.message);
+    // 静默处理错误
   }
 }
 
 async function createTables(sequelize) {
-  console.log('📋 创建数据表...');
-  
   // 创建 users 表
   await sequelize.query(`
     CREATE TABLE IF NOT EXISTS \`users\` (
       \`id\` varchar(36) NOT NULL,
       \`username\` varchar(50) NOT NULL,
       \`email\` varchar(100) NOT NULL,
+      \`display_name\` varchar(100) DEFAULT NULL COMMENT '用户昵称/显示名',
       \`password_hash\` varchar(255) NOT NULL,
       \`role\` enum('admin','user') DEFAULT 'user',
       \`status\` enum('active','inactive','banned') DEFAULT 'active',
@@ -452,10 +411,10 @@ async function createTables(sequelize) {
       UNIQUE KEY \`users_username_unique\` (\`username\`),
       UNIQUE KEY \`users_email_unique\` (\`email\`),
       KEY \`idx_users_role\` (\`role\`),
-      KEY \`idx_users_status\` (\`status\`)
+      KEY \`idx_users_status\` (\`status\`),
+      KEY \`idx_users_display_name\` (\`display_name\`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
-  console.log('  ✅ users 表创建完成');
   
   // 创建 tools 表
   await sequelize.query(`
@@ -486,7 +445,6 @@ async function createTables(sequelize) {
       KEY \`idx_tools_created_at\` (\`created_at\`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
-  console.log('  ✅ tools 表创建完成');
   
   // 创建 system_settings 表
   await sequelize.query(`
@@ -506,7 +464,6 @@ async function createTables(sequelize) {
       KEY \`idx_settings_public\` (\`is_public\`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
-  console.log('  ✅ system_settings 表创建完成');
   
   // 创建 friend_link_applications 表
   await sequelize.query(`
@@ -536,7 +493,6 @@ async function createTables(sequelize) {
       KEY \`idx_friend_applications_expires\` (\`expires_at\`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
-  console.log('  ✅ friend_link_applications 表创建完成');
   
   // 创建 tool_submissions 表
   await sequelize.query(`
@@ -573,19 +529,15 @@ async function createTables(sequelize) {
       KEY \`idx_tool_submissions_priority_created\` (\`priority\`, \`created_at\`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `);
-  console.log('  ✅ tool_submissions 表创建完成');
 }
 
 async function initializeAdminUser(sequelize) {
-  console.log('👤 初始化管理员账户...');
-  
   // 检查是否已存在管理员账户
   const [existingUsers] = await sequelize.query(
     "SELECT COUNT(*) as count FROM users WHERE role = 'admin'"
   );
   
   if (existingUsers[0].count > 0) {
-    console.log('  ⚠️  管理员账户已存在，跳过初始化');
     return;
   }
   
@@ -598,35 +550,28 @@ async function initializeAdminUser(sequelize) {
   
   await sequelize.query(`
     INSERT INTO users (
-      id, username, email, password_hash, role, status, created_at, updated_at
+      id, username, email, display_name, password_hash, role, status, created_at, updated_at
     ) VALUES (
-      :id, :username, :email, :passwordHash, 'admin', 'active', NOW(), NOW()
+      :id, :username, :email, :displayName, :passwordHash, 'admin', 'active', NOW(), NOW()
     )
   `, {
     replacements: {
       id: adminId,
       username: username,
       email: email,
+      displayName: '超级管理员',
       passwordHash: passwordHash
     }
   });
-  
-  console.log('  ✅ 管理员账户创建完成');
-  console.log(`     - 用户名: ${username}`);
-  console.log(`     - 密码: ${password}`);
-  console.log(`     - 邮箱: ${email}`);
 }
 
 async function initializeSystemSettings(sequelize) {
-  console.log('⚙️ 初始化系统设置...');
-  
   // 检查是否已存在系统设置
   const [existingSettings] = await sequelize.query(
     "SELECT COUNT(*) as count FROM system_settings"
   );
   
   if (existingSettings[0].count > 0) {
-    console.log('  ⚠️  系统设置已存在，跳过初始化');
     return;
   }
   
@@ -694,30 +639,252 @@ async function initializeSystemSettings(sequelize) {
       description: '友情链接列表（数组：{name,url,icon}）',
       category: 'website',
       is_public: 1
+    },
+    // 邮箱配置设置
+    {
+      id: 'smtp-host-' + Date.now(),
+      setting_key: 'smtp_host',
+      setting_value: '',
+      setting_type: 'string',
+      description: 'SMTP服务器地址',
+      category: 'email',
+      is_public: 0
+    },
+    {
+      id: 'smtp-port-' + Date.now() + 1,
+      setting_key: 'smtp_port',
+      setting_value: '587',
+      setting_type: 'string',
+      description: 'SMTP端口',
+      category: 'email',
+      is_public: 0
+    },
+    {
+      id: 'smtp-secure-' + Date.now() + 2,
+      setting_key: 'smtp_secure',
+      setting_value: 'false',
+      setting_type: 'boolean',
+      description: '是否启用SSL/TLS',
+      category: 'email',
+      is_public: 0
+    },
+    {
+      id: 'smtp-user-' + Date.now() + 3,
+      setting_key: 'smtp_user',
+      setting_value: '',
+      setting_type: 'string',
+      description: 'SMTP用户名',
+      category: 'email',
+      is_public: 0
+    },
+    {
+      id: 'smtp-pass-' + Date.now() + 4,
+      setting_key: 'smtp_pass',
+      setting_value: '',
+      setting_type: 'string',
+      description: 'SMTP密码',
+      category: 'email',
+      is_public: 0
+    },
+    {
+      id: 'from-name-' + Date.now() + 5,
+      setting_key: 'from_name',
+      setting_value: 'AiQiji工具箱',
+      setting_type: 'string',
+      description: '发件人名称',
+      category: 'email',
+      is_public: 0
+    },
+    {
+      id: 'from-email-' + Date.now() + 6,
+      setting_key: 'from_email',
+      setting_value: '',
+      setting_type: 'string',
+      description: '发件人邮箱',
+      category: 'email',
+      is_public: 0
+    },
+    {
+      id: 'email-enabled-' + Date.now() + 7,
+      setting_key: 'email_enabled',
+      setting_value: 'false',
+      setting_type: 'boolean',
+      description: '是否启用邮件功能',
+      category: 'email',
+      is_public: 0
     }
   ];
-  
+
+  // 检查现有设置并只插入不存在的设置
   for (const setting of defaultSettings) {
-    await sequelize.query(`
-      INSERT INTO system_settings (
-        id, setting_key, setting_value, setting_type, description, category, is_public, created_at, updated_at
-      ) VALUES (
-        :id, :setting_key, :setting_value, :setting_type, :description, :category, :is_public, NOW(), NOW()
-      )
-    `, {
-      replacements: setting
-    });
+    const existing = await sequelize.query(
+      'SELECT id FROM system_settings WHERE setting_key = ?',
+      {
+        replacements: [setting.setting_key],
+        type: sequelize.QueryTypes.SELECT
+      }
+    );
+
+    if (existing.length === 0) {
+      await sequelize.query(
+        'INSERT INTO system_settings (id, setting_key, setting_value, setting_type, description, category, is_public, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',
+        {
+          replacements: [setting.id, setting.setting_key, setting.setting_value, setting.setting_type, setting.description, setting.category, setting.is_public]
+        }
+      );
+    }
   }
-  
-  console.log('  ✅ 系统设置初始化完成');
-  console.log('     - 备案号设置');
-  console.log('     - 显示控制开关');
-  console.log('     - 网站基本信息');
 }
 
 // 运行初始化
 if (import.meta.url === `file://${process.argv[1]}` || import.meta.url.endsWith('init.js')) {
   initializeDatabase();
+}
+
+/**
+ * 确保验证码表存在
+ */
+async function ensureVerificationCodesTable(sequelize) {
+  try {
+    const [tables] = await sequelize.query("SHOW TABLES LIKE 'verification_codes'");
+    
+    if (tables.length === 0) {
+      await sequelize.query(`
+        CREATE TABLE verification_codes (
+          id INT AUTO_INCREMENT PRIMARY KEY COMMENT '验证码ID',
+          email VARCHAR(255) NOT NULL COMMENT '邮箱地址',
+          code VARCHAR(255) NOT NULL COMMENT '验证码（bcrypt加密）',
+          code_type ENUM('register', 'login', 'reset_password', 'email_change') NOT NULL COMMENT '验证码类型',
+          expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
+          is_used BOOLEAN DEFAULT FALSE COMMENT '是否已使用',
+          used_at TIMESTAMP NULL COMMENT '使用时间',
+          send_count INT DEFAULT 1 COMMENT '发送次数',
+          last_send_at TIMESTAMP NULL COMMENT '最后发送时间',
+          ip_address VARCHAR(45) NULL COMMENT '请求IP地址',
+          user_agent TEXT NULL COMMENT '用户代理信息',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+          
+          INDEX idx_email_type (email, code_type),
+          INDEX idx_code_type_used (code, code_type, is_used),
+          INDEX idx_expires_at (expires_at),
+          INDEX idx_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='邮箱验证码表'
+      `);
+    } else {
+      // 检查并添加可能缺失的列，以及更新验证码字段长度
+      try {
+        const [columns] = await sequelize.query(`
+          SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
+          FROM INFORMATION_SCHEMA.COLUMNS 
+          WHERE TABLE_SCHEMA = DATABASE() 
+          AND TABLE_NAME = 'verification_codes'
+        `);
+        
+        const existingColumns = columns.map(col => col.COLUMN_NAME);
+        const requiredColumns = [
+          'send_count', 'last_send_at', 'ip_address', 'user_agent'
+        ];
+        
+        // 检查验证码字段长度，如果是旧的VARCHAR(10)则升级到VARCHAR(255)
+        const codeColumn = columns.find(col => col.COLUMN_NAME === 'code');
+        if (codeColumn && codeColumn.CHARACTER_MAXIMUM_LENGTH < 255) {
+          console.log('  🔧 升级验证码字段以支持加密存储...');
+          
+          // 先清空现有数据（因为旧数据是明文，新系统需要加密）
+          await sequelize.query(`TRUNCATE TABLE verification_codes`);
+          
+          // 修改字段长度和注释
+          await sequelize.query(`
+            ALTER TABLE verification_codes 
+            MODIFY COLUMN code VARCHAR(255) NOT NULL COMMENT '验证码（bcrypt加密）'
+          `);
+          
+          console.log('  ✅ 验证码字段升级完成，现已支持加密存储');
+        }
+        
+        for (const column of requiredColumns) {
+          if (!existingColumns.includes(column)) {
+            switch (column) {
+              case 'send_count':
+                await sequelize.query(`
+                  ALTER TABLE verification_codes 
+                  ADD COLUMN send_count INT DEFAULT 1 COMMENT '发送次数'
+                `);
+                break;
+              case 'last_send_at':
+                await sequelize.query(`
+                  ALTER TABLE verification_codes 
+                  ADD COLUMN last_send_at TIMESTAMP NULL COMMENT '最后发送时间'
+                `);
+                break;
+              case 'ip_address':
+                await sequelize.query(`
+                  ALTER TABLE verification_codes 
+                  ADD COLUMN ip_address VARCHAR(45) NULL COMMENT '请求IP地址'
+                `);
+                break;
+              case 'user_agent':
+                await sequelize.query(`
+                  ALTER TABLE verification_codes 
+                  ADD COLUMN user_agent TEXT NULL COMMENT '用户代理信息'
+                `);
+                break;
+            }
+          }
+        }
+      } catch (error) {
+        // 静默处理错误
+        console.error('验证码表升级失败:', error.message);
+      }
+    }
+  } catch (error) {
+    console.error('❌ 创建验证码表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 确保用户表包含display_name字段
+ */
+async function ensureUserDisplayNameField(sequelize) {
+  try {
+    // 检查 display_name 字段是否存在
+    const [columns] = await sequelize.query(`
+      SHOW COLUMNS FROM users LIKE 'display_name'
+    `);
+    
+    if (columns.length === 0) {
+      // 第一步：只添加字段
+      await sequelize.query(`
+        ALTER TABLE users 
+        ADD COLUMN display_name VARCHAR(100) DEFAULT NULL COMMENT '用户昵称/显示名' AFTER email
+      `);
+      
+      // 第二步：检查索引数量并尝试添加索引
+      try {
+        const [indexes] = await sequelize.query(`
+          SHOW INDEX FROM users
+        `);
+        const indexCount = new Set(indexes.map(idx => idx.Key_name)).size;
+        
+        if (indexCount < 60) { // 留一些余量
+          await sequelize.query(`
+            ALTER TABLE users ADD INDEX idx_users_display_name (display_name)
+          `);
+        }
+      } catch (indexError) {
+        // 静默处理索引错误
+      }
+      
+      // 为现有用户设置默认昵称（使用用户名）
+      await sequelize.query(`
+        UPDATE users SET display_name = username WHERE display_name IS NULL
+      `);
+    }
+  } catch (error) {
+    // 静默处理错误，继续执行
+  }
 }
 
 export { initializeDatabase };

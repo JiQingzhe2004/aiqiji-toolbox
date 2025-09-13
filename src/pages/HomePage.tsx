@@ -1,4 +1,5 @@
 import React, { memo, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HeroBanner } from '@/components/HeroBanner';
 import { CategoryTabs } from '@/components/CategoryTabs';
@@ -24,6 +25,9 @@ interface HomePageProps {
  * 包含搜索、分类、工具展示等核心功能
  */
 const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', onClearSearch }: HomePageProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryParam = searchParams.get('category') || '全部';
+
   const {
     filteredTools,
     categories,
@@ -39,8 +43,25 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
   // 工具区域的引用
   const toolsSectionRef = useRef<HTMLDivElement>(null);
 
-  // 设置首页SEO
-  useSEO(SEOPresets.homePage());
+  // 根据URL参数设置激活的分类
+  useEffect(() => {
+    if (categoryParam !== activeCategory) {
+      setActiveCategory(categoryParam as any);
+    }
+  }, [categoryParam, activeCategory, setActiveCategory]);
+
+  // 动态设置SEO，根据分类参数
+  const currentCategory = categoryParam === '全部' ? '' : categoryParam;
+  const seoConfig = currentCategory 
+    ? {
+        title: `${currentCategory}工具 - AiQiji工具箱`,
+        description: `精选${currentCategory}类工具，提升工作效率。发现最好用的${currentCategory}工具，让工作更高效。`,
+        keywords: [`${currentCategory}`, '工具', '效率', `${currentCategory}工具箱`],
+        canonicalUrl: `/?category=${encodeURIComponent(currentCategory)}`,
+      }
+    : SEOPresets.homePage();
+  
+  useSEO(seoConfig);
 
   // 当搜索查询变化且有搜索内容时，自动滚动到工具区域
   useEffect(() => {
@@ -72,6 +93,20 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
     window.scrollTo({ top: scrollPosition, behavior: 'smooth' });
   };
 
+  // 处理分类切换（更新URL参数）
+  const handleCategoryChange = (category: string) => {
+    if (category === '全部') {
+      // 移除category参数，回到首页
+      setSearchParams({});
+    } else {
+      // 设置category参数
+      setSearchParams({ category });
+    }
+    
+    // 滚动到工具区域
+    setTimeout(() => scrollToToolsSection(), 100);
+  };
+
   return (
     <div className="relative">
       {/* 首页全屏壁纸横幅 */}
@@ -82,11 +117,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
         <SidebarCategoryTabs
           categories={categories}
           activeCategory={activeCategory}
-          onChange={(category: string) => {
-            setActiveCategory(category as any);
-            // 分类切换后滚动到工具网格顶部
-            scrollToToolsSection();
-          }}
+          onChange={handleCategoryChange}
         />
       )}
 
@@ -100,17 +131,32 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
         className="relative z-10 bg-background dark:bg-black min-h-screen pt-8 md:pt-12 pb-8 md:pb-12"
       >
         <div className="container mx-auto px-4 max-w-7xl">
+          {/* 动态页面标题 - 当有分类参数时显示 */}
+          {currentCategory && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-8"
+            >
+              <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  {currentCategory}工具
+                </span>
+              </h1>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                精选{currentCategory}类工具，让你的工作更高效
+              </p>
+            </motion.div>
+          )}
+
           {/* 平板端分类标签 - 在md到xl之间显示 */}
           {!isLoading && (
             <div className="hidden md:block xl:hidden sticky top-16 z-40 bg-background/80 backdrop-blur-md border-b border-muted-foreground/10 mb-8 -mx-4 px-4 py-4">
               <CategoryTabs
                 categories={categories}
                 activeCategory={activeCategory}
-                onChange={(category: string) => {
-                  setActiveCategory(category as any);
-                  // 分类切换后滚动到工具网格顶部
-                  scrollToToolsSection();
-                }}
+                onChange={handleCategoryChange}
                 className="flex"
               />
             </div>
@@ -180,7 +226,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
                     {filteredTools.length}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    当前显示工具
+                    {currentCategory ? `${currentCategory}工具` : '当前显示工具'}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -213,11 +259,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
         <BottomNavigation
           categories={categories}
           activeCategory={activeCategory}
-          onChange={(category) => {
-            setActiveCategory(category as any);
-            // 分类切换后滚动到工具网格顶部
-            scrollToToolsSection();
-          }}
+          onChange={handleCategoryChange}
           className="md:hidden"
         />
       )}

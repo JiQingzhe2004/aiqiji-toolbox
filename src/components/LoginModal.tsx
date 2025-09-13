@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Eye, EyeOff, LogIn, Loader2, Shield } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Loader2, Shield, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserRegisterDialog } from './UserRegisterDialog';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
@@ -30,6 +31,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   
   const { login } = useAuth();
 
@@ -51,15 +53,31 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
       const success = await login(formData.username, formData.password);
       
       if (success) {
-        toast.success('登录成功！正在跳转到管理界面...');
         onOpenChange(false);
         // 重置表单
         setFormData({ username: '', password: '' });
         setShowPassword(false);
-        // 自动跳转到管理员界面
+        
+        // 登录成功后需要获取用户信息来判断跳转
+        // 给login一点时间更新用户状态
         setTimeout(() => {
-          window.location.href = '/admin';
-        }, 500); // 延迟500ms让用户看到成功提示
+          const userData = JSON.parse(localStorage.getItem('auth_user') || 'null');
+          const userIsAdmin = userData?.role === 'admin';
+          
+          if (userIsAdmin) {
+            toast.success('登录成功！正在跳转到管理界面...', { duration: 2000 });
+            setTimeout(() => {
+              window.location.href = '/admin';
+            }, 500);
+          } else {
+            toast.success('🎉 登录成功！欢迎使用 AiQiji 工具箱', { duration: 3000 });
+            // 普通用户留在当前页面，不进行跳转
+            // 如果想跳转到首页，取消注释下面的代码
+            // setTimeout(() => {
+            //   window.location.href = '/';
+            // }, 500);
+          }
+        }, 200);
       } else {
         toast.error('用户名或密码错误');
       }
@@ -97,10 +115,10 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
           {/* 标题 */}
           <div>
             <DialogTitle className="text-2xl font-semibold text-foreground mb-1">
-              管理员登录
+              登录账号
             </DialogTitle>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              欢迎回来，请输入您的登录信息以访问管理面板
+              欢迎使用 AiQiji 工具箱，请登录您的账号继续使用
             </p>
           </div>
         </DialogHeader>
@@ -178,7 +196,46 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             </Button>
           </div>
         </form>
+
+        {/* 注册链接 */}
+        <div className="px-2 pb-4">
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-3">
+              还没有账号？
+            </p>
+            <Button
+              variant="outline"
+              className="w-full h-11 rounded-lg text-sm font-medium border-dashed"
+              onClick={() => {
+                setShowRegisterDialog(true);
+              }}
+              disabled={isLoading}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              创建新账号
+            </Button>
+          </div>
+        </div>
       </DialogContent>
+
+      {/* 用户注册对话框 */}
+      <UserRegisterDialog
+        open={showRegisterDialog}
+        onOpenChange={setShowRegisterDialog}
+        onSuccess={(user) => {
+          console.log('注册成功:', user);
+          toast.success('🎉 注册成功！欢迎加入 AiQiji 工具箱', {
+            duration: 4000,
+          });
+          setShowRegisterDialog(false);
+          // 关闭登录弹窗，用户可以手动再次打开进行登录
+          onOpenChange(false);
+        }}
+        onSwitchToLogin={() => {
+          setShowRegisterDialog(false);
+          // 保持登录弹窗打开状态
+        }}
+      />
     </Dialog>
   );
 }

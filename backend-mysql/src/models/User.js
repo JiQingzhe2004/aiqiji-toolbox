@@ -28,6 +28,14 @@ const User = sequelize.define('User', {
       isEmail: true,
     },
   },
+  display_name: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    validate: {
+      len: [1, 100],
+    },
+    field: 'display_name',
+  },
   password_hash: {
     type: DataTypes.STRING(255),
     allowNull: false,

@@ -19,6 +19,7 @@ import settingsRoutes from './routes/settingsRoutes.js';
 import importRoutes from './routes/importRoutes.js';
 import friendLinkRoutes from './routes/friendLinkRoutes.js';
 import toolSubmissionRoutes from './routes/toolSubmissionRoutes.js';
+import emailRoutes from './routes/emailRoutes.js';
 
 // 加载环境变量
 dotenv.config();
@@ -167,6 +168,9 @@ class Server {
             auth: `${this.apiPrefix}/auth`,
             settings: `${this.apiPrefix}/settings`,
             import: `${this.apiPrefix}/import`,
+            email: `${this.apiPrefix}/email`,
+            'friend-links': `${this.apiPrefix}/friend-links`,
+            'tool-submissions': `${this.apiPrefix}/tool-submissions`,
             health: '/health',
             info: `${this.apiPrefix}/info`,
             static: process.env.STATIC_URL || '/static'
@@ -208,6 +212,9 @@ class Server {
     
     // 工具提交路由
     this.app.use(`${this.apiPrefix}/tool-submissions`, toolSubmissionRoutes);
+    
+    // 邮件路由
+    this.app.use(`${this.apiPrefix}/email`, emailRoutes);
 
     // 根路径
     this.app.get('/', (req, res) => {

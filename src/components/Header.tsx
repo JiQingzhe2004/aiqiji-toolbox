@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Github, Sparkles, Search, LogIn, Settings, MailCheck, X, Send } from 'lucide-react';
+import { Github, Sparkles, Search, LogIn, Settings, MailCheck, X, Send, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SearchBar } from './SearchBar';
 import { AnimatedThemeToggler } from './magicui/animated-theme-toggler';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LoginModal } from './LoginModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { settingsApi, type WebsiteInfo } from '@/services/settingsApi';
@@ -259,19 +260,37 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
             <Search className="w-5 h-5" />
           </Button>
           
-          {/* 移动端登录/管理按钮 */}
-          {isAuthenticated && isAdmin ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden rounded-2xl hover:bg-muted"
-              onClick={() => {
-                window.location.href = '/admin';
-              }}
-              aria-label="管理"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
+          {/* 移动端用户按钮 */}
+          {isAuthenticated ? (
+            isAdmin ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden rounded-2xl hover:bg-muted"
+                onClick={() => {
+                  window.location.href = '/admin';
+                }}
+                aria-label="管理"
+              >
+                <Settings className="w-5 h-5" />
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden rounded-2xl hover:bg-muted"
+                onClick={() => {
+                  // 获取当前用户信息
+                  const userData = JSON.parse(localStorage.getItem('auth_user') || 'null');
+                  if (userData?.username) {
+                    window.location.href = `/user?username=${userData.username}`;
+                  }
+                }}
+                aria-label="个人中心"
+              >
+                <User className="w-5 h-5" />
+              </Button>
+            )
           ) : (
             <Button
               variant="ghost"
@@ -311,19 +330,59 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
           {/* 更多操作按钮（可扩展） */}
           <div className="hidden md:flex items-center space-x-2">
             {/* 根据登录状态显示不同按钮 */}
-            {isAuthenticated && isAdmin ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                onClick={() => {
-                  // 在当前标签页跳转到管理页面，不新开标签页
-                  window.location.href = '/admin';
-                }}
-              >
-                <Settings className="w-3 h-3 mr-1" />
-                管理
-              </Button>
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-3">
+                {isAdmin ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => {
+                      // 在当前标签页跳转到管理页面，不新开标签页
+                      window.location.href = '/admin';
+                    }}
+                  >
+                    <Settings className="w-3 h-3 mr-1" />
+                    管理
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-8 h-8 rounded-full hover:bg-muted"
+                    onClick={() => {
+                      // 跳转到个人页面
+                      const userData = JSON.parse(localStorage.getItem('auth_user') || 'null');
+                      if (userData?.username) {
+                        window.location.href = `/user?username=${userData.username}`;
+                      }
+                    }}
+                    aria-label="个人中心"
+                  >
+                    <User className="w-4 h-4" />
+                  </Button>
+                )}
+                
+                {/* 用户头像和昵称 */}
+                {!isAdmin && (() => {
+                  const userData = JSON.parse(localStorage.getItem('auth_user') || 'null');
+                  const displayName = userData?.display_name || userData?.username || '用户';
+                  const avatarInitial = displayName.charAt(0).toUpperCase();
+                  
+                  return (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="w-7 h-7">
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                          {avatarInitial}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium text-foreground max-w-20 truncate">
+                        {displayName}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
             ) : (
               <Button
                 variant="outline"
@@ -338,18 +397,21 @@ export function Header({ onSearchChange, searchValue = '' }: HeaderProps) {
                 登录
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={() => {
-                // 反馈功能 - 发送邮件到开发者邮箱
-                window.open('mailto:jqz1215@qq.com?subject=AiQiji工具箱反馈&body=感谢您的反馈！请在此处写下您的建议或问题：', '_blank');
-              }}
-            >
-              <MailCheck className="w-3 h-3 mr-1" />
-              反馈
-            </Button>
+            {/* 只在未登录时显示反馈按钮 */}
+            {!isAuthenticated && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => {
+                  // 反馈功能 - 发送邮件到开发者邮箱
+                  window.open('mailto:jqz1215@qq.com?subject=AiQiji工具箱反馈&body=感谢您的反馈！请在此处写下您的建议或问题：', '_blank');
+                }}
+              >
+                <MailCheck className="w-3 h-3 mr-1" />
+                反馈
+              </Button>
+            )}
           </div>
         </motion.div>
       </div>

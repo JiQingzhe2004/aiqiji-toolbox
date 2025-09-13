@@ -321,11 +321,11 @@ function AdminPage() {
       </header>
 
       {/* 主要内容 - 添加顶部边距以避免被固定顶部栏遮挡，包含PWA安全区 */}
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 pt-safe-24 sm:pt-safe-32">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 pt-20 sm:pt-24">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* 手机端使用滚动标签，桌面端使用网格 */}
-          <div className="md:hidden">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+          <div className="md:hidden sticky top-16 bg-background/95 backdrop-blur-sm border-b z-40 pb-3 -mt-2 mb-6">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 pt-2">
               <TabsTrigger 
                 value="tools" 
                 className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-sm flex-shrink-0"
@@ -386,7 +386,7 @@ function AdminPage() {
           </div>
           
           {/* 桌面端使用网格布局 */}
-          <TabsList className="hidden md:grid w-full grid-cols-8">
+          <TabsList className="hidden md:grid w-full grid-cols-8 sticky top-20 bg-background/95 backdrop-blur-sm border-b z-40 -mt-2 mb-6">
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Database className="w-4 h-4" />
               工具管理

@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import User from '../models/User.js';
+import { VerificationCodeService } from '../services/VerificationCodeService.js';
 
 // JWT配置
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
@@ -83,6 +84,7 @@ export const login = async (req, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      display_name: user.display_name,
       role: user.role,
       createdAt: user.created_at
     };
@@ -178,26 +180,56 @@ export const validateToken = async (req, res) => {
 };
 
 /**
- * 用户注册（仅管理员可用）
+ * 用户注册（公开注册，需要邮箱验证码）
  */
 export const register = async (req, res) => {
   try {
-    const { username, email, password, role = 'user' } = req.body;
+    const { username, email, password, displayName, verificationCode, role = 'user' } = req.body;
+    const verificationCodeService = new VerificationCodeService();
 
     // 验证输入
-    if (!username || !password) {
+    if (!username || !password || !email || !verificationCode || !displayName) {
       return res.status(400).json({
         success: false,
-        message: '用户名和密码不能为空'
+        message: '用户名、邮箱、昵称、密码和验证码不能为空'
       });
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.status(400).json({
         success: false,
-        message: '密码长度至少为6位'
+        message: '密码长度至少为8位'
       });
     }
+
+    // 验证密码强度
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: '密码必须包含大小写字母和数字'
+      });
+    }
+
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: '请输入有效的邮箱地址'
+      });
+    }
+
+    // 验证验证码
+    const isValidCode = await verificationCodeService.verifyCode(email, verificationCode, 'register');
+    if (!isValidCode) {
+      return res.status(400).json({
+        success: false,
+        message: '验证码无效或已过期'
+      });
+    }
+
+    // 标记验证码为已使用
+    await verificationCodeService.markCodeAsUsed(email, verificationCode, 'register');
 
     // 检查用户名是否已存在
     const existingUser = await User.findOne({
@@ -233,6 +265,7 @@ export const register = async (req, res) => {
     const user = await User.create({
       username: username.toLowerCase().trim(),
       email: email?.toLowerCase().trim(),
+      display_name: displayName?.trim(),
       password_hash,
       role
     });
@@ -242,6 +275,7 @@ export const register = async (req, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      display_name: user.display_name,
       role: user.role,
       createdAt: user.created_at
     };
@@ -455,6 +489,147 @@ export const getProfile = async (req, res) => {
 
   } catch (error) {
     console.error('Get profile error:', error instanceof Error ? error.message : String(error));
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+/**
+ * 检查邮箱是否已存在
+ */
+export const checkEmailExists = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: '邮箱地址不能为空'
+      });
+    }
+
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: '请输入有效的邮箱地址'
+      });
+    }
+
+    // 检查邮箱是否已存在
+    const existingUser = await User.findOne({
+      where: { email: email.toLowerCase().trim() }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        email: email.toLowerCase().trim(),
+        exists: !!existingUser,
+        message: existingUser ? '该邮箱已被注册' : '该邮箱可以使用'
+      }
+    });
+
+  } catch (error) {
+    console.error('Check email exists error:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+/**
+ * 检查用户名是否已存在
+ */
+export const checkUsernameExists = async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: '用户名不能为空'
+      });
+    }
+
+    // 检查用户名是否已存在
+    const existingUser = await User.findOne({
+      where: { username: username.toLowerCase().trim() }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        username: username.toLowerCase().trim(),
+        exists: !!existingUser,
+        message: existingUser ? '该用户名已被占用' : '该用户名可以使用'
+      }
+    });
+
+  } catch (error) {
+    console.error('Check username exists error:', error);
+    res.status(500).json({
+      success: false,
+      message: '服务器内部错误'
+    });
+  }
+};
+
+/**
+ * 根据用户名获取公开用户信息
+ */
+export const getUserByUsername = async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: '用户名不能为空'
+      });
+    }
+
+    // 查找用户
+    const user = await User.findOne({
+      where: {
+        username: username.toLowerCase().trim(),
+        status: 'active' // 只显示活跃用户
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在'
+      });
+    }
+
+    // 返回公开的用户信息（不包含敏感信息）
+    const publicUserInfo = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      status: user.status,
+      created_at: user.created_at,
+      last_login_success: user.last_login_success,
+      // 可以扩展更多公开信息，如头像、简介等
+      profile: {
+        display_name: user.display_name || user.username, // 优先使用昵称，否则使用用户名
+        // 未来可以添加更多个人资料字段
+      }
+    };
+
+    res.json({
+      success: true,
+      data: publicUserInfo
+    });
+
+  } catch (error) {
+    console.error('Get user by username error:', error);
     res.status(500).json({
       success: false,
       message: '服务器内部错误'

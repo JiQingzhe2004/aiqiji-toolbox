@@ -13,6 +13,7 @@ import CookieConsent from './components/CookieConsent';
 
 // 懒加载页面组件以提高性能
 import HomePage from './pages/HomePage'; // 首页不懒加载，立即可用
+import UserPage from './pages/UserPage'; // 用户页面不懒加载，避免加载问题
 const ExternalLinkPage = lazy(() => import('./pages/ExternalLinkPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
@@ -74,6 +75,13 @@ class ErrorBoundary extends React.Component {
 }
 
 /**
+ * 用户页面包装组件 - 避免懒加载问题
+ */
+function UserPageWrapper() {
+  return <UserPage />;
+}
+
+/**
  * 应用内容组件 - 需要在 Router 内部使用 useLocation
  */
 function AppContent() {
@@ -100,6 +108,9 @@ function AppContent() {
                   </ProtectedRoute>
                 </Suspense>
               } />
+              
+              {/* 用户页面 - 独立布局，使用专用顶部栏 */}
+              <Route path="/user" element={<UserPageWrapper />} />
               
               {/* 主站页面 - 带Header和Footer */}
               <Route path="/*" element={

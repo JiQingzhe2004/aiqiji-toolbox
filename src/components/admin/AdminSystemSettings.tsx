@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, RefreshCw, Settings, Globe, Info, Eye, EyeOff, Plus, Edit, Trash, ExternalLink, Loader2, Shield } from 'lucide-react';
+import { Save, RefreshCw, Settings, Globe, Info, Eye, EyeOff, Plus, Edit, Trash, ExternalLink, Loader2, Shield, Mail, TestTube } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { settingsApi, type SettingsUpdateData } from '@/services/settingsApi';
+import { EmailConfigCard } from '@/components/EmailConfigCard';
 import toast from 'react-hot-toast';
 
 interface SystemSettings {
@@ -32,6 +33,14 @@ interface SystemSettings {
       is_public: boolean;
     };
   };
+  email?: {
+    [key: string]: {
+      value: any;
+      description: string;
+      type: string;
+      is_public: boolean;
+    };
+  };
 }
 
 export function AdminSystemSettings() {
@@ -41,6 +50,8 @@ export function AdminSystemSettings() {
   const [savingWebsite, setSavingWebsite] = useState(false);
   const [savingIcp, setSavingIcp] = useState(false);
   const [savingVpn, setSavingVpn] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [testingEmail, setTestingEmail] = useState(false);
   const [formData, setFormData] = useState({
     site_name: '',
     site_url: '',
@@ -50,6 +61,19 @@ export function AdminSystemSettings() {
     show_icp: false,
     show_vpn_indicator: true
   });
+  
+  // 邮箱配置表单数据
+  const [emailConfig, setEmailConfig] = useState({
+    smtp_host: '',
+    smtp_port: 587,
+    smtp_secure: false,
+    smtp_user: '',
+    smtp_pass: '',
+    from_name: '',
+    from_email: '',
+    email_enabled: false
+  });
+  
 
 
   // 加载系统设置
@@ -57,13 +81,18 @@ export function AdminSystemSettings() {
     try {
       setLoading(true);
       const response = await settingsApi.getAllSettings();
-      // console.log('AdminSystemSettings - 系统设置API响应:', response); // 调试日志
+      console.log('AdminSystemSettings - 系统设置API响应:', response); // 调试日志
       if (response.success) {
         setSettings(response.data);
         
         // 更新表单数据
         const websiteSettings = response.data.website || {};
-        // console.log('AdminSystemSettings - 网站设置:', websiteSettings); // 调试日志
+        // 邮箱设置可能在 email 分类或 general 分类中
+        const emailSettings = response.data.email || {};
+        const generalSettings = response.data.general || {};
+        console.log('AdminSystemSettings - 网站设置:', websiteSettings); // 调试日志
+        console.log('AdminSystemSettings - 邮箱设置:', emailSettings); // 调试日志
+        console.log('AdminSystemSettings - 通用设置:', generalSettings); // 调试日志
         setFormData({
           site_name: websiteSettings.site_name?.value || '',
           site_url: websiteSettings.site_url?.value || '',
@@ -72,6 +101,22 @@ export function AdminSystemSettings() {
           icp_number: websiteSettings.icp_number?.value || '',
           show_icp: websiteSettings.show_icp?.value || false,
           show_vpn_indicator: response.data.general?.show_vpn_indicator?.value ?? true
+        });
+        
+        // 更新邮箱配置表单数据 - 从email分类或general分类获取
+        const getEmailSetting = (key: string) => {
+          return emailSettings[key]?.value || generalSettings[key]?.value || '';
+        };
+        
+        setEmailConfig({
+          smtp_host: getEmailSetting('smtp_host'),
+          smtp_port: parseInt(getEmailSetting('smtp_port')) || 587,
+          smtp_secure: getEmailSetting('smtp_secure') || false,
+          smtp_user: getEmailSetting('smtp_user'),
+          smtp_pass: getEmailSetting('smtp_pass'),
+          from_name: getEmailSetting('from_name'),
+          from_email: getEmailSetting('from_email'),
+          email_enabled: getEmailSetting('email_enabled') || false
         });
       }
     } catch (error) {
@@ -293,6 +338,68 @@ export function AdminSystemSettings() {
     }
   };
 
+
+  // 保存邮箱配置
+  const handleSaveEmailConfig = async () => {
+    try {
+      setSavingEmail(true);
+      
+      const updates: SettingsUpdateData[] = [
+        {
+          setting_key: 'smtp_host',
+          setting_value: emailConfig.smtp_host,
+          setting_type: 'string'
+        },
+        {
+          setting_key: 'smtp_port',
+          setting_value: emailConfig.smtp_port.toString(),
+          setting_type: 'string'
+        },
+        {
+          setting_key: 'smtp_secure',
+          setting_value: emailConfig.smtp_secure,
+          setting_type: 'boolean'
+        },
+        {
+          setting_key: 'smtp_user',
+          setting_value: emailConfig.smtp_user,
+          setting_type: 'string'
+        },
+        {
+          setting_key: 'smtp_pass',
+          setting_value: emailConfig.smtp_pass,
+          setting_type: 'string'
+        },
+        {
+          setting_key: 'from_name',
+          setting_value: emailConfig.from_name,
+          setting_type: 'string'
+        },
+        {
+          setting_key: 'from_email',
+          setting_value: emailConfig.from_email,
+          setting_type: 'string'
+        },
+        {
+          setting_key: 'email_enabled',
+          setting_value: emailConfig.email_enabled,
+          setting_type: 'boolean'
+        }
+      ];
+      
+      const response = await settingsApi.updateSettings(updates);
+      if (response.success) {
+        toast.success('邮箱配置保存成功');
+      } else {
+        toast.error('保存邮箱配置失败');
+      }
+    } catch (error) {
+      console.error('保存邮箱配置失败:', error);
+      toast.error('保存邮箱配置失败');
+    } finally {
+      setSavingEmail(false);
+    }
+  };
 
   useEffect(() => {
     loadSettings();
@@ -590,6 +697,20 @@ export function AdminSystemSettings() {
           </div>
         </div>
       </div>
+
+      {/* 邮箱配置卡片 */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+      >
+        <EmailConfigCard
+          config={emailConfig}
+          onChange={setEmailConfig}
+          onSave={handleSaveEmailConfig}
+          loading={savingEmail}
+        />
+      </motion.div>
     </motion.div>
   );
 }

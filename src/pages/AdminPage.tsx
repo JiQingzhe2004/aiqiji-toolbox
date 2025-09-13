@@ -259,6 +259,8 @@ function AdminPage() {
     <div className="min-h-screen bg-background">
       {/* 固定顶部栏 */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        {/* PWA安全区适配 */}
+        <div className="h-safe-top bg-background/95"></div>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-4">
@@ -318,8 +320,8 @@ function AdminPage() {
         </div>
       </header>
 
-      {/* 主要内容 - 添加顶部边距以避免被固定顶部栏遮挡 */}
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 pt-24 sm:pt-32">
+      {/* 主要内容 - 添加顶部边距以避免被固定顶部栏遮挡，包含PWA安全区 */}
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 pt-safe-24 sm:pt-safe-32">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* 手机端使用滚动标签，桌面端使用网格 */}
           <div className="md:hidden">

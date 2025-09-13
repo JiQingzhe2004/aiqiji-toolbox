@@ -7,6 +7,7 @@ import { Highlight } from '@tiptap/extension-highlight';
 import { Underline } from '@tiptap/extension-underline';
 import { HorizontalRule } from '@tiptap/extension-horizontal-rule';
 import { Image } from '@tiptap/extension-image';
+import ImageAlignExtension from './rich-text-extensions/ImageAlignExtension';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Typography } from '@tiptap/extension-typography';
 import { Placeholder } from '@tiptap/extension-placeholder';
@@ -67,6 +68,28 @@ export function RichTextEditor({
   const [showButtonDialog, setShowButtonDialog] = useState(false);
   const [showCardDialog, setShowCardDialog] = useState(false);
   const [editingImage, setEditingImage] = useState<{src: string; element: HTMLElement} | null>(null);
+
+  // 推断图片当前的尺寸与对齐方式
+  const inferImageSettings = (img: HTMLImageElement): { size: 'small' | 'medium' | 'large'; alignment: 'left' | 'center' | 'right' } => {
+    const classList = Array.from(img.classList);
+    // 尺寸
+    let size: 'small' | 'medium' | 'large' = 'medium';
+    if (classList.includes('w-[25%]') || classList.includes('max-w-xs')) size = 'small';
+    else if (classList.includes('w-[100%]') || classList.includes('max-w-lg')) size = 'large';
+    else if (classList.includes('w-[50%]') || classList.includes('max-w-md')) size = 'medium';
+
+    // 对齐
+    let alignment: 'left' | 'center' | 'right' = 'center';
+    if (classList.includes('float-left')) alignment = 'left';
+    else if (classList.includes('float-right')) alignment = 'right';
+    else {
+      const parent = img.parentElement;
+      if (parent && parent.classList.contains('text-center')) alignment = 'center';
+      else if (classList.includes('inline-block')) alignment = 'center';
+    }
+
+    return { size, alignment };
+  };
 
   // 格式化HTML代码
   const formatHTML = (html: string): string => {
@@ -147,7 +170,7 @@ export function RichTextEditor({
           class: 'my-horizontal-rule',
         },
       }),
-      Image.configure({
+      ImageAlignExtension.configure({
         inline: false,
         allowBase64: true,
         HTMLAttributes: {
@@ -206,6 +229,11 @@ export function RichTextEditor({
           if (target.tagName === 'IMG') {
             // 双击图片时打开编辑对话框
             const img = target as HTMLImageElement;
+            // 将选区设置到该图片节点，保证 updateAttributes 命中
+            try {
+              const pos = view.posAtDOM(img, 0);
+              editor?.commands.setNodeSelection(pos);
+            } catch {}
             setEditingImage({
               src: img.src,
               element: img
@@ -229,9 +257,8 @@ export function RichTextEditor({
       editorElement.style.outline = 'none';
       editorElement.style.border = 'none';
       
-      // 添加自定义CSS样式
-      const style = document.createElement('style');
-      style.textContent = `
+      // 添加/更新自定义CSS样式（始终覆盖为最新内容）
+      const cssContent = `
         .ProseMirror .my-highlight {
           background-color: var(--highlight-color, #ffff00);
           padding: 0.1em 0.3em;
@@ -253,8 +280,26 @@ export function RichTextEditor({
           max-width: 100%;
           height: auto;
           border-radius: 0.5rem;
-          margin: 0.5rem 0;
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        /* 强制根据节点属性渲染对齐方式，避免被其他样式覆盖 */
+        .ProseMirror img[data-alignment="center"] {
+          display: block !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          float: none !important;
+        }
+        .ProseMirror img[data-alignment="left"] {
+          float: left !important;
+          margin-right: 1rem !important;
+          margin-left: 0 !important;
+        }
+        .ProseMirror img[data-alignment="right"] {
+          float: right !important;
+          margin-left: 1rem !important;
+          margin-right: 0 !important;
         }
         .ProseMirror .my-badge {
           display: inline-flex;
@@ -328,8 +373,13 @@ export function RichTextEditor({
           height: 1rem;
         }
       `;
-      if (!document.head.querySelector('style[data-editor-highlight]')) {
+      const existing = document.head.querySelector('style[data-editor-highlight]') as HTMLStyleElement | null;
+      if (existing) {
+        existing.textContent = cssContent;
+      } else {
+        const style = document.createElement('style');
         style.setAttribute('data-editor-highlight', 'true');
+        style.textContent = cssContent;
         document.head.appendChild(style);
       }
     }
@@ -639,59 +689,32 @@ export function RichTextEditor({
             setEditingImage(null);
           }
         }}
-        initialData={editingImage ? {
-          url: editingImage.src,
-          size: 'medium',
-          alignment: 'center'
-        } : undefined}
+        initialData={editingImage ? (() => {
+          const img = editingImage.element as HTMLImageElement;
+          const { size, alignment } = inferImageSettings(img);
+          return { url: editingImage.src, size, alignment };
+        })() : undefined}
         onConfirm={(data) => {
           setTimeout(() => {
-            // 构建包含样式的图片属性
+            // 将尺寸以 extraClass 持久化，对齐用 alignment 属性持久化
             const sizeClass = {
               small: 'w-[25%] max-w-xs',
               medium: 'w-[50%] max-w-md', 
               large: 'w-[100%] max-w-lg'
             }[data.size] || 'w-[50%] max-w-md';
-            
-            const alignClass = {
-              left: 'float-left mr-4 mb-2 clear-left',
-              center: 'block mb-4',
-              right: 'float-right ml-4 mb-2 clear-right'
-            }[data.alignment] || 'block mb-4';
-            
-            const containerClass = data.alignment === 'center' ? 'text-center' : '';
-            
+
             if (editingImage) {
-              // 编辑现有图片
-              const img = editingImage.element as HTMLImageElement;
-              img.src = data.url;
-              img.className = `my-image cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200 ${sizeClass} ${alignClass} object-contain rounded-lg border`;
-              
-              // 如果是居中对齐，确保父容器有正确的类
-              if (data.alignment === 'center') {
-                const parent = img.parentElement;
-                if (parent && !parent.classList.contains('text-center')) {
-                  parent.classList.add('text-center');
-                }
-              }
+              editor?.chain().focus().updateAttributes('image', {
+                src: data.url,
+                alignment: data.alignment,
+                extraClass: sizeClass,
+              }).run();
             } else {
-              // 插入新图片
-              if (data.alignment === 'center') {
-                // 居中图片需要包装在div中
-                const html = `<div class="text-center mb-4"><img src="${data.url}" class="my-image cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200 ${sizeClass} ${alignClass} object-contain rounded-lg border inline-block" title="双击编辑图片" /></div>`;
-                editor?.chain().focus().insertContent(html).run();
-              } else {
-                // 左对齐和右对齐直接插入图片
-                editor?.chain().focus().setImage({ src: data.url }).run();
-                
-                // 然后为图片添加样式类
-                setTimeout(() => {
-                  const img = editor?.view.dom.querySelector('img[src="' + data.url + '"]');
-                  if (img) {
-                    img.className = `my-image cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200 ${sizeClass} ${alignClass} object-contain rounded-lg border`;
-                  }
-                }, 100);
-              }
+              editor?.chain().focus().setImage({
+                src: data.url,
+                alignment: data.alignment,
+                extraClass: sizeClass,
+              } as any).run();
             }
           }, 0);
           setShowImageDialog(false);

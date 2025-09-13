@@ -162,7 +162,7 @@ export function FloatingSubmitButton({
     <>
       <Confetti ref={confettiRef} />
       <TooltipProvider>
-        <div className={`fixed right-6 z-50 ${isToolDetailPage ? 'bottom-6' : 'bottom-24 sm:bottom-6'}`}>
+        <div className={`fixed right-6 z-50 ${isToolDetailPage ? 'bottom-[calc(1.5rem+env(safe-area-inset-bottom))]' : 'bottom-[calc(6rem+env(safe-area-inset-bottom))] sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]'}`}>
           {/* 功能按钮组 */}
           <AnimatePresence>
             {isExpanded && (

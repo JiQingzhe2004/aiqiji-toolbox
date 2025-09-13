@@ -6,7 +6,8 @@ import { Color } from '@tiptap/extension-color';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Underline } from '@tiptap/extension-underline';
 import { HorizontalRule } from '@tiptap/extension-horizontal-rule';
-import { Image } from '@tiptap/extension-image';
+// 使用带对齐属性的图片扩展，确保渲染时还原 alignment/extraClass
+import ImageAlignExtension from './rich-text-extensions/ImageAlignExtension';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Typography } from '@tiptap/extension-typography';
 import { BadgeExtension } from './rich-text-extensions/BadgeExtension';
@@ -48,11 +49,12 @@ export function RichTextDisplay({ content, className }: RichTextDisplayProps) {
           class: 'my-horizontal-rule',
         },
       }),
-      Image.configure({
+      ImageAlignExtension.configure({
         inline: false,
         allowBase64: true,
         HTMLAttributes: {
           class: 'my-image',
+          title: '图片',
         },
       }),
       TextAlign.configure({
@@ -107,8 +109,7 @@ export function RichTextDisplay({ content, className }: RichTextDisplayProps) {
 
   // 添加高亮样式支持
   useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
+    const css = `
       .rich-text-display .ProseMirror .my-highlight {
         padding: 0.1em 0.3em;
         border-radius: 0.3em;
@@ -121,9 +122,29 @@ export function RichTextDisplay({ content, className }: RichTextDisplayProps) {
         box-decoration-break: clone;
         display: inline;
       }
+      /* 显示页面也强制按照 alignment 渲染 */
+      .rich-text-display .ProseMirror img[data-alignment="center"] {
+        display: block !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        float: none !important;
+      }
+      .rich-text-display .ProseMirror img[data-alignment="left"] {
+        float: left !important;
+        margin-right: 1rem !important;
+        margin-left: 0 !important;
+      }
+      .rich-text-display .ProseMirror img[data-alignment="right"] {
+        float: right !important;
+        margin-left: 1rem !important;
+        margin-right: 0 !important;
+      }
     `;
-    if (!document.head.querySelector('style[data-display-highlight]')) {
+    const existing = document.head.querySelector('style[data-display-highlight]') as HTMLStyleElement | null;
+    if (existing) existing.textContent = css; else {
+      const style = document.createElement('style');
       style.setAttribute('data-display-highlight', 'true');
+      style.textContent = css;
       document.head.appendChild(style);
     }
   }, []);

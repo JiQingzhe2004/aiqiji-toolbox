@@ -78,8 +78,19 @@ export function validateToolFormData(data: any): ValidationResult {
     }
   }
   
-  if (!data.category || data.category.trim().length === 0) {
+  // 验证分类
+  if (!data.category) {
     errors.push('请选择工具分类');
+  } else if (Array.isArray(data.category)) {
+    if (data.category.length === 0) {
+      errors.push('请选择工具分类');
+    }
+  } else if (typeof data.category === 'string') {
+    if (data.category.trim().length === 0) {
+      errors.push('请选择工具分类');
+    }
+  } else {
+    errors.push('工具分类格式不正确');
   }
   
   // 验证标签

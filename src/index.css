@@ -16,6 +16,40 @@
   }
 }
 
+/* 安全区域工具类 */
+.h-safe-top {
+  height: env(safe-area-inset-top);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pl-safe {
+  padding-left: env(safe-area-inset-left);
+}
+
+.pr-safe {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* 组合安全区类 */
+.pt-safe-16 {
+  padding-top: calc(env(safe-area-inset-top) + 4rem);
+}
+
+.pt-safe-24 {
+  padding-top: calc(env(safe-area-inset-top) + 6rem);
+}
+
+.pt-safe-32 {
+  padding-top: calc(env(safe-area-inset-top) + 8rem);
+}
+
 /* 简单的渐入动画替代复杂的motion动画 */
 @keyframes fadeIn {
   from { opacity: 0; }

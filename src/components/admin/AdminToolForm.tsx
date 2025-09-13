@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { ImageEditor } from './ImageEditor';
 import toast from 'react-hot-toast';
 import { toolsApi } from '@/services/toolsApi';
 import type { Tool } from '@/types';
@@ -39,8 +38,6 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
     content: tool?.content || '',
     icon_url: tool?.icon_url || '',
     icon_theme: tool?.icon_theme || 'auto',
-    icon_layout: (tool as any)?.icon_layout || 'center',
-    icon_size: (tool as any)?.icon_size || 'medium',
     categories: tool?.category ? (Array.isArray(tool.category) ? tool.category : [tool.category]) : [] as string[],
     url: tool?.url || '',
     featured: tool?.featured || false,
@@ -121,7 +118,9 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* 顶部标题栏 */}
-      <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="h-safe-top bg-background/95"></div>
+        <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <div className="min-w-0 flex-1">
             <h1 className="text-lg font-semibold hidden md:block">
@@ -155,11 +154,12 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
             {saving ? '提交中...' : uploading ? '上传中...' : tool ? '保存修改' : '添加工具'}
           </Button>
         </div>
+        </div>
       </div>
 
       {/* 主要内容区域 */}
       <div className="flex-1 overflow-y-auto">
-        <form id="tool-form" onSubmit={handleSubmit} className="p-4 md:p-6 space-y-6 max-w-4xl mx-auto">
+        <form id="tool-form" onSubmit={handleSubmit} className="px-4 pb-4 pt-6 md:px-6 md:pb-6 md:pt-8 space-y-6 max-w-4xl mx-auto">
           {/* 基本信息 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -214,28 +214,71 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
             <h3 className="text-lg font-medium">图标设置</h3>
             
             <div className="space-y-4">
-              <ImageEditor
-                value={formData.icon_url}
-                onChange={(value) => handleInputChange('icon_url', value)}
-                theme={formData.icon_theme}
-                onThemeChange={(theme) => handleInputChange('icon_theme', theme)}
-                layout={formData.icon_layout as 'left' | 'center' | 'right'}
-                onLayoutChange={(layout) => handleInputChange('icon_layout', layout)}
-                imageSize={formData.icon_size as 'small' | 'medium' | 'large'}
-                onImageSizeChange={(size) => handleInputChange('icon_size', size)}
-                toolName={formData.name || '工具'}
-                size="lg"
-              />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="icon_url">工具图标URL</Label>
+                  <Input
+                    id="icon_url"
+                    placeholder="https://example.com/icon.png"
+                    value={formData.icon_url}
+                    onChange={(e) => handleInputChange('icon_url', e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    推荐使用PNG格式，尺寸64x64像素
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>图标主题</Label>
+                  <Select
+                    value={formData.icon_theme}
+                    onValueChange={(value) => handleInputChange('icon_theme', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择图标主题" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">自动适配</SelectItem>
+                      <SelectItem value="auto-light">自动适配（偏亮色）</SelectItem>
+                      <SelectItem value="auto-dark">自动适配（偏暗色）</SelectItem>
+                      <SelectItem value="light">浅色主题</SelectItem>
+                      <SelectItem value="dark">深色主题</SelectItem>
+                      <SelectItem value="none">无处理</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    控制图标在不同主题下的显示效果
+                  </p>
+                </div>
+
+                {/* 图标预览 */}
+                {formData.icon_url && (
+                  <div className="space-y-2">
+                    <Label>图标预览</Label>
+                    <div className="flex items-center gap-4 p-4 border rounded-lg">
+                      <img
+                        src={formData.icon_url}
+                        alt="图标预览"
+                        className="w-12 h-12 object-contain rounded border"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      <div className="text-sm text-muted-foreground">
+                        预览效果（实际大小可能会根据使用场景调整）
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
               
               <div className="p-4 bg-muted/30 rounded-lg">
                 <h4 className="text-sm font-medium mb-2">图标使用说明</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• 点击图标预览区域可以编辑图片链接</li>
-                  <li>• 使用"图片大小"调整图标显示尺寸</li>
-                  <li>• 使用"横向排版"调整图标在容器中的位置</li>
-                  <li>• 使用"显示主题"调整图标在不同主题下的显示效果</li>
-                  <li>• 推荐使用正方形图标，尺寸建议 200x200 像素以上</li>
-                  <li>• SVG格式图标在缩放时效果最佳</li>
+                  <li>• 推荐使用PNG或SVG格式，尺寸64x64像素</li>
+                  <li>• 图标主题影响在暗色/亮色模式下的显示</li>
+                  <li>• 建议使用透明背景的图标以获得最佳效果</li>
+                  <li>• 图标会在不同使用场景中自动调整大小</li>
                 </ul>
               </div>
             </div>

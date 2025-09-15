@@ -78,7 +78,7 @@ const adminNavigationItems: NavigationItem[] = [
 ];
 
 export function AppSidebar({ children }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [websiteInfo, setWebsiteInfo] = useState<WebsiteInfo | null>(null);
@@ -240,7 +240,7 @@ export function AppSidebar({ children }: SidebarProps) {
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="fixed left-0 top-0 z-50 h-full w-80 bg-card/95 backdrop-blur-xl border-r border-border/50 flex flex-col shadow-xl lg:hidden"
+              className="fixed left-0 top-0 z-50 h-full w-80 bg-card/95 backdrop-blur-xl border-r border-border/50 flex flex-col shadow-xl lg:hidden pt-safe"
             >
               {/* 移动端顶部区域 */}
               <div className="flex items-center justify-between p-4 border-b border-border/50">
@@ -407,10 +407,6 @@ export function AppSidebar({ children }: SidebarProps) {
                     </Button>
                   )}
 
-                  {/* 主题切换按钮 - 居中显示 */}
-                  <div className="flex justify-center">
-                    <AnimatedThemeToggler />
-                  </div>
                 </div>
               </div>
             </motion.aside>
@@ -891,45 +887,74 @@ export function AppSidebar({ children }: SidebarProps) {
                 </div>
               )}
 
-              {/* 主题切换按钮 - 居中显示 */}
-              <div className="flex justify-center">
-                <AnimatedThemeToggler />
-              </div>
             </div>
 
-            {/* 折叠控制按钮 - 移到最底部 */}
-            <div className="mt-4 pt-4 border-t border-border/50 flex justify-center">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-8 h-8 rounded-lg"
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                  >
-                    {isCollapsed ? (
-                      <PanelLeftOpen className="w-4 h-4" />
-                    ) : (
-                      <PanelLeftClose className="w-4 h-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent 
-                  side="right" 
-                  className="bg-popover text-popover-foreground border border-border shadow-md px-3 py-1.5 text-sm font-medium"
-                  sideOffset={5}
-                >
-                  <p>{isCollapsed ? "展开侧边栏" : "收起侧边栏"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
           </div>
+          
+          {/* 侧边栏折叠/展开按钮 - 融入侧边栏设计 */}
+          <motion.div
+            className="absolute -right-3 top-1/2 -translate-y-1/2 z-10"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.6, duration: 0.4, type: "spring", stiffness: 300 }}
+          >
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <motion.button
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className={cn(
+                    'relative w-6 h-12 group',
+                    'bg-card/95 backdrop-blur-md hover:bg-card',
+                    'border border-l-0 border-border/50 hover:border-primary/30',
+                    'rounded-r-xl shadow-lg hover:shadow-xl',
+                    'transition-all duration-300 ease-out',
+                    'flex items-center justify-center',
+                    'hover:bg-gradient-to-r hover:from-card hover:to-card/90',
+                    'active:scale-95'
+                  )}
+                  whileHover={{ x: 1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {/* 背景装饰 */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-primary/10 rounded-r-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* 图标 */}
+                  <motion.div
+                    animate={{ 
+                      rotateY: isCollapsed ? 0 : 180,
+                      x: isCollapsed ? 1 : -1
+                    }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="relative z-10 flex items-center justify-center"
+                  >
+                    <PanelLeftOpen className={cn(
+                      "w-3.5 h-3.5 transition-colors duration-200",
+                      "text-muted-foreground group-hover:text-primary"
+                    )} />
+                  </motion.div>
+                  
+                  {/* 左侧连接线 - 让按钮看起来是侧边栏的一部分 */}
+                  <div className={cn(
+                    "absolute left-0 top-2 bottom-2 w-px",
+                    "bg-gradient-to-b from-transparent via-border/30 to-transparent"
+                  )} />
+                </motion.button>
+              </TooltipTrigger>
+              <TooltipContent 
+                side="right" 
+                className="bg-popover text-popover-foreground border border-border shadow-md px-3 py-1.5 text-sm font-medium"
+                sideOffset={8}
+              >
+                <p>{isCollapsed ? "展开侧边栏" : "收起侧边栏"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </motion.div>
       </motion.aside>
 
       {/* 主内容区域 */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* 移动端顶部栏 */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b border-border/50 bg-background/80 backdrop-blur-md">
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-border/50 bg-background/80 backdrop-blur-md min-h-[64px]">
           <Button
             variant="ghost"
             size="icon"
@@ -956,7 +981,8 @@ export function AppSidebar({ children }: SidebarProps) {
             </span>
           </div>
 
-          <div className="w-10" /> {/* 占位 */}
+          {/* 手机端主题切换按钮 */}
+          <AnimatedThemeToggler />
         </div>
 
         {/* 主内容 */}

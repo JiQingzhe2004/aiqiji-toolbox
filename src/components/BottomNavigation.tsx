@@ -49,7 +49,7 @@ export function BottomNavigation({
       className={cn(
         'fixed bottom-0 left-0 right-0 z-40',
         'bg-background/95 backdrop-blur-xl border-t border-border/50',
-        'pb-safe-area-inset-bottom', // 兼容iOS安全区域
+        'pb-safe', // 使用正确的安全区域类名
         className
       )}
     >

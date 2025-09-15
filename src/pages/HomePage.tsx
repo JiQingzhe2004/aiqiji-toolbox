@@ -153,6 +153,23 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
               </motion.p>
             )}
           </motion.div>
+          
+          {/* 桌面端分类标签 - 紧跟搜索栏下方 */}
+          {!isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="hidden xl:flex justify-center mt-4"
+            >
+              <CategoryTabs
+                categories={categories}
+                activeCategory={activeCategory}
+                onChange={handleCategoryChange}
+                className="max-w-4xl"
+              />
+            </motion.div>
+          )}
         </div>
       </div>
 

@@ -10,6 +10,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ScrollToTop } from './components/ScrollToTop';
 import CookieConsent from './components/CookieConsent';
+import { AnimatedThemeToggler } from './components/magicui/animated-theme-toggler';
 
 // 懒加载页面组件以提高性能
 import HomePage from './pages/HomePage'; // 首页不懒加载，立即可用
@@ -209,6 +210,11 @@ function App() {
         
         {/* Cookie同意横幅 */}
         <CookieConsent />
+        
+        {/* 桌面端右上角主题切换按钮 */}
+        <div className="fixed top-4 right-4 z-[60] hidden md:block">
+          <AnimatedThemeToggler />
+        </div>
       </ErrorBoundary>
     </AuthProvider>
   );

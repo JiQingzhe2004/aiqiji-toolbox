@@ -62,7 +62,7 @@ export function FloatingSubmitButton({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="fixed right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-50">
+       <div className="fixed right-6 bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-50">
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div

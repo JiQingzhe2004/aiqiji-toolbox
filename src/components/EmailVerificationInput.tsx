@@ -17,7 +17,7 @@ interface EmailVerificationInputProps {
   /** 邮箱地址 */
   email: string;
   /** 验证码类型 */
-  type: 'register' | 'login' | 'reset_password' | 'email_change';
+  type: 'register' | 'login' | 'reset_password' | 'email_change' | 'feedback';
   /** 验证码值 */
   value: string;
   /** 验证码变化回调 */

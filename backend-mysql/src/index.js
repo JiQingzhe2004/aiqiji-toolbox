@@ -22,6 +22,7 @@ import toolSubmissionRoutes from './routes/toolSubmissionRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import favoritesRoutes from './routes/favoritesRoutes.js';
 import emailRoutes from './routes/emailRoutes.js';
+import feedbackRoutes from './routes/feedbackRoutes.js';
 // 注册Sequelize模型（确保在syncDatabase之前已加载）
 import './models/Favorite.js';
 
@@ -225,6 +226,9 @@ class Server {
 
     // 用户收藏
     this.app.use(`${this.apiPrefix}/favorites`, favoritesRoutes);
+
+    // 意见反馈
+    this.app.use(`${this.apiPrefix}/feedback`, feedbackRoutes);
 
     // 根路径
     this.app.get('/', (req, res) => {

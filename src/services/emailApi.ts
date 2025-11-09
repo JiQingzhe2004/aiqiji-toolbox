@@ -21,7 +21,7 @@ interface ApiResponse<T = any> {
  */
 interface SendVerificationCodeRequest {
   email: string;
-  type: 'register' | 'login' | 'reset_password' | 'email_change';
+  type: 'register' | 'login' | 'reset_password' | 'email_change' | 'feedback';
   template?: string;
 }
 
@@ -31,7 +31,7 @@ interface SendVerificationCodeRequest {
 interface VerifyCodeRequest {
   email: string;
   code: string;
-  type: 'register' | 'login' | 'reset_password' | 'email_change';
+  type: 'register' | 'login' | 'reset_password' | 'email_change' | 'feedback';
 }
 
 /**

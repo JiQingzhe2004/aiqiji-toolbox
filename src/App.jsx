@@ -24,6 +24,7 @@ const FriendLinksPage = lazy(() => import('./pages/FriendLinksPage'));
 const FriendLinkApplicationPage = lazy(() => import('./pages/FriendLinkApplicationPage'));
 const ToolSubmissionPage = lazy(() => import('./pages/ToolSubmissionPage'));
 const ToolDetailPage = lazy(() => import('./pages/ToolDetailPage'));
+const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
 
 
 /**
@@ -159,6 +160,11 @@ function AppContent() {
                 <Route path="/tool/:toolId" element={
                   <Suspense fallback={<LoadingSpinner />}>
                     <ToolDetailPage />
+                  </Suspense>
+                } />
+                <Route path="/feedback" element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <FeedbackPage />
                   </Suspense>
                 } />
                 <Route path="*" element={

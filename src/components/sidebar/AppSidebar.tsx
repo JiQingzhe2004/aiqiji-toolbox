@@ -473,21 +473,19 @@ export function AppSidebar({ children }: SidebarProps) {
 
                 {/* 操作按钮区域 - 移动端也改为独行显示 */}
                 <div className="space-y-2">
-                  {/* 意见反馈按钮 - 只在未登录时显示 */}
-                  {!isAuthenticated && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        window.open('mailto:jqz1215@qq.com?subject=AiQiji工具箱反馈&body=感谢您的反馈！请在此处写下您的建议或问题：', '_blank');
-                      }}
-                    >
-                      <MailCheck className="w-4 h-4 mr-2" />
-                      意见反馈
-                    </Button>
-                  )}
-
+                  {/* 意见反馈按钮 */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      navigate('/feedback');
+                      setIsMobileOpen(false);
+                    }}
+                  >
+                    <MailCheck className="w-4 h-4 mr-2" />
+                    意见反馈
+                  </Button>
                 </div>
               </div>
             </motion.aside>
@@ -914,59 +912,53 @@ export function AppSidebar({ children }: SidebarProps) {
 
             {/* 操作按钮区域 - 每个按钮独占一行 */}
             <div className="space-y-3">
-              {/* 意见反馈按钮 - 只在未登录时显示 */}
-              {!isAuthenticated && (
-                <div className={cn(
-                  "flex",
-                  isCollapsed ? "justify-center" : "w-full"
-                )}>
-                  {isCollapsed ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="w-10 h-10 p-0"
-                          onClick={() => {
-                            window.open('mailto:jqz1215@qq.com?subject=AiQiji工具箱反馈&body=感谢您的反馈！请在此处写下您的建议或问题：', '_blank');
-                          }}
-                        >
-                          <MailCheck className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent 
-                        side="right" 
-                        className="bg-popover text-popover-foreground border border-border shadow-md px-3 py-1.5 text-sm font-medium"
-                        sideOffset={5}
+              {/* 意见反馈按钮 */}
+              <div className={cn(
+                "flex",
+                isCollapsed ? "justify-center" : "w-full"
+              )}>
+                {isCollapsed ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="w-10 h-10 p-0"
+                        onClick={() => navigate('/feedback')}
                       >
-                        <p>意见反馈</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        window.open('mailto:jqz1215@qq.com?subject=AiQiji工具箱反馈&body=感谢您的反馈！请在此处写下您的建议或问题：', '_blank');
-                      }}
+                        <MailCheck className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="right" 
+                      className="bg-popover text-popover-foreground border border-border shadow-md px-3 py-1.5 text-sm font-medium"
+                      sideOffset={5}
                     >
-                      <MailCheck className="w-4 h-4" />
-                      <AnimatePresence mode="wait">
-                        <motion.span
-                          initial={{ opacity: 0, x: -5 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -5 }}
-                          transition={{ duration: 0.2, ease: 'easeInOut' }}
-                          className="ml-2"
-                        >
-                          意见反馈
-                        </motion.span>
-                      </AnimatePresence>
-                    </Button>
-                  )}
-                </div>
-              )}
+                      <p>意见反馈</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => navigate('/feedback')}
+                  >
+                    <MailCheck className="w-4 h-4" />
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        initial={{ opacity: 0, x: -5 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -5 }}
+                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        className="ml-2"
+                      >
+                        意见反馈
+                      </motion.span>
+                    </AnimatePresence>
+                  </Button>
+                )}
+              </div>
 
             </div>
 

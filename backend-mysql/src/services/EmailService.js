@@ -6,6 +6,8 @@
 import nodemailer from 'nodemailer';
 import { SettingsService } from './SettingsService.js';
 import { getAdminNotificationEmail, getApplicantReceiptEmail, getAdminDecisionEmail, getApplicantDecisionEmail } from '../emailTemplates/friendLinkApplication.js';
+import { getAdminFeedbackEmail } from '../emailTemplates/feedback.js';
+import { getUserFeedbackSuccessEmail } from '../emailTemplates/feedbackSuccess.js';
 
 export class EmailService {
   constructor() {
@@ -206,7 +208,8 @@ export class EmailService {
       register: '注册',
       login: '登录',
       reset_password: '重置密码',
-      email_change: '更换邮箱'
+      email_change: '更换邮箱',
+      feedback: '意见反馈'
     };
 
     const typeName = typeTexts[type] || '验证';
@@ -743,6 +746,97 @@ AiQiji工具箱团队
       return { success: true };
     } catch (error) {
       console.error('发送友链审核结果邮件失败:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * 发送意见反馈邮件（管理员通知）
+   */
+  async sendFeedbackEmail({ feedback }) {
+    try {
+      const settings = await this.getEmailSettings();
+
+      if (!settings.email_enabled) {
+        console.log('邮件未启用（email_enabled = false），跳过发送意见反馈邮件');
+        return { success: true, skipped: true };
+      }
+
+      const transporter = await this.createTransporter();
+      const fromAddress = await this.getFromAddress();
+
+      // 读取网站信息用于邮件抬头/落款
+      const siteName = (await this.settingsService.getSettingValue('site_name')) || 'AiQiji工具箱';
+      const siteUrl = (await this.settingsService.getSettingValue('site_url')) || '';
+
+      // 管理员通知接收邮箱：优先 from_email，其次 smtp_user
+      const adminTo = settings.from_email || settings.smtp_user;
+
+      const { subject, html } = getAdminFeedbackEmail({
+        feedback,
+        siteName,
+        siteUrl
+      });
+
+      // 发送管理员通知
+      if (adminTo) {
+        await transporter.sendMail({
+          from: fromAddress,
+          to: adminTo,
+          subject: subject,
+          html: html
+        });
+        console.log('意见反馈管理员通知已发送:', { to: adminTo });
+      } else {
+        console.warn('未找到管理员接收邮箱（from_email/smtp_user），跳过管理员通知');
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('发送意见反馈邮件失败:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * 发送意见反馈提交成功邮件（用户确认）
+   */
+  async sendFeedbackSuccessEmail({ feedback }) {
+    try {
+      const settings = await this.getEmailSettings();
+
+      if (!settings.email_enabled) {
+        console.log('邮件未启用（email_enabled = false），跳过发送意见反馈提交成功邮件');
+        return { success: true, skipped: true };
+      }
+
+      const transporter = await this.createTransporter();
+      const fromAddress = await this.getFromAddress();
+
+      // 读取网站信息用于邮件抬头/落款
+      const siteName = (await this.settingsService.getSettingValue('site_name')) || 'AiQiji工具箱';
+      const siteUrl = (await this.settingsService.getSettingValue('site_url')) || '';
+
+      const { subject, html } = getUserFeedbackSuccessEmail({
+        feedback,
+        siteName,
+        siteUrl
+      });
+
+      // 发送用户确认邮件
+      if (feedback.email) {
+        await transporter.sendMail({
+          from: fromAddress,
+          to: feedback.email,
+          subject: subject,
+          html: html
+        });
+        console.log('意见反馈提交成功邮件已发送给用户:', { to: feedback.email });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('发送意见反馈提交成功邮件失败:', error);
       return { success: false, message: error.message };
     }
   }

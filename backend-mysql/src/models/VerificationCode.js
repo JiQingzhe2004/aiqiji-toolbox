@@ -28,7 +28,7 @@ VerificationCode.init({
     comment: '验证码（bcrypt加密）'
   },
   code_type: {
-    type: DataTypes.ENUM('register', 'login', 'reset_password', 'email_change'),
+    type: DataTypes.ENUM('register', 'login', 'reset_password', 'email_change', 'feedback'),
     allowNull: false,
     comment: '验证码类型'
   },

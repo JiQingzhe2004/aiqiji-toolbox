@@ -759,7 +759,7 @@ async function ensureVerificationCodesTable(sequelize) {
           id INT AUTO_INCREMENT PRIMARY KEY COMMENT '验证码ID',
           email VARCHAR(255) NOT NULL COMMENT '邮箱地址',
           code VARCHAR(255) NOT NULL COMMENT '验证码（bcrypt加密）',
-          code_type ENUM('register', 'login', 'reset_password', 'email_change') NOT NULL COMMENT '验证码类型',
+          code_type ENUM('register', 'login', 'reset_password', 'email_change', 'feedback') NOT NULL COMMENT '验证码类型',
           expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
           is_used BOOLEAN DEFAULT FALSE COMMENT '是否已使用',
           used_at TIMESTAMP NULL COMMENT '使用时间',
@@ -837,6 +837,35 @@ async function ensureVerificationCodesTable(sequelize) {
                 break;
             }
           }
+        }
+        
+        // 检查并更新 code_type ENUM 类型，添加 'feedback' 选项
+        try {
+          const [enumInfo] = await sequelize.query(`
+            SELECT COLUMN_TYPE 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'verification_codes' 
+            AND COLUMN_NAME = 'code_type'
+          `);
+          
+          if (enumInfo && enumInfo.length > 0) {
+            const currentEnum = enumInfo[0].COLUMN_TYPE;
+            // 检查是否包含 'feedback'
+            if (!currentEnum.includes("'feedback'")) {
+              console.log('  🔧 更新验证码类型ENUM，添加 feedback 类型...');
+              
+              await sequelize.query(`
+                ALTER TABLE verification_codes 
+                MODIFY COLUMN code_type ENUM('register', 'login', 'reset_password', 'email_change', 'feedback') NOT NULL COMMENT '验证码类型'
+              `);
+              
+              console.log('  ✅ 验证码类型ENUM更新完成，现已支持 feedback 类型');
+            }
+          }
+        } catch (error) {
+          console.error('  ⚠️ 更新验证码类型ENUM失败:', error.message);
+          // 不抛出错误，允许继续执行
         }
       } catch (error) {
         // 静默处理错误

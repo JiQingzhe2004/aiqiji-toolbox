@@ -20,7 +20,7 @@ router.post('/send-verification', [
     .withMessage('请输入有效的邮箱地址')
     .normalizeEmail(),
   body('type')
-    .isIn(['register', 'login', 'reset_password', 'email_change'])
+    .isIn(['register', 'login', 'reset_password', 'email_change', 'feedback'])
     .withMessage('验证码类型无效'),
   body('template')
     .optional()
@@ -63,7 +63,7 @@ router.post('/verify-code', [
     .matches(/^[0-9A-Z]{6}$/)
     .withMessage('验证码必须是6位数字或大写字母'),
   body('type')
-    .isIn(['register', 'login', 'reset_password', 'email_change'])
+    .isIn(['register', 'login', 'reset_password', 'email_change', 'feedback'])
     .withMessage('验证码类型无效')
 ], async (req, res) => {
   try {

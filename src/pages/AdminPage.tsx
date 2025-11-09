@@ -304,9 +304,9 @@ function AdminPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background md:min-h-screen pb-8 md:pb-6">
       {/* 主要内容 */}
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 md:py-6">
         {/* 页面标题和操作按钮 */}
         <div className="flex items-center justify-between mb-6">
           <div>

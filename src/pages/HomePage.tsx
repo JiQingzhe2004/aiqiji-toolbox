@@ -129,7 +129,7 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
       <HeroBanner />
 
       {/* Sticky 搜索栏 - 滚动时停在顶部 */}
-      <div className="sticky top-0 z-40 bg-background/95 dark:bg-black/95 backdrop-blur-md border-b border-border/30 shadow-sm">
+      <div className="sticky top-[64px] md:top-0 z-40 bg-background/95 dark:bg-black/95 backdrop-blur-md border-b border-border/30 shadow-sm">
         <div className="container mx-auto px-4 py-3 md:py-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

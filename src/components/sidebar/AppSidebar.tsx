@@ -241,7 +241,7 @@ export function AppSidebar({ children }: SidebarProps) {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen bg-background overflow-hidden">
+      <div className="flex h-auto md:h-screen bg-background overflow-visible md:overflow-hidden">
       {/* 移动端侧边栏 */}
       <AnimatePresence>
         {isMobileOpen && (
@@ -1033,9 +1033,9 @@ export function AppSidebar({ children }: SidebarProps) {
       </motion.aside>
 
       {/* 主内容区域 */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden md:overflow-hidden overflow-visible">
         {/* 移动端顶部栏 */}
-        <div className="lg:hidden flex items-center justify-between px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-border/50 bg-background/80 backdrop-blur-md min-h-[64px]">
+        <div className="lg:hidden flex items-center justify-between px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-border/50 bg-background/80 backdrop-blur-md min-h-[64px] sticky top-0 z-50">
           <Button
             variant="ghost"
             size="icon"
@@ -1067,7 +1067,7 @@ export function AppSidebar({ children }: SidebarProps) {
         </div>
 
         {/* 主内容 */}
-        <main id="app-main" className="flex-1 overflow-auto">
+        <main id="app-main" className="flex-1 overflow-visible md:overflow-auto">
           {children}
         </main>
       </div>

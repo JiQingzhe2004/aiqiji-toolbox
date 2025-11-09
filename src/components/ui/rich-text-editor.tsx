@@ -439,7 +439,7 @@ export function RichTextEditor({
   );
 
   return (
-    <div className={cn('border rounded-lg bg-background', className)}>
+    <div className={cn('border-0 rounded-none md:border md:rounded-lg bg-background', className)}>
       {/* 工具栏 - 固定在编辑器顶部 */}
       <div className="border-b p-3 bg-muted/30 flex-shrink-0">
         <div className="flex flex-wrap gap-1">
@@ -651,7 +651,7 @@ export function RichTextEditor({
 
       {/* 编辑器内容区域 - 大幅增加高度 */}
       <div className="relative h-[75vh] overflow-y-auto">
-        <div className="p-4">
+        <div className="p-0 md:p-4">
           {isSourceMode ? (
             <textarea
               value={sourceContent}

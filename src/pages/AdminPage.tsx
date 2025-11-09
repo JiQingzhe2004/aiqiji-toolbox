@@ -1,3 +1,15 @@
+  // 统一排序：按排序权重降序，其次创建时间降序
+  const sortTools = (arr: Tool[]) => {
+    return [...arr].sort((a, b) => {
+      const sa = typeof a.sort_order === 'number' ? a.sort_order : 0;
+      const sb = typeof b.sort_order === 'number' ? b.sort_order : 0;
+      if (sb !== sa) return sb - sa;
+      const ta = a.created_at || a.createdAt || '';
+      const tb = b.created_at || b.createdAt || '';
+      return new Date(tb).getTime() - new Date(ta).getTime();
+    });
+  };
+
 /**
  * 管理页面
  * 提供工具管理、统计查看等功能
@@ -10,6 +22,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminToolsList } from '@/components/admin/AdminToolsList';
 import { AdminStats } from '@/components/admin/AdminStats';
@@ -55,6 +71,10 @@ function AdminPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // 筛选条件
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive' | 'maintenance'>('all');
+  const [filterCategory, setFilterCategory] = useState<'全部' | 'AI' | '效率' | '设计' | '开发' | '其他'>('全部');
+  const [filterFeatured, setFilterFeatured] = useState<'all' | 'only' | 'none'>('all');
 
   // 转换后端数据格式到前端格式
   const normalizeToolData = (toolData: any): Tool => {
@@ -79,7 +99,7 @@ function AdminPage() {
       });
       
       if (response.success && response.data) {
-        setTools(response.data.tools);
+        setTools(sortTools(response.data.tools));
       }
     } catch (error) {
       console.error('Failed to load tools:', error instanceof Error ? error.message : String(error));
@@ -112,7 +132,7 @@ function AdminPage() {
       });
       
       if (response.success && response.data) {
-        setTools(response.data.tools);
+        setTools(sortTools(response.data.tools));
         toast.success('工具列表刷新成功', { id: 'refresh-tools' });
       } else {
         toast.error('刷新工具列表失败', { id: 'refresh-tools' });
@@ -140,9 +160,9 @@ function AdminPage() {
           // 无感刷新：使用正确的数据结构并标准化数据
           const rawTool = (response.data as any).tool || response.data;
           const updatedTool = normalizeToolData(rawTool);
-          setTools(prev => prev.map(tool => 
-            tool.id === selectedTool.id ? updatedTool : tool
-          ));
+        setTools(prev => sortTools(prev.map(tool => 
+          tool.id === selectedTool.id ? updatedTool : tool
+        )));
           
           setShowForm(false);
           setSelectedTool(null);
@@ -159,7 +179,7 @@ function AdminPage() {
           // 无感刷新：使用正确的数据结构并标准化数据
           const rawTool = (response.data as any).tool || response.data;
           const newTool = normalizeToolData(rawTool);
-          setTools(prev => [newTool, ...prev]);
+        setTools(prev => sortTools([newTool, ...prev]));
           
           setShowForm(false);
         } else {
@@ -176,10 +196,11 @@ function AdminPage() {
 
   // 处理工具删除
   const handleToolUpdate = (updatedTool: Tool) => {
-    // 无感更新：直接更新本地状态
-    setTools(prev => prev.map(tool => 
-      tool.id === updatedTool.id ? updatedTool : tool
-    ));
+    // 无感更新：标准化并重排
+    const normalized = normalizeToolData(updatedTool as any);
+    setTools(prev => sortTools(prev.map(tool => 
+      tool.id === normalized.id ? normalized : tool
+    )));
   };
 
   const handleToolDelete = async (toolId: string) => {
@@ -243,10 +264,27 @@ function AdminPage() {
   };
 
   // 过滤工具
-  const filteredTools = tools.filter(tool =>
-    (tool.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (tool.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
-  );
+  const filteredTools = tools.filter(tool => {
+    // 搜索
+    const matchSearch = (tool.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (tool.description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+    if (!matchSearch) return false;
+
+    // 分类
+    if (filterCategory !== '全部') {
+      const cats = Array.isArray(tool.category) ? tool.category : [tool.category];
+      if (!cats.includes(filterCategory)) return false;
+    }
+
+    // 状态
+    if (filterStatus !== 'all' && tool.status !== filterStatus) return false;
+
+    // 精选
+    if (filterFeatured === 'only' && !tool.featured) return false;
+    if (filterFeatured === 'none' && tool.featured) return false;
+
+    return true;
+  });
 
   // 分页逻辑
   const totalPages = Math.ceil(filteredTools.length / itemsPerPage);
@@ -341,14 +379,75 @@ function AdminPage() {
                     >
                       <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      className="border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
-                      title="筛选工具"
-                    >
-                      <Filter className="w-4 h-4" />
-                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          className="border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                          title="筛选工具"
+                        >
+                          <Filter className="w-4 h-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-80">
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label>状态</Label>
+                            <Select value={filterStatus} onValueChange={(v: any) => setFilterStatus(v)}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="选择状态" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">全部</SelectItem>
+                                <SelectItem value="active">正常</SelectItem>
+                                <SelectItem value="inactive">停用</SelectItem>
+                                <SelectItem value="maintenance">维护</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>分类</Label>
+                            <Select value={filterCategory} onValueChange={(v: any) => setFilterCategory(v)}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="选择分类" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="全部">全部</SelectItem>
+                                <SelectItem value="AI">AI</SelectItem>
+                                <SelectItem value="效率">效率</SelectItem>
+                                <SelectItem value="设计">设计</SelectItem>
+                                <SelectItem value="开发">开发</SelectItem>
+                                <SelectItem value="其他">其他</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>精选</Label>
+                            <Select value={filterFeatured} onValueChange={(v: any) => setFilterFeatured(v)}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="是否精选" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">全部</SelectItem>
+                                <SelectItem value="only">仅精选</SelectItem>
+                                <SelectItem value="none">非精选</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center justify-between pt-1">
+                            <div className="text-xs text-muted-foreground">实时应用筛选</div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { setFilterStatus('all'); setFilterCategory('全部'); setFilterFeatured('all'); }}
+                            >
+                              重置
+                            </Button>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </CardTitle>
               </CardHeader>

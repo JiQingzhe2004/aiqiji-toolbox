@@ -2,7 +2,7 @@
  * 管理页面工具列表组件
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Edit, Trash2, ExternalLink, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,9 @@ import {
 import type { Tool } from '@/types';
 import { getToolIconUrl } from '@/utils/imageUtils';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import toast from 'react-hot-toast';
+import { toolsApi } from '@/services/toolsApi';
 
 interface AdminToolsListProps {
   tools: Tool[];
@@ -53,6 +56,36 @@ export function AdminToolsList({
   onSelectTool, 
   onSelectAll 
 }: AdminToolsListProps) {
+  const [weightEdits, setWeightEdits] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const saveWeight = async (tool: Tool) => {
+    const raw = weightEdits[tool.id];
+    const val = raw !== undefined ? raw : (typeof tool.sort_order === 'number' ? String(tool.sort_order) : '0');
+    const parsed = Number(val);
+    if (Number.isNaN(parsed)) {
+      toast.error('权重必须是数字');
+      setWeightEdits(prev => ({ ...prev, [tool.id]: String(tool.sort_order ?? 0) }));
+      return;
+    }
+    if (parsed === tool.sort_order) return;
+    try {
+      setSavingId(tool.id);
+      const res = await toolsApi.updateTool(tool.id, { sort_order: parsed });
+      if (res.success && res.data) {
+        const updated: any = (res.data as any).tool || res.data;
+        onUpdate && onUpdate(updated as Tool);
+        setWeightEdits(prev => ({ ...prev, [tool.id]: String((updated as Tool).sort_order ?? parsed) }));
+        toast.success('已更新权重');
+      } else {
+        toast.error(res.message || '更新权重失败');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || '更新权重失败');
+    } finally {
+      setSavingId(null);
+    }
+  };
   if (loading) {
     return (
       <div className="space-y-3">
@@ -122,6 +155,18 @@ export function AdminToolsList({
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                   {tool.description || '暂无描述'}
                 </p>
+                <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                  <span>权重：</span>
+                  <Input
+                    className="h-7 w-20"
+                    type="number"
+                    value={weightEdits[tool.id] ?? String(tool.sort_order ?? 0)}
+                    onChange={(e) => setWeightEdits(prev => ({ ...prev, [tool.id]: e.target.value }))}
+                    onBlur={() => saveWeight(tool)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur(); }}
+                    disabled={savingId === tool.id}
+                  />
+                </div>
                 {/* 状态和分类一行 */}
                 <div className="flex items-center gap-2 mb-2 overflow-x-auto scrollbar-hide">
                   <Badge className={cn(getStatusColor(tool.status), "text-xs flex-shrink-0")}>
@@ -223,9 +268,10 @@ export function AdminToolsList({
                 />
               </TableHead>
             )}
-            <TableHead className="w-1/2">工具信息</TableHead>
+            <TableHead className="w-2/5">工具信息</TableHead>
             <TableHead className="w-20">分类</TableHead>
             <TableHead className="w-20">状态</TableHead>
+            <TableHead className="w-28">权重</TableHead>
             <TableHead className="w-24">创建时间</TableHead>
             <TableHead className="flex-1">操作</TableHead>
           </TableRow>
@@ -241,7 +287,7 @@ export function AdminToolsList({
                   />
                 </TableCell>
               )}
-              <TableCell className="w-1/2">
+              <TableCell className="w-2/5">
                 <div className="flex items-start space-x-3">
                   {getToolIconUrl(tool) ? (
                     <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center p-2">
@@ -297,6 +343,19 @@ export function AdminToolsList({
                   {tool.status === 'active' ? '正常' : 
                    tool.status === 'inactive' ? '停用' : '维护'}
                 </Badge>
+              </TableCell>
+              <TableCell className="w-28">
+                <div className="flex items-center gap-2">
+                  <Input
+                    className="h-8 w-24"
+                    type="number"
+                    value={weightEdits[tool.id] ?? String(tool.sort_order ?? 0)}
+                    onChange={(e) => setWeightEdits(prev => ({ ...prev, [tool.id]: e.target.value }))}
+                    onBlur={() => saveWeight(tool)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur(); }}
+                    disabled={savingId === tool.id}
+                  />
+                </div>
               </TableCell>
               <TableCell className="w-24">
                 <div className="text-xs text-muted-foreground">

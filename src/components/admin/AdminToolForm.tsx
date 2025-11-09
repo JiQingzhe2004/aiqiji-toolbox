@@ -397,6 +397,19 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2 md:col-span-1">
+              <Label>排序权重</Label>
+              <Input
+                type="number"
+                value={formData.sort_order}
+                onChange={(e) => handleInputChange('sort_order', Number(e.target.value || 0))}
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground">
+                数值越大越靠前，默认 0
+              </p>
+            </div>
           </div>
 
         </form>

@@ -83,10 +83,8 @@ export function FriendLinksPage() {
   useEffect(() => {
     const fetchWebsiteInfo = async () => {
       try {
-        const response = await settingsApi.getWebsiteInfo();
-        if (response.success && response.data) {
-          setWebsiteInfo(response.data as WebsiteInfo);
-        }
+        const info = await settingsApi.getWebsiteInfo();
+        setWebsiteInfo(info as WebsiteInfo);
       } catch (error) {
         console.error('获取网站信息失败:', error);
       } finally {

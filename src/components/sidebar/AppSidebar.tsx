@@ -986,7 +986,7 @@ export function AppSidebar({ children }: SidebarProps) {
         </div>
 
         {/* 主内容 */}
-        <main className="flex-1 overflow-auto">
+        <main id="app-main" className="flex-1 overflow-auto">
           {children}
         </main>
       </div>

@@ -10,7 +10,8 @@ import {
   X,
   Link2,
   Globe,
-  Image
+  Image,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,7 @@ export function AdminFriendLinkManager() {
   const [friendLinks, setFriendLinks] = useState<FriendLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
   // 友情链接弹窗状态
   const [modal, setModal] = useState({
@@ -44,9 +46,13 @@ export function AdminFriendLinkManager() {
   });
 
   // 加载友情链接数据
-  const loadFriendLinks = async () => {
+  const loadFriendLinks = async (options?: { silent?: boolean }) => {
     try {
-      setLoading(true);
+      if (options?.silent) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       const response = await settingsApi.getAllSettings();
       if (response.success) {
         const websiteSettings = response.data.website || {};
@@ -59,7 +65,11 @@ export function AdminFriendLinkManager() {
       console.error('加载友情链接失败:', error);
       toast.error('加载友情链接失败');
     } finally {
-      setLoading(false);
+      if (options?.silent) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -220,7 +230,7 @@ export function AdminFriendLinkManager() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center gap-2">
               <CardTitle className="flex items-center gap-2">
                 <Link2 className="w-5 h-5 text-primary" />
                 友情链接管理
@@ -229,100 +239,112 @@ export function AdminFriendLinkManager() {
                 管理网站底部展示的友情链接，支持添加、编辑和删除操作
               </CardDescription>
             </div>
-            <Dialog open={modal.open} onOpenChange={(open) => !open && handleClose()}>
-              <DialogTrigger asChild>
-                <Button onClick={handleAdd} className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  添加友链
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>
-                    {modal.editing ? '编辑友情链接' : '新增友情链接'}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">网站名称 *</Label>
-                    <Input
-                      id="name"
-                      value={modal.form.name}
-                      onChange={(e) => setModal(prev => ({
-                        ...prev,
-                        form: { ...prev.form, name: e.target.value }
-                      }))}
-                      placeholder="请输入网站名称"
-                      disabled={saving}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="url">网站地址 *</Label>
-                    <Input
-                      id="url"
-                      type="url"
-                      value={modal.form.url}
-                      onChange={(e) => setModal(prev => ({
-                        ...prev,
-                        form: { ...prev.form, url: e.target.value }
-                      }))}
-                      placeholder="https://example.com"
-                      disabled={saving}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">网站描述</Label>
-                    <Textarea
-                      id="description"
-                      value={modal.form.description}
-                      onChange={(e) => setModal(prev => ({
-                        ...prev,
-                        form: { ...prev.form, description: e.target.value }
-                      }))}
-                      placeholder="请简要介绍网站内容和特色"
-                      rows={3}
-                      disabled={saving}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      可选，用于在友情链接中展示网站介绍
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="icon">网站图标</Label>
-                    <Input
-                      id="icon"
-                      type="url"
-                      value={modal.form.icon}
-                      onChange={(e) => setModal(prev => ({
-                        ...prev,
-                        form: { ...prev.form, icon: e.target.value }
-                      }))}
-                      placeholder="https://example.com/favicon.ico"
-                      disabled={saving}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      可选，留空将显示默认图标
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={handleClose}
-                    disabled={saving}
-                  >
-                    取消
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadFriendLinks({ silent: true })}
+                disabled={loading || refreshing}
+                className="hidden sm:inline-flex"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                刷新
+              </Button>
+              <Dialog open={modal.open} onOpenChange={(open) => !open && handleClose()}>
+                <DialogTrigger asChild>
+                  <Button onClick={handleAdd} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    添加友链
                   </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={saving}
-                  >
-                    {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    {saving ? '保存中...' : (modal.editing ? '更新' : '添加')}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {modal.editing ? '编辑友情链接' : '新增友情链接'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">网站名称 *</Label>
+                      <Input
+                        id="name"
+                        value={modal.form.name}
+                        onChange={(e) => setModal(prev => ({
+                          ...prev,
+                          form: { ...prev.form, name: e.target.value }
+                        }))}
+                        placeholder="请输入网站名称"
+                        disabled={saving}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="url">网站地址 *</Label>
+                      <Input
+                        id="url"
+                        type="url"
+                        value={modal.form.url}
+                        onChange={(e) => setModal(prev => ({
+                          ...prev,
+                          form: { ...prev.form, url: e.target.value }
+                        }))}
+                        placeholder="https://example.com"
+                        disabled={saving}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">网站描述</Label>
+                      <Textarea
+                        id="description"
+                        value={modal.form.description}
+                        onChange={(e) => setModal(prev => ({
+                          ...prev,
+                          form: { ...prev.form, description: e.target.value }
+                        }))}
+                        placeholder="请简要介绍网站内容和特色"
+                        rows={3}
+                        disabled={saving}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        可选，用于在友情链接中展示网站介绍
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="icon">网站图标</Label>
+                      <Input
+                        id="icon"
+                        type="url"
+                        value={modal.form.icon}
+                        onChange={(e) => setModal(prev => ({
+                          ...prev,
+                          form: { ...prev.form, icon: e.target.value }
+                        }))}
+                        placeholder="https://example.com/favicon.ico"
+                        disabled={saving}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        可选，留空将显示默认图标
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={handleClose}
+                      disabled={saving}
+                    >
+                      取消
+                    </Button>
+                    <Button
+                      onClick={handleSave}
+                      disabled={saving}
+                    >
+                      {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      {saving ? '保存中...' : (modal.editing ? '更新' : '添加')}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </CardHeader>
       </Card>

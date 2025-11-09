@@ -8,6 +8,7 @@ import FriendLinkApplication from '../models/FriendLinkApplication.js';
 import SystemSetting from '../models/SystemSetting.js';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { EmailService } from '../services/EmailService.js';
 
 /**
  * 提交友链申请
@@ -96,6 +97,25 @@ export const submitApplication = async (req, res) => {
       verification_token: verificationToken,
       expires_at: expiresAt
     });
+
+    // 异步发送邮件通知（管理员 + 申请人回执），不阻塞响应
+    try {
+      const emailService = new EmailService();
+      // 仅传递必要字段，避免泄露敏感token
+      const payload = {
+        site_name,
+        site_url,
+        site_description,
+        site_icon,
+        admin_email,
+        admin_qq
+      };
+      emailService
+        .sendFriendLinkApplicationEmails({ application: payload })
+        .catch(err => console.error('友链申请邮件发送失败:', err?.message || err));
+    } catch (e) {
+      console.error('触发友链申请邮件失败:', e?.message || e);
+    }
 
     res.status(201).json({
       success: true,
@@ -283,6 +303,24 @@ export const approveApplication = async (req, res) => {
       }
     }
 
+    // 异步发送审核通过邮件（管理员 + 申请人），不阻塞响应
+    try {
+      const emailService = new EmailService();
+      const payload = {
+        site_name: application.site_name,
+        site_url: application.site_url,
+        site_description: application.site_description,
+        site_icon: application.site_icon,
+        admin_email: application.admin_email,
+        admin_qq: application.admin_qq
+      };
+      emailService
+        .sendFriendLinkDecisionEmails({ application: payload, decision: 'approved', note: note || '' })
+        .catch(err => console.error('友链审核通过邮件发送失败:', err?.message || err));
+    } catch (e) {
+      console.error('触发友链审核通过邮件失败:', e?.message || e);
+    }
+
     res.json({
       success: true,
       data: {
@@ -330,6 +368,24 @@ export const rejectApplication = async (req, res) => {
 
     // 拒绝申请
     await application.reject(adminId, note);
+
+    // 异步发送审核拒绝邮件（管理员 + 申请人），不阻塞响应
+    try {
+      const emailService = new EmailService();
+      const payload = {
+        site_name: application.site_name,
+        site_url: application.site_url,
+        site_description: application.site_description,
+        site_icon: application.site_icon,
+        admin_email: application.admin_email,
+        admin_qq: application.admin_qq
+      };
+      emailService
+        .sendFriendLinkDecisionEmails({ application: payload, decision: 'rejected', note: note || '' })
+        .catch(err => console.error('友链审核拒绝邮件发送失败:', err?.message || err));
+    } catch (e) {
+      console.error('触发友链审核拒绝邮件失败:', e?.message || e);
+    }
 
     res.json({
       success: true,
@@ -395,6 +451,24 @@ export const batchProcessApplications = async (req, res) => {
           await application.approve(adminId, note);
         } else {
           await application.reject(adminId, note);
+        }
+
+        // 异步发送审核结果邮件（批量）
+        try {
+          const emailService = new EmailService();
+          const payload = {
+            site_name: application.site_name,
+            site_url: application.site_url,
+            site_description: application.site_description,
+            site_icon: application.site_icon,
+            admin_email: application.admin_email,
+            admin_qq: application.admin_qq
+          };
+          emailService
+            .sendFriendLinkDecisionEmails({ application: payload, decision: action === 'approve' ? 'approved' : 'rejected', note: note || '' })
+            .catch(err => console.error('友链批量审核结果邮件发送失败:', err?.message || err));
+        } catch (e) {
+          console.error('触发友链批量审核结果邮件失败:', e?.message || e);
         }
 
         results.push({

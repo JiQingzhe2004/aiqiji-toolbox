@@ -32,12 +32,8 @@ const CardComponent = ({ node, updateAttributes, deleteNode, editor }: CardCompo
   useEffect(() => {
     const fetchSiteName = async () => {
       try {
-        const response = await settingsApi.getWebsiteInfo();
-        if (response.success && response.data) {
-          setSiteName(response.data.site_name || '工具导航站点');
-        } else {
-          setSiteName('工具导航站点');
-        }
+        const info = await settingsApi.getWebsiteInfo();
+        setSiteName(info.site_name || '工具导航站点');
       } catch (error) {
         console.error('获取网站名称失败:', error);
         // 使用默认值

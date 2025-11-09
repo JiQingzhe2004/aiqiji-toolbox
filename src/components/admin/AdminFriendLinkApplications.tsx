@@ -73,6 +73,7 @@ export function AdminFriendLinkApplications() {
   const [applications, setApplications] = useState<FriendLinkApplication[]>([]);
   const [stats, setStats] = useState<ApplicationStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedApplications, setSelectedApplications] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -92,9 +93,13 @@ export function AdminFriendLinkApplications() {
   const [addToFriendLinks, setAddToFriendLinks] = useState(true);
 
   // 获取申请列表
-  const fetchApplications = async (page = 1) => {
+  const fetchApplications = async (page = 1, options?: { silent?: boolean }) => {
     try {
-      setLoading(true);
+      if (options?.silent) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       const params = {
         page: page.toString(),
         limit: '20',
@@ -117,7 +122,11 @@ export function AdminFriendLinkApplications() {
       console.error('获取申请列表失败:', error);
       toast.error('网络错误，请稍后重试');
     } finally {
-      setLoading(false);
+      if (options?.silent) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -145,7 +154,7 @@ export function AdminFriendLinkApplications() {
 
       if (result.success) {
         toast.success(`申请已${action === 'approve' ? '批准' : '拒绝'}`);
-        fetchApplications(currentPage);
+        fetchApplications(currentPage, { silent: true });
         fetchStats();
         return true;
       } else {
@@ -176,7 +185,7 @@ export function AdminFriendLinkApplications() {
       if (result.success) {
         toast.success(`批量${action === 'approve' ? '批准' : '拒绝'}处理完成`);
         setSelectedApplications([]);
-        fetchApplications(currentPage);
+        fetchApplications(currentPage, { silent: true });
         fetchStats();
       } else {
         toast.error(result.message || '批量处理失败');
@@ -194,7 +203,7 @@ export function AdminFriendLinkApplications() {
 
       if (result.success) {
         toast.success('申请已删除');
-        fetchApplications(currentPage);
+        fetchApplications(currentPage, { silent: true });
         fetchStats();
       } else {
         toast.error(result.message || '删除失败');
@@ -212,7 +221,7 @@ export function AdminFriendLinkApplications() {
 
       if (result.success) {
         toast.success(`已清理 ${result.data.expired_count} 个过期申请`);
-        fetchApplications(currentPage);
+        fetchApplications(currentPage, { silent: true });
         fetchStats();
       } else {
         toast.error(result.message || '清理失败');
@@ -323,10 +332,10 @@ export function AdminFriendLinkApplications() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => fetchApplications(currentPage)}
-                disabled={loading}
+                onClick={() => fetchApplications(currentPage, { silent: true })}
+                disabled={loading || refreshing}
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                 刷新
               </Button>
               <Button

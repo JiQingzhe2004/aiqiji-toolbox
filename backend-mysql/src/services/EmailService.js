@@ -5,6 +5,7 @@
 
 import nodemailer from 'nodemailer';
 import { SettingsService } from './SettingsService.js';
+import { getAdminNotificationEmail, getApplicantReceiptEmail, getAdminDecisionEmail, getApplicantDecisionEmail } from '../emailTemplates/friendLinkApplication.js';
 
 export class EmailService {
   constructor() {
@@ -616,5 +617,133 @@ AiQiji工具箱团队
 </body>
 </html>
     `;
+  }
+
+  /**
+   * 发送友链申请相关邮件（管理员通知 + 申请人回执）
+   */
+  async sendFriendLinkApplicationEmails({ application }) {
+    try {
+      const settings = await this.getEmailSettings();
+
+      if (!settings.email_enabled) {
+        console.log('邮件未启用（email_enabled = false），跳过发送友链申请邮件');
+        return { success: true, skipped: true };
+      }
+
+      const transporter = await this.createTransporter();
+      const fromAddress = await this.getFromAddress();
+
+      // 读取网站信息用于邮件抬头/落款
+      const siteName = (await this.settingsService.getSettingValue('site_name')) || 'AiQiji工具箱';
+      const siteUrl = (await this.settingsService.getSettingValue('site_url')) || '';
+
+      // 管理员通知接收邮箱：优先 from_email，其次 smtp_user
+      const adminTo = settings.from_email || settings.smtp_user;
+
+      const { subject: adminSubject, html: adminHtml } = getAdminNotificationEmail({
+        application,
+        siteName,
+        siteUrl
+      });
+
+      const { subject: applicantSubject, html: applicantHtml } = getApplicantReceiptEmail({
+        application,
+        siteName,
+        siteUrl
+      });
+
+      // 发送管理员通知
+      if (adminTo) {
+        await transporter.sendMail({
+          from: fromAddress,
+          to: adminTo,
+          subject: adminSubject,
+          html: adminHtml
+        });
+        console.log('友链申请管理员通知已发送:', { to: adminTo });
+      } else {
+        console.warn('未找到管理员接收邮箱（from_email/smtp_user），跳过管理员通知');
+      }
+
+      // 发送申请人回执
+      if (application.admin_email) {
+        await transporter.sendMail({
+          from: fromAddress,
+          to: application.admin_email,
+          subject: applicantSubject,
+          html: applicantHtml
+        });
+        console.log('友链申请回执已发送给申请人:', { to: application.admin_email });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('发送友链申请相关邮件失败:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * 发送友链审核结果邮件（管理员记录 + 申请人通知）
+   */
+  async sendFriendLinkDecisionEmails({ application, decision, note }) {
+    try {
+      const settings = await this.getEmailSettings();
+
+      if (!settings.email_enabled) {
+        console.log('邮件未启用（email_enabled = false），跳过发送友链审核结果邮件');
+        return { success: true, skipped: true };
+      }
+
+      const transporter = await this.createTransporter();
+      const fromAddress = await this.getFromAddress();
+
+      const siteName = (await this.settingsService.getSettingValue('site_name')) || 'AiQiji工具箱';
+      const siteUrl = (await this.settingsService.getSettingValue('site_url')) || '';
+
+      const adminTo = settings.from_email || settings.smtp_user;
+
+      const { subject: adminSubject, html: adminHtml } = getAdminDecisionEmail({
+        application,
+        siteName,
+        siteUrl,
+        decision,
+        note: note || ''
+      });
+
+      const { subject: applicantSubject, html: applicantHtml } = getApplicantDecisionEmail({
+        application,
+        siteName,
+        siteUrl,
+        decision,
+        note: note || ''
+      });
+
+      if (adminTo) {
+        await transporter.sendMail({
+          from: fromAddress,
+          to: adminTo,
+          subject: adminSubject,
+          html: adminHtml
+        });
+        console.log('友链审核结果通知已发送给管理员:', { to: adminTo, decision });
+      }
+
+      if (application.admin_email) {
+        await transporter.sendMail({
+          from: fromAddress,
+          to: application.admin_email,
+          subject: applicantSubject,
+          html: applicantHtml
+        });
+        console.log('友链审核结果通知已发送给申请人:', { to: application.admin_email, decision });
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('发送友链审核结果邮件失败:', error);
+      return { success: false, message: error.message };
+    }
   }
 }

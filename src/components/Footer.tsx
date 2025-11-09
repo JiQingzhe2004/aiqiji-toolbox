@@ -43,10 +43,8 @@ export function Footer() {
   useEffect(() => {
     const fetchWebsiteInfo = async () => {
       try {
-        const response = await settingsApi.getWebsiteInfo();
-        if (response.success && response.data) {
-          setWebsiteInfo(response.data);
-        }
+        const info = await settingsApi.getWebsiteInfo();
+        setWebsiteInfo(info);
       } catch (error) {
         console.error('获取网站信息失败:', error);
         // 设置默认值

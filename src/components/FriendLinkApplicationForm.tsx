@@ -11,6 +11,7 @@ import { CopyButton } from '@/components/CopyButton';
 import { settingsApi, type WebsiteInfo } from '@/services/settingsApi';
 import { apiPost } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { animateScroll as scroll } from 'react-scroll';
 
 interface FormData {
   site_name: string;
@@ -127,6 +128,11 @@ export function FriendLinkApplicationForm({ onSuccess }: FriendLinkApplicationFo
 
       if (result.success) {
         setSubmitted(true);
+        try {
+          // 使用 react-scroll 统一滚动到顶部
+          scroll.scrollToTop({ duration: 0, smooth: false });
+          scroll.scrollToTop({ containerId: 'app-main', duration: 0, smooth: false });
+        } catch {}
         toast.success('友链申请提交成功！');
         onSuccess?.();
       } else {
@@ -155,7 +161,7 @@ export function FriendLinkApplicationForm({ onSuccess }: FriendLinkApplicationFo
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="text-center py-12"
+        className="min-h-[60vh] flex flex-col items-center justify-center text-center py-16"
       >
         <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-6" />
         <h3 className="text-2xl font-semibold mb-4">申请提交成功！</h3>

@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react';
-import { Edit, Trash2, ExternalLink, Star } from 'lucide-react';
+import { Edit, Trash2, ExternalLink, Star, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -128,7 +128,7 @@ export function AdminToolsList({
   return (
     <>
       {/* 移动端简化布局 - 减少嵌套 */}
-      <div className="block md:hidden space-y-3">
+      <div className="block md:hidden space-y-3 overflow-x-hidden">
         {tools.map((tool) => (
           <div key={tool.id} className="bg-card border rounded-lg p-3">
             <div className="flex gap-3 mb-3">
@@ -157,18 +157,46 @@ export function AdminToolsList({
                 </p>
                 <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
                   <span>权重：</span>
-                  <Input
-                    className="h-7 w-20"
-                    type="number"
-                    value={weightEdits[tool.id] ?? String(tool.sort_order ?? 0)}
-                    onChange={(e) => setWeightEdits(prev => ({ ...prev, [tool.id]: e.target.value }))}
-                    onBlur={() => saveWeight(tool)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur(); }}
-                    disabled={savingId === tool.id}
-                  />
+                  <div className="relative inline-flex items-center">
+                    <Input
+                      className="h-7 w-36 pr-12 pl-12 text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+                      type="number"
+                      value={weightEdits[tool.id] ?? String(tool.sort_order ?? 0)}
+                      onChange={(e) => setWeightEdits(prev => ({ ...prev, [tool.id]: e.target.value }))}
+                      onBlur={() => saveWeight(tool)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur(); }}
+                      disabled={savingId === tool.id}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-0 h-7 w-7 rounded-full hover:bg-muted"
+                      onClick={() => {
+                        const current = Number(weightEdits[tool.id] ?? tool.sort_order ?? 0);
+                        setWeightEdits(prev => ({ ...prev, [tool.id]: String(current - 1) }));
+                        setTimeout(() => saveWeight(tool), 100);
+                      }}
+                      disabled={savingId === tool.id}
+                    >
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 h-7 w-7 rounded-full hover:bg-muted"
+                      onClick={() => {
+                        const current = Number(weightEdits[tool.id] ?? tool.sort_order ?? 0);
+                        setWeightEdits(prev => ({ ...prev, [tool.id]: String(current + 1) }));
+                        setTimeout(() => saveWeight(tool), 100);
+                      }}
+                      disabled={savingId === tool.id}
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
                 {/* 状态和分类一行 */}
-                <div className="flex items-center gap-2 mb-2 overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-2 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
                   <Badge className={cn(getStatusColor(tool.status), "text-xs flex-shrink-0")}>
                     {tool.status === 'active' ? '正常' : 
                      tool.status === 'inactive' ? '停用' : '维护'}
@@ -181,7 +209,7 @@ export function AdminToolsList({
                 </div>
                 {/* 标签单独一行 */}
                 {tool.tags && tool.tags.length > 0 && (
-                  <div className="flex gap-1 mb-2 overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-1 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
                     {tool.tags.map((tag, index) => (
                       <Badge key={`${tool.id}-tag-${index}`} variant="secondary" className="text-xs flex-shrink-0">
                         {tag}
@@ -256,7 +284,7 @@ export function AdminToolsList({
 
       {/* 桌面端表格布局 */}
       <div className="hidden md:block border rounded-md overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-visible">
           <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow>
@@ -271,7 +299,7 @@ export function AdminToolsList({
             <TableHead className="w-2/5">工具信息</TableHead>
             <TableHead className="w-20">分类</TableHead>
             <TableHead className="w-20">状态</TableHead>
-            <TableHead className="w-28">权重</TableHead>
+            <TableHead className="w-40">权重</TableHead>
             <TableHead className="w-24">创建时间</TableHead>
             <TableHead className="flex-1">操作</TableHead>
           </TableRow>
@@ -344,10 +372,10 @@ export function AdminToolsList({
                    tool.status === 'inactive' ? '停用' : '维护'}
                 </Badge>
               </TableCell>
-              <TableCell className="w-28">
-                <div className="flex items-center gap-2">
+              <TableCell className="w-40">
+                <div className="relative inline-flex items-center w-full">
                   <Input
-                    className="h-8 w-24"
+                    className="h-8 w-full max-w-40 pr-10 pl-10 text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
                     type="number"
                     value={weightEdits[tool.id] ?? String(tool.sort_order ?? 0)}
                     onChange={(e) => setWeightEdits(prev => ({ ...prev, [tool.id]: e.target.value }))}
@@ -355,6 +383,34 @@ export function AdminToolsList({
                     onKeyDown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur(); }}
                     disabled={savingId === tool.id}
                   />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute left-0 h-8 w-8 rounded-full hover:bg-muted"
+                    onClick={() => {
+                      const current = Number(weightEdits[tool.id] ?? tool.sort_order ?? 0);
+                      setWeightEdits(prev => ({ ...prev, [tool.id]: String(current - 1) }));
+                      setTimeout(() => saveWeight(tool), 100);
+                    }}
+                    disabled={savingId === tool.id}
+                    title="减少权重"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 h-8 w-8 rounded-full hover:bg-muted"
+                    onClick={() => {
+                      const current = Number(weightEdits[tool.id] ?? tool.sort_order ?? 0);
+                      setWeightEdits(prev => ({ ...prev, [tool.id]: String(current + 1) }));
+                      setTimeout(() => saveWeight(tool), 100);
+                    }}
+                    disabled={savingId === tool.id}
+                    title="增加权重"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
                 </div>
               </TableCell>
               <TableCell className="w-24">

@@ -16,7 +16,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, BarChart3, Settings, Users, Database, FileSpreadsheet, RefreshCw, ExternalLink, User, Send } from 'lucide-react';
+import { Plus, Search, Filter, BarChart3, Settings, Users, Database, FileSpreadsheet, RefreshCw, ExternalLink, User, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,7 +68,7 @@ function AdminPage() {
   };
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -498,22 +498,42 @@ function AdminPage() {
                   onSelectAll={handleSelectAll}
                 />
                 
-                {/* 分页控件 */}
-                {totalPages > 1 && (
-                  <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="text-sm text-muted-foreground text-center sm:text-left">
-                      显示 {startIndex + 1}-{Math.min(endIndex, filteredTools.length)} 
-                      ，共 {filteredTools.length} 条记录
-                    </div>
-                    <div className="flex items-center gap-2 justify-center sm:justify-end flex-wrap">
+                 {/* 每页显示条数选择和分页控件 */}
+                 <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                   <div className="flex items-center gap-2">
+                     <span className="text-xs text-muted-foreground">每页：</span>
+                     <Select value={String(itemsPerPage)} onValueChange={(value) => {
+                       setItemsPerPage(Number(value));
+                       setCurrentPage(1);
+                     }}>
+                       <SelectTrigger className="w-16 h-8 text-xs">
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="10">10</SelectItem>
+                         <SelectItem value="20">20</SelectItem>
+                         <SelectItem value="50">50</SelectItem>
+                         <SelectItem value="100">100</SelectItem>
+                       </SelectContent>
+                     </Select>
+                     {totalPages > 1 && (
+                       <span className="text-sm text-muted-foreground">
+                         显示 {startIndex + 1}-{Math.min(endIndex, filteredTools.length)} 
+                         ，共 {filteredTools.length} 条记录
+                       </span>
+                     )}
+                   </div>
+                   {totalPages > 1 && (
+                     <div className="flex items-center gap-2 justify-center sm:justify-end flex-wrap">
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                         disabled={currentPage === 1}
-                        className="border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                        className="rounded-full border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                        title="上一页"
                       >
-                        上一页
+                        <ChevronLeft className="w-4 h-4" />
                       </Button>
                       <div className="flex items-center gap-1">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -532,21 +552,22 @@ function AdminPage() {
                             {page}
                           </Button>
                         ))}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                        className="border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
-                      >
-                        下一页
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                       </div>
+                       <Button
+                         variant="outline"
+                         size="icon"
+                         onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                         disabled={currentPage === totalPages}
+                         className="rounded-full border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                         title="下一页"
+                       >
+                         <ChevronRight className="w-4 h-4" />
+                       </Button>
+                     </div>
+                   )}
+                 </div>
+               </CardContent>
+             </Card>
             
             {/* 手机端工具列表 - 不支持批量操作 */}
             <div className="md:hidden">
@@ -562,22 +583,41 @@ function AdminPage() {
               />
             </div>
             
-            {/* 手机端分页控件 */}
-            {totalPages > 1 && (
-              <div className="md:hidden flex flex-col gap-4">
-                <div className="text-sm text-muted-foreground text-center">
-                  显示 {startIndex + 1}-{Math.min(endIndex, filteredTools.length)} 
-                  ，共 {filteredTools.length} 条记录
-                </div>
-                <div className="flex items-center gap-2 justify-center flex-wrap">
+             {/* 手机端每页显示条数选择和分页控件 */}
+             <div className="md:hidden flex flex-col gap-4 mt-4">
+               <div className="flex items-center justify-center gap-2">
+                 <span className="text-xs text-muted-foreground">每页：</span>
+                 <Select value={String(itemsPerPage)} onValueChange={(value) => {
+                   setItemsPerPage(Number(value));
+                   setCurrentPage(1);
+                 }}>
+                   <SelectTrigger className="w-16 h-8 text-xs">
+                     <SelectValue />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="10">10</SelectItem>
+                     <SelectItem value="20">20</SelectItem>
+                     <SelectItem value="50">50</SelectItem>
+                     <SelectItem value="100">100</SelectItem>
+                   </SelectContent>
+                 </Select>
+               </div>
+               {totalPages > 1 && (
+                 <>
+                   <div className="text-sm text-muted-foreground text-center">
+                     显示 {startIndex + 1}-{Math.min(endIndex, filteredTools.length)} 
+                     ，共 {filteredTools.length} 条记录
+                   </div>
+                   <div className="flex items-center gap-2 justify-center flex-wrap">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                    className="rounded-full border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                    title="上一页"
                   >
-                    上一页
+                    <ChevronLeft className="w-4 h-4" />
                   </Button>
                   <div className="flex items-center gap-1">
                     {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -594,21 +634,23 @@ function AdminPage() {
                           {pageNum}
                         </Button>
                       );
-                    })}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className="border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
-                  >
-                    下一页
-                  </Button>
-                </div>
-              </div>
-            )}
-          </TabsContent>
+                     })}
+                   </div>
+                   <Button
+                     variant="outline"
+                     size="icon"
+                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                     disabled={currentPage === totalPages}
+                     className="rounded-full border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                     title="下一页"
+                   >
+                     <ChevronRight className="w-4 h-4" />
+                   </Button>
+                 </div>
+                 </>
+               )}
+             </div>
+           </TabsContent>
 
           {/* Excel批量导入 */}
           <TabsContent value="import">
@@ -616,7 +658,7 @@ function AdminPage() {
           </TabsContent>
 
           {/* 统计数据 */}
-          <TabsContent value="stats">
+          <TabsContent value="stats" className="overflow-x-hidden">
             <AdminStats stats={stats} />
           </TabsContent>
 

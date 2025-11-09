@@ -55,7 +55,10 @@ export class SettingsApi {
   async getWebsiteInfo() {
     try {
       const response = await apiGet<WebsiteInfo>(`${this.baseUrl}/website`);
-      return response;
+      if ((response as any)?.success && (response as any)?.data) {
+        return (response as any).data as WebsiteInfo;
+      }
+      throw new Error('获取网站信息失败');
     } catch (error) {
       console.error('获取网站信息失败:', error);
       throw error;

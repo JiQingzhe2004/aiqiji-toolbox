@@ -4,8 +4,8 @@
 
 // API基础配置
 export const API_CONFIG = {
-  // 直接从环境变量读取API地址
-  BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  // 直接从环境变量读取API地址，若未配置则使用后端默认本地地址作为回退
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1',
   
   // 请求超时时间
   TIMEOUT: 10000,

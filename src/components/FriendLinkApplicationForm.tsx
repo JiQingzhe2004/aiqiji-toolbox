@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CopyButton } from '@/components/CopyButton';
-import { SEOImage, SEOImagePresets } from '@/components/SEOImage';
 import { settingsApi, type WebsiteInfo } from '@/services/settingsApi';
 import { apiPost } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -46,7 +45,7 @@ export function FriendLinkApplicationForm({ onSuccess }: FriendLinkApplicationFo
   useEffect(() => {
     const fetchWebsiteInfo = async () => {
       try {
-        const info = await settingsApi.getPublicWebsiteInfo();
+        const info = await settingsApi.getWebsiteInfo();
         setWebsiteInfo(info);
       } catch (error) {
         console.error('获取网站信息失败:', error);
@@ -206,19 +205,7 @@ export function FriendLinkApplicationForm({ onSuccess }: FriendLinkApplicationFo
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex-1">
                     <Label className="text-sm font-medium">网站图标</Label>
-                    <div className="flex items-center gap-2 mt-1">
-                      {websiteInfo?.site_icon && (
-                        <SEOImage 
-                          {...SEOImagePresets.websiteLogo(
-                            websiteInfo.site_icon,
-                            websiteInfo.site_name || 'AiQiji工具箱'
-                          )}
-                          className="w-4 h-4 rounded object-contain"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      )}
+                    <div className="mt-1">
                       <p className="text-sm font-mono">{websiteInfo?.site_icon || '/favicon.ico'}</p>
                     </div>
                   </div>

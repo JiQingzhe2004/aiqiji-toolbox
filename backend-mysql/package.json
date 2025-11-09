@@ -1,6 +1,6 @@
 {
   "name": "aiqiji-tools-backend-mysql",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "AiQiji工具箱后端API服务 - MySQL版本",
   "main": "src/index.js",
   "type": "module",

@@ -181,9 +181,10 @@ export const deleteSetting = async (req, res) => {
 export const getWebsiteInfo = async (req, res) => {
   try {
     const settingsService = new SettingsService();
-    const allSettings = await settingsService.getPublicSettings();
+    // 读取所有设置（不受 is_public 限制），但仅返回网站所需字段
+    const allSettings = await settingsService.getAllSettings();
     
-    // 从公开设置中提取网站信息
+    // 从所有设置中提取网站信息
     const websiteInfo = {
       site_name: allSettings.website?.site_name?.value || '工具导航站点',
       site_url: allSettings.website?.site_url?.value || '',

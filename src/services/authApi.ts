@@ -11,29 +11,35 @@ export class AuthApi {
    */
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
-      const response = await apiPost('/auth/login', credentials);
-      
-      if (response.success && response.data) {
+      const resp = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      });
+
+      const json = await resp.json().catch(() => ({}));
+
+      if (resp.ok && json?.success && json?.data) {
         return {
           success: true,
           data: {
-            user: response.data.user,
-            token: response.data.token
+            user: json.data.user,
+            token: json.data.token,
           },
-          message: response.message
+          message: json.message,
         };
       }
-      
-      return {
-        success: false,
-        message: response.message || '登录失败'
-      };
+
+      // Map status-specific messages (fallback to server message if present)
+      let message = json?.message || '登录失败';
+      if (resp.status === 403) message = '账户已被停用，请联系管理员';
+      else if (resp.status === 423) message = '账户已被挂起，请联系管理员';
+      else if (resp.status === 401) message = '用户名或密码错误';
+
+      return { success: false, message };
     } catch (error) {
       console.error('Login API error:', error instanceof Error ? error.message : String(error));
-      return {
-        success: false,
-        message: '网络错误，请稍后重试'
-      };
+      return { success: false, message: '网络错误，请稍后重试' };
     }
   }
 

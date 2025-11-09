@@ -27,15 +27,12 @@ export const login = async (req, res) => {
       });
     }
 
-    // 查找用户 - 支持用户名或邮箱登录
+    // 查找用户 - 支持用户名或邮箱登录（不按状态过滤，以便返回更准确提示）
     const isEmail = username.includes('@');
     const whereCondition = isEmail 
-      ? { email: username.toLowerCase().trim(), status: 'active' }
-      : { username: username.toLowerCase().trim(), status: 'active' };
-    
-    const user = await User.findOne({
-      where: whereCondition
-    });
+      ? { email: username.toLowerCase().trim() }
+      : { username: username.toLowerCase().trim() };
+    const user = await User.findOne({ where: whereCondition });
 
     if (!user) {
       return res.status(401).json({
@@ -44,12 +41,19 @@ export const login = async (req, res) => {
       });
     }
 
+    // 检查账户状态
+    if (user.status && user.status !== 'active') {
+      if (user.status === 'inactive') {
+        return res.status(403).json({ success: false, message: '账户已被停用，请联系管理员' });
+      }
+      if (user.status === 'suspended') {
+        return res.status(423).json({ success: false, message: '账户已被挂起，请稍后再试或联系管理员' });
+      }
+    }
+
     // 检查账户是否被锁定
     if (user.isLocked()) {
-      return res.status(423).json({
-        success: false,
-        message: '账户已被锁定，请稍后再试'
-      });
+      return res.status(423).json({ success: false, message: '账户已被锁定，请稍后再试' });
     }
 
     // 验证密码

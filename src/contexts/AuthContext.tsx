@@ -45,30 +45,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initAuth();
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<{ success: boolean; message?: string }> => {
     try {
       setLoading(true);
       const response = await AuthApi.login({ username, password });
-      
       if (response.success && response.data) {
         const { user: userData, token: userToken } = response.data;
-        
-        
         setUser(userData);
         setToken(userToken);
-        
-        // 保存到localStorage
         localStorage.setItem('auth_token', userToken);
         localStorage.setItem('auth_user', JSON.stringify(userData));
-        
-        
-        return true;
+        return { success: true };
       }
-      
-      return false;
+      return { success: false, message: response.message };
     } catch (error) {
       console.error('Login error:', error instanceof Error ? error.message : String(error));
-      return false;
+      return { success: false, message: '登录失败，请稍后重试' };
     } finally {
       setLoading(false);
     }

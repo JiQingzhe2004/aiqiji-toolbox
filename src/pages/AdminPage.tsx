@@ -35,6 +35,7 @@ import { AdminExcelImport } from '@/components/admin/AdminExcelImport';
 import { AdminFriendLinkApplications } from '@/components/admin/AdminFriendLinkApplications';
 import { AdminFriendLinkManager } from '@/components/admin/AdminFriendLinkManager';
 import { AdminProfileSettings } from '@/components/admin/AdminProfileSettings';
+import { AdminUserManagement } from '@/components/admin/AdminUserManagement';
 import { ToolSubmissionManagement } from '@/components/admin/ToolSubmissionManagement';
 import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import { toolsApi } from '@/services/toolsApi';
@@ -637,14 +638,7 @@ function AdminPage() {
 
           {/* 用户管理 */}
           <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle>用户管理</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">用户管理功能开发中...</p>
-              </CardContent>
-            </Card>
+            <AdminUserManagement />
           </TabsContent>
 
           {/* 系统设置 */}

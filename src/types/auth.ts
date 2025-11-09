@@ -63,7 +63,7 @@ export interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateUser: (updatedUser: Partial<User>) => void;
   loading: boolean;

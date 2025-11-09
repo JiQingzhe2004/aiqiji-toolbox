@@ -19,6 +19,7 @@ import settingsRoutes from './routes/settingsRoutes.js';
 import importRoutes from './routes/importRoutes.js';
 import friendLinkRoutes from './routes/friendLinkRoutes.js';
 import toolSubmissionRoutes from './routes/toolSubmissionRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import emailRoutes from './routes/emailRoutes.js';
 
 // 加载环境变量
@@ -114,7 +115,7 @@ class Server {
         }
       },
       credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
     }));
 
@@ -215,6 +216,9 @@ class Server {
     
     // 邮件路由
     this.app.use(`${this.apiPrefix}/email`, emailRoutes);
+
+    // 用户管理（管理员）
+    this.app.use(`${this.apiPrefix}/users`, userRoutes);
 
     // 根路径
     this.app.get('/', (req, res) => {

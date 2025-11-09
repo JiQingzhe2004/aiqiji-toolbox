@@ -25,3 +25,4 @@ dist-ssr
 .env
 
 backend-mysql/data/
+backend-mysql/uploads/

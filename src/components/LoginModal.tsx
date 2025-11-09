@@ -50,9 +50,9 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     setIsLoading(true);
     
     try {
-      const success = await login(formData.username, formData.password);
+      const result = await login(formData.username, formData.password);
       
-      if (success) {
+      if (result.success) {
         onOpenChange(false);
         // 重置表单
         setFormData({ username: '', password: '' });
@@ -79,7 +79,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
           }
         }, 200);
       } else {
-        toast.error('用户名或密码错误');
+        toast.error(result.message || '登录失败');
       }
     } catch (error) {
       console.error('Login error:', error);

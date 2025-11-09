@@ -29,6 +29,7 @@ export function AdminEmailSender() {
   const [sending, setSending] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('none');
+  const [aiDraft, setAiDraft] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -231,6 +232,30 @@ export function AdminEmailSender() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {/* AI 文案 -> HTML 生成 */}
+          <div className="space-y-2">
+            <Label>AI 文案（输入要表达的内容，点击生成将转为带样式的HTML）</Label>
+            <Textarea rows={4} value={aiDraft} onChange={(e)=>setAiDraft(e.target.value)} placeholder="请输入要发送的主要内容/要点，AI 将自动包装为美观的邮件HTML..." />
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={async()=>{
+                if (!aiDraft.trim() && !body.trim()) { toast.error('请填写 AI 文案或邮件内容'); return; }
+                try {
+                  toast.loading('AI 正在生成HTML...', { id: 'ai-gen' });
+                  const res: any = await emailApi.renderEmailByAI({ subject, text: aiDraft || body });
+                  if (res?.success && res.data?.html) {
+                    setContentMode('html');
+                    setBody(res.data.html);
+                    toast.success('已生成HTML', { id: 'ai-gen' });
+                  } else {
+                    toast.error(res?.message || 'AI 生成失败', { id: 'ai-gen' });
+                  }
+                } catch (e: any) {
+                  toast.error(e?.message || 'AI 生成失败', { id: 'ai-gen' });
+                }
+              }}>用AI生成HTML</Button>
+            </div>
           </div>
 
           <div className="space-y-2">

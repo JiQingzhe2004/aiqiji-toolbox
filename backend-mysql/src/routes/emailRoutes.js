@@ -167,6 +167,57 @@ router.post('/test', [
 });
 
 /**
+ * 使用AI渲染HTML
+ * POST /api/v1/email/ai-render
+ */
+router.post('/ai-render', authenticateToken, requireAdmin, [
+  body('subject').optional().isString().isLength({ max: 200 }),
+  body('text').optional().isString()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, message: '输入验证失败', errors: errors.array() });
+    }
+    await emailController.aiRender(req, res);
+  } catch (error) {
+    console.error('AI渲染失败:', error);
+    res.status(500).json({ success: false, message: 'AI渲染失败', error: error.message });
+  }
+});
+
+/**
+ * 测试AI配置可用性
+ * POST /api/v1/email/ai-test
+ */
+router.post('/ai-test', authenticateToken, requireAdmin, [
+  body('base_url').optional().custom((value) => {
+    if (value && value.trim() !== '') {
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        throw new Error('Base URL 必须是有效的URL');
+      }
+    }
+    return true;
+  }),
+  body('api_key').optional().isString(),
+  body('model').optional().isString()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, message: '输入验证失败', errors: errors.array() });
+    }
+    await emailController.aiTest(req, res);
+  } catch (error) {
+    console.error('AI测试失败:', error);
+    res.status(500).json({ success: false, message: 'AI测试失败', error: error.message });
+  }
+});
+
+/**
  * 获取邮箱配置状态
  * GET /api/v1/email/status
  */

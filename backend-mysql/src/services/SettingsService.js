@@ -141,6 +141,7 @@ export class SettingsService {
       // 转换值为字符串存储
       const stringValue = this.valueToString(value, type);
 
+      // 先尝试更新
       const [result] = await sequelize.query(
         `UPDATE ${this.tableName} SET setting_value = ?, setting_type = ?, updated_at = NOW() WHERE setting_key = ?`,
         {
@@ -148,7 +149,34 @@ export class SettingsService {
         }
       );
 
-      return result.affectedRows > 0;
+      // 如果更新成功（受影响行数 > 0），直接返回
+      if (result.affectedRows > 0) {
+        return true;
+      }
+
+      // 如果更新失败（记录不存在），尝试插入
+      // 注意：这里假设 setting_key 有唯一约束，如果没有，可能需要先检查
+      try {
+        const id = `${key}-${Date.now()}`;
+        await sequelize.query(
+          `INSERT INTO ${this.tableName} (id, setting_key, setting_value, setting_type, description, category, is_public, created_at, updated_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+          {
+            replacements: [id, key, stringValue, type, this.getSettingDescription(key), this.getSettingCategory(key), this.getSettingIsPublic(key) ? 1 : 0]
+          }
+        );
+        return true;
+      } catch (insertError) {
+        // 如果插入也失败（可能是唯一约束冲突），再次尝试更新
+        // 这可能发生在并发情况下
+        const [retryResult] = await sequelize.query(
+          `UPDATE ${this.tableName} SET setting_value = ?, setting_type = ?, updated_at = NOW() WHERE setting_key = ?`,
+          {
+            replacements: [stringValue, type, key]
+          }
+        );
+        return retryResult.affectedRows > 0;
+      }
     } catch (error) {
       console.error(`更新设置 ${key} 失败:`, error);
       throw error;
@@ -235,7 +263,8 @@ export class SettingsService {
       'smtp_pass': 'SMTP密码',
       'from_name': '发件人名称',
       'from_email': '发件人邮箱',
-      'email_enabled': '是否启用邮件功能'
+      'email_enabled': '是否启用邮件功能',
+      'ai_models': 'AI模型预设列表'
     };
     
     return descriptions[settingKey] || '';

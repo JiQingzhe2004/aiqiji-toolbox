@@ -4,6 +4,7 @@
  */
 
 import { SettingsService } from '../services/SettingsService.js';
+import crypto from 'crypto';
 
 /**
  * 获取公开的系统设置
@@ -25,6 +26,111 @@ export const getPublicSettings = async (req, res) => {
       message: '获取公开设置失败',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+};
+
+/**
+ * ===== AI 模型预设管理 =====
+ */
+
+function readAiModelsArray(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
+export const getAiModels = async (req, res) => {
+  try {
+    const settingsService = new SettingsService();
+    const raw = await settingsService.getSettingValue('ai_models');
+    const list = readAiModelsArray(raw);
+    res.json({ success: true, data: { items: list } });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e?.message || '获取模型预设失败' });
+  }
+};
+
+export const createAiModel = async (req, res) => {
+  try {
+    const { name, provider, model, base_url, api_key, description } = req.body || {};
+    if (!name || !provider || !model || !base_url || !api_key) {
+      return res.status(400).json({ success: false, message: '请填写 name/provider/model/base_url/api_key' });
+    }
+    const settingsService = new SettingsService();
+    const raw = await settingsService.getSettingValue('ai_models');
+    const list = readAiModelsArray(raw);
+    const id = (crypto.randomUUID && crypto.randomUUID()) || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const now = new Date().toISOString();
+    const preset = { id, name, provider, model, base_url, api_key, description: description || '', created_at: now, updated_at: now };
+    list.push(preset);
+    
+    // updateSetting 现在支持 upsert，会自动创建不存在的记录
+    await settingsService.updateSetting('ai_models', JSON.stringify(list), 'json');
+    
+    res.json({ success: true, data: { preset } });
+  } catch (e) {
+    console.error('创建模型预设失败:', e);
+    res.status(500).json({ success: false, message: e?.message || '创建模型预设失败' });
+  }
+};
+
+export const updateAiModel = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const patch = req.body || {};
+    const settingsService = new SettingsService();
+    const raw = await settingsService.getSettingValue('ai_models');
+    const list = readAiModelsArray(raw);
+    const idx = list.findIndex(x => x.id === id);
+    if (idx === -1) return res.status(404).json({ success: false, message: '预设不存在' });
+    list[idx] = { ...list[idx], ...patch, updated_at: new Date().toISOString() };
+    
+    // updateSetting 现在支持 upsert，会自动创建不存在的记录
+    await settingsService.updateSetting('ai_models', JSON.stringify(list), 'json');
+    
+    res.json({ success: true, data: { preset: list[idx] } });
+  } catch (e) {
+    console.error('更新模型预设失败:', e);
+    res.status(500).json({ success: false, message: e?.message || '更新模型预设失败' });
+  }
+};
+
+export const deleteAiModel = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const settingsService = new SettingsService();
+    const raw = await settingsService.getSettingValue('ai_models');
+    const list = readAiModelsArray(raw);
+    const next = list.filter(x => x.id !== id);
+    
+    // updateSetting 现在支持 upsert，会自动创建不存在的记录
+    // 即使列表为空，也保存空数组，以便后续可以继续添加
+    await settingsService.updateSetting('ai_models', JSON.stringify(next), 'json');
+    
+    res.json({ success: true });
+  } catch (e) {
+    console.error('删除模型预设失败:', e);
+    res.status(500).json({ success: false, message: e?.message || '删除模型预设失败' });
+  }
+};
+
+export const applyAiModel = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const settingsService = new SettingsService();
+    const raw = await settingsService.getSettingValue('ai_models');
+    const list = readAiModelsArray(raw);
+    const preset = list.find(x => x.id === id);
+    if (!preset) return res.status(404).json({ success: false, message: '预设不存在' });
+    const updates = [
+      { setting_key: 'ai_base_url', setting_value: preset.base_url, setting_type: 'string' },
+      { setting_key: 'ai_api_key', setting_value: preset.api_key, setting_type: 'string' },
+      { setting_key: 'ai_model', setting_value: preset.model, setting_type: 'string' },
+    ];
+    await settingsService.updateSettings(updates);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e?.message || '应用模型预设失败' });
   }
 };
 

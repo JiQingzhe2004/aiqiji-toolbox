@@ -3,6 +3,9 @@
  * 提供验证码发送、邮件测试等功能
  */
 
+import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api';
+import type { AiModelPreset } from '@/services/settingsApi';
+
 // API基础配置
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1';
 
@@ -195,6 +198,105 @@ export class EmailApiService {
     const blob = await res.blob();
     return blob;
   }
+
+  /** 使用AI将纯文本渲染为HTML */
+  async renderEmailByAI(params: { subject?: string; text: string }): Promise<ApiResponse<{ html: string }>> {
+    const res = await fetch(`${this.baseUrl}/ai-render`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+      },
+      body: JSON.stringify(params)
+    });
+    return res.json();
+  }
+
+  /**
+   * 测试AI配置可用性
+   */
+  async testAI(params: { base_url?: string; api_key?: string; model?: string }): Promise<ApiResponse<{ ok: boolean; latency_ms?: number }>> {
+    try {
+      const res = await fetch(`${this.baseUrl}/ai-test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+        },
+        body: JSON.stringify(params)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'AI 测试失败');
+      }
+      return data;
+    } catch (error) {
+      console.error('测试AI配置失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '测试AI配置失败',
+      };
+    }
+  }
+
+  /** ===== AI 模型预设管理 ===== */
+  /**
+   * 获取AI模型预设列表
+   */
+  async getAiModels(): Promise<ApiResponse<{ items: AiModelPreset[] }>> {
+    return apiGet<{ items: AiModelPreset[] }>('/settings/ai-models');
+  }
+
+  /**
+   * 创建AI模型预设
+   */
+  async createAiModel(preset: Omit<AiModelPreset, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse<{ preset: AiModelPreset }>> {
+    try {
+      console.log('发送创建预设请求:', preset);
+      const response = await apiPost<{ preset: AiModelPreset }>('/settings/ai-models', preset);
+      console.log('创建预设响应:', response);
+      return response;
+    } catch (error: any) {
+      console.error('创建预设API调用失败:', error);
+      // ApiError 会被 apiFetch 抛出，但我们应该让组件处理
+      // 如果这里需要转换，确保错误信息正确传递
+      if (error?.status && error?.message) {
+        // 这是 ApiError
+        return {
+          success: false,
+          message: error.message || '创建预设失败',
+          error: error.message
+        };
+      }
+      // 其他错误也转换为响应格式
+      return {
+        success: false,
+        message: error?.message || '创建预设失败',
+        error: error?.message || '未知错误'
+      };
+    }
+  }
+
+  /**
+   * 更新AI模型预设
+   */
+  async updateAiModel(id: string, patch: Partial<Omit<AiModelPreset, 'id' | 'created_at' | 'updated_at'>>): Promise<ApiResponse<{ preset: AiModelPreset }>> {
+    return apiPut<{ preset: AiModelPreset }>(`/settings/ai-models/${id}`, patch);
+  }
+
+  /**
+   * 删除AI模型预设
+   */
+  async deleteAiModel(id: string): Promise<ApiResponse> {
+    return apiDelete(`/settings/ai-models/${id}`);
+  }
+
+  /**
+   * 应用AI模型预设（将预设配置应用到系统设置）
+   */
+  async applyAiModel(id: string): Promise<ApiResponse> {
+    return apiPost(`/settings/ai-models/${id}/apply`, {});
+  }
   /**
    * 验证邮箱验证码
    */
@@ -350,3 +452,6 @@ export type {
   CheckEmailRequest,
   CheckUsernameRequest
 };
+
+// 导出 AI 模型预设类型（从 settingsApi 重新导出以便使用）
+export type { AiModelPreset } from '@/services/settingsApi';

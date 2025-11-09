@@ -9,7 +9,12 @@ import {
   updateSetting,
   updateSettings,
   deleteSetting,
-  getWebsiteInfo
+  getWebsiteInfo,
+  getAiModels,
+  createAiModel,
+  updateAiModel,
+  deleteAiModel,
+  applyAiModel
 } from '../controllers/settingsController.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
@@ -36,5 +41,12 @@ router.put('/batch', updateSettings);
 
 // 删除系统设置
 router.delete('/:setting_key', deleteSetting);
+
+// ===== AI 模型预设管理 =====
+router.get('/ai-models', getAiModels);
+router.post('/ai-models', createAiModel);
+router.put('/ai-models/:id', updateAiModel);
+router.delete('/ai-models/:id', deleteAiModel);
+router.post('/ai-models/:id/apply', applyAiModel);
 
 export default router;

@@ -9,12 +9,14 @@ import { SettingsService } from '../services/SettingsService.js';
 import EmailTemplate from '../models/EmailTemplate.js';
 import EmailLog from '../models/EmailLog.js';
 import { Op } from 'sequelize';
+import { AiService } from '../services/AiService.js';
 
 export class EmailController {
   constructor() {
     this.emailService = new EmailService();
     this.verificationCodeService = new VerificationCodeService();
     this.settingsService = new SettingsService();
+    this.aiService = new AiService();
   }
 
   /**
@@ -397,6 +399,36 @@ export class EmailController {
       res.send('\ufeff' + csv);
     } catch (e) {
       res.status(500).json({ success: false, message: e?.message || '导出失败' });
+    }
+  }
+
+  /** 使用AI将纯文本渲染为HTML */
+  async aiRender(req, res) {
+    try {
+      const { subject, text } = req.body || {};
+      const result = await this.aiService.renderEmailHTML({ subject, text });
+      if (result && result.success) {
+        return res.json({ success: true, data: { html: result.html } });
+      }
+      return res.status(400).json({ success: false, message: result?.message || 'AI 渲染失败' });
+    } catch (e) {
+      console.error('AI 渲染失败:', e);
+      return res.status(500).json({ success: false, message: e?.message || 'AI 渲染失败' });
+    }
+  }
+
+  /** 测试AI配置可用性（不做限流） */
+  async aiTest(req, res) {
+    try {
+      const { base_url, api_key, model } = req.body || {};
+      const result = await this.aiService.testConnection({ baseURL: base_url, apiKey: api_key, model });
+      if (result.ok) {
+        return res.json({ success: true, data: { ok: true, latency_ms: result.latency_ms } });
+      }
+      return res.status(400).json({ success: false, message: result.message || 'AI 测试失败' });
+    } catch (e) {
+      console.error('AI 测试失败:', e);
+      return res.status(500).json({ success: false, message: e?.message || 'AI 测试失败' });
     }
   }
 }

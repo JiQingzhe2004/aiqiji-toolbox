@@ -104,17 +104,21 @@ export async function apiFetch<T = any>(
     return data;
   } catch (error) {
     if (error instanceof ApiError) {
+      // 如果是 ApiError，直接抛出，但先确保有错误信息
+      console.error('API错误:', error.status, error.message);
       throw error;
     }
     
     // 处理网络错误、超时等
     if (error instanceof Error) {
+      console.error('请求错误:', error.name, error.message);
       if (error.name === 'AbortError' || error.name === 'TimeoutError') {
         throw new ApiError(408, '请求超时，请检查网络连接');
       }
       throw new ApiError(0, `网络错误: ${error.message}`);
     }
     
+    console.error('未知错误:', error);
     throw new ApiError(0, '未知错误');
   }
 }

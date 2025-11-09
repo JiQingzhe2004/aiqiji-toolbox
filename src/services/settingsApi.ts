@@ -2,7 +2,7 @@
  * 系统设置 API 服务
  */
 
-import { apiGet, apiPut, apiDelete } from '@/lib/api';
+import { apiGet, apiPut, apiDelete, apiPost } from '@/lib/api';
 
 // 系统设置类型定义
 export interface SystemSetting {
@@ -31,6 +31,27 @@ export interface SettingsUpdateData {
 }
 
 /**
+ * AI 模型预设类型定义
+ * name: 预设名称（用于显示和识别）
+ * provider: 提供商（如：openai, zhipu, etc.）
+ * model: 模型名称（如：glm-4.5, gpt-4, etc.）- 这是实际使用的模型标识
+ * base_url: API 基础地址
+ * api_key: API 密钥
+ * description: 预设描述（可选）
+ */
+export interface AiModelPreset {
+  id?: string;
+  name: string;
+  provider: string;
+  model: string;
+  base_url: string;
+  api_key: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
  * 系统设置 API 类
  */
 export class SettingsApi {
@@ -47,6 +68,27 @@ export class SettingsApi {
       console.error('获取公开设置失败:', error);
       throw error;
     }
+  }
+
+  /** ===== AI 模型预设管理 ===== */
+  async getAiModels() {
+    return apiGet<{ items: AiModelPreset[] }>(`${this.baseUrl}/ai-models`);
+  }
+
+  async createAiModel(preset: Omit<AiModelPreset, 'id' | 'created_at' | 'updated_at'>) {
+    return apiPost(`${this.baseUrl}/ai-models`, preset);
+  }
+
+  async updateAiModel(id: string, patch: Partial<Omit<AiModelPreset, 'id' | 'created_at' | 'updated_at'>>) {
+    return apiPut(`${this.baseUrl}/ai-models/${id}`, patch);
+  }
+
+  async deleteAiModel(id: string) {
+    return apiDelete(`${this.baseUrl}/ai-models/${id}`);
+  }
+
+  async applyAiModel(id: string) {
+    return apiPost(`${this.baseUrl}/ai-models/${id}/apply`, {});
   }
 
   /**

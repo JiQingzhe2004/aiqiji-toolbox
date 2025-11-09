@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { settingsApi, type SettingsUpdateData } from '@/services/settingsApi';
 import { EmailConfigCard } from '@/components/EmailConfigCard';
+import { AIConfigCard } from '@/components/admin/AIConfigCard';
 import toast from 'react-hot-toast';
 
 interface SystemSettings {
@@ -73,6 +74,14 @@ export function AdminSystemSettings() {
     from_email: '',
     email_enabled: false
   });
+  // AI 配置
+  const [aiConfig, setAiConfig] = useState({
+    ai_enabled: false,
+    ai_base_url: '',
+    ai_api_key: '',
+    ai_model: 'glm-4.5'
+  });
+  const [savingAI, setSavingAI] = useState(false);
   
 
 
@@ -113,6 +122,15 @@ export function AdminSystemSettings() {
           from_name: getEmailSetting('from_name'),
           from_email: getEmailSetting('from_email'),
           email_enabled: getEmailSetting('email_enabled') || false
+        });
+
+        // 更新 AI 配置
+        const getAny = (key: string) => (response.data.general?.[key]?.value ?? response.data.email?.[key]?.value ?? '');
+        setAiConfig({
+          ai_enabled: !!getAny('ai_enabled') || false,
+          ai_base_url: getAny('ai_base_url') || '',
+          ai_api_key: getAny('ai_api_key') || '',
+          ai_model: getAny('ai_model') || 'glm-4.5'
         });
       }
     } catch (error) {
@@ -394,6 +412,30 @@ export function AdminSystemSettings() {
       toast.error('保存邮箱配置失败');
     } finally {
       setSavingEmail(false);
+    }
+  };
+
+  // 保存AI配置
+  const handleSaveAIConfig = async () => {
+    try {
+      setSavingAI(true);
+      const updates: SettingsUpdateData[] = [
+        { setting_key: 'ai_enabled', setting_value: aiConfig.ai_enabled, setting_type: 'boolean' },
+        { setting_key: 'ai_base_url', setting_value: aiConfig.ai_base_url, setting_type: 'string' },
+        { setting_key: 'ai_api_key', setting_value: aiConfig.ai_api_key, setting_type: 'string' },
+        { setting_key: 'ai_model', setting_value: aiConfig.ai_model, setting_type: 'string' },
+      ];
+      const response = await settingsApi.updateSettings(updates);
+      if (response.success) {
+        toast.success('AI 配置保存成功');
+      } else {
+        toast.error('保存 AI 配置失败');
+      }
+    } catch (error) {
+      console.error('保存AI配置失败:', error);
+      toast.error('保存AI配置失败');
+    } finally {
+      setSavingAI(false);
     }
   };
 
@@ -705,6 +747,21 @@ export function AdminSystemSettings() {
           onChange={setEmailConfig}
           onSave={handleSaveEmailConfig}
           loading={savingEmail}
+        />
+      </motion.div>
+
+      {/* AI 配置卡片 */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+      >
+        <AIConfigCard
+          config={aiConfig}
+          onChange={setAiConfig}
+          onSave={handleSaveAIConfig}
+          onConfigReload={loadSettings}
+          loading={savingAI}
         />
       </motion.div>
     </motion.div>

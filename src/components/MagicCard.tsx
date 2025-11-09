@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
-import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone, ShieldBan, ShieldAlert, X, Shield } from 'lucide-react';
+import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone, ShieldBan, ShieldAlert, X, Shield, Heart } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import type { Tool } from '@/types';
 import { cn, openExternalLinkWithWarning, formatDate } from '@/lib/utils';
 import { getToolIconUrl } from '@/utils/imageUtils';
+import { favoritesApi } from '@/services/favoritesApi';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * MagicCard组件属性接口
@@ -224,6 +226,30 @@ export const MagicCard = memo(function MagicCard({
   const navigate = useNavigate();
   const [showQRModal, setShowQRModal] = useState(false);
   const [showDescModal, setShowDescModal] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const [fav, setFav] = useState(false);
+
+  // 在组件挂载时检查收藏状态
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (!isAuthenticated) {
+        setFav(false);
+        return;
+      }
+      
+      try {
+        const res = await favoritesApi.exists(tool.id);
+        if (res.success && res.data) {
+          setFav(res.data.favorited || false);
+        }
+      } catch (err) {
+        console.error('检查收藏状态失败:', err);
+        // 失败时保持当前状态，不强制设置为false
+      }
+    };
+
+    checkFavoriteStatus();
+  }, [isAuthenticated, tool.id]);
 
   // 复制链接功能
   const copyLink = useCallback(async (e: React.MouseEvent) => {
@@ -346,6 +372,41 @@ export const MagicCard = memo(function MagicCard({
       {/* Radix AspectRatio 确保图片区域完美比例 */}
       <AspectRatio.Root ratio={16 / 9}>
         <div className="relative w-full h-full bg-gradient-to-br from-background/5 via-muted/30 to-muted/60 overflow-hidden">
+          {/* 收藏按钮 左上角 */}
+          <button
+            className={cn(
+              'absolute top-3 left-3 z-10 rounded-full p-2 border shadow-sm backdrop-blur-sm',
+              fav ? 'bg-red-500/90 border-red-400 text-white' : 'bg-background/70 border-border/60 text-muted-foreground hover:text-red-500'
+            )}
+            onClick={async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!isAuthenticated) {
+                toast.error('请先登录后再收藏');
+                return;
+              }
+              try {
+                if (!fav) {
+                  setFav(true);
+                  const res: any = await favoritesApi.add(tool.id);
+                  if (!res.success) { setFav(false); toast.error(res.message || '收藏失败'); }
+                  else toast.success('已收藏');
+                } else {
+                  setFav(false);
+                  const res: any = await favoritesApi.remove(tool.id);
+                  if (!res.success) { setFav(true); toast.error(res.message || '取消失败'); }
+                  else toast.success('已取消收藏');
+                }
+              } catch (err: any) {
+                setFav((v) => v); // 保持不变
+                toast.error(err?.message || '操作失败');
+              }
+            }}
+            aria-label={fav ? '取消收藏' : '收藏'}
+            title={fav ? '取消收藏' : '收藏'}
+          >
+            <Heart className={cn('w-4 h-4', fav ? 'fill-current' : '')} />
+          </button>
           
           {/* 主图标/Logo */}
           <div className="absolute inset-0 flex items-center justify-center">
@@ -360,9 +421,18 @@ export const MagicCard = memo(function MagicCard({
                   className={cn(
                     "h-8 w-8 object-contain rounded-sm",
                     // 主题适配逻辑：根据图标原始颜色类型进行适配
-                    (tool.logoTheme === 'auto-dark' || tool.logoTheme === 'auto' || tool.logoTheme === 'dark' || !tool.logoTheme) && "dark:invert", // 深色图标
-                    (tool.logoTheme === 'auto-light' || tool.logoTheme === 'light') && "invert dark:invert-0", // 浅色图标
-                    // none: 不添加任何样式，保持原色
+                    // 优先使用 icon_theme（数据库字段），兼容 logoTheme（转换后的字段）
+                    (() => {
+                      const theme = tool.icon_theme || tool.logoTheme;
+                      if (theme === 'auto-light' || theme === 'light') {
+                        return "invert dark:invert-0"; // 浅色图标
+                      }
+                      if (theme === 'none') {
+                        return ""; // 不添加任何样式，保持原色
+                      }
+                      // 默认：auto-dark, auto, dark 或未设置时，深色图标
+                      return "dark:invert";
+                    })()
                   )}
                   keywords={tool.tags || []}
                   onError={(e) => {
@@ -478,10 +548,10 @@ export const MagicCard = memo(function MagicCard({
               className="w-full"
               hoverText={
                 tool.status === 'active' 
-                  ? `查看${tool.name}详情` 
+                  ? tool.name
                   : tool.status === 'inactive' 
                     ? '工具已停用' 
-                    : `查看${tool.name}详情`
+                    : tool.name
               }
               onClick={(e) => {
                 e.stopPropagation();

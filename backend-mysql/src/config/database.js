@@ -57,10 +57,9 @@ export async function testConnection() {
  */
 export async function syncDatabase() {
   try {
-    await sequelize.sync({ 
-      alter: process.env.NODE_ENV === 'development',
-      force: false 
-    });
+    const alter = process.env.DB_SYNC_ALTER === 'true' || process.env.NODE_ENV === 'development';
+    const force = process.env.DB_SYNC_FORCE === 'true';
+    await sequelize.sync({ alter, force });
     console.log('✅ 数据库模型同步成功');
     return true;
   } catch (error) {

@@ -28,8 +28,8 @@ const router = express.Router();
 
 // 公开路由
 
-// GET /api/v1/tools - 获取所有工具
-router.get('/', getAllTools);
+// GET /api/v1/tools - 获取所有工具（可选认证，用于返回favorited标志）
+router.get('/', optionalAuth, getAllTools);
 
 // GET /api/v1/tools/featured - 获取精选工具
 router.get('/featured', getFeaturedTools);

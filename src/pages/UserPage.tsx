@@ -18,17 +18,24 @@ import {
   UserX,
   Home,
   Edit,
-  ArrowLeft
+  ArrowLeft,
+  Search
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LazyMagicCard } from '@/components/LazyMagicCard';
 import { SmartAvatar } from '@/components/SmartAvatar';
+import { ToolGrid } from '@/components/ToolGrid';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserProfileEdit } from '@/components/UserProfileEdit';
 import { userApi, type UserProfile } from '@/services/userApi';
+import { favoritesApi } from '@/services/favoritesApi';
+import type { Tool } from '@/types';
 import toast from 'react-hot-toast';
 
 interface UserInfo {
@@ -51,16 +58,20 @@ interface UserInfo {
 export default function UserPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user: currentUser, isAuthenticated } = useAuth();
+  const { user: currentUser, isAuthenticated, loading: authLoading } = useAuth();
   const username = searchParams.get('username') || searchParams.get('user') || searchParams.get('name');
   
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const section = searchParams.get('section');
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   // 判断是否是当前用户自己的页面
-  const isOwnProfile = isAuthenticated && currentUser && username === currentUser.username;
+  // 如果URL中没有username参数，但section是favorites，则认为是自己的收藏页面
+  const isOwnProfile = section === 'favorites' 
+    ? (isAuthenticated && currentUser && (!username || username === currentUser.username))
+    : (isAuthenticated && currentUser && username === currentUser.username);
 
   // 获取用户信息
   useEffect(() => {
@@ -114,6 +125,45 @@ export default function UserPage() {
     fetchUserInfo();
   }, [username]);
 
+  // 我的收藏（仅本人）
+  const [favLoading, setFavLoading] = useState(false);
+  const [favItems, setFavItems] = useState<Tool[]>([]);
+  const [favPage, setFavPage] = useState(1);
+  const [favTotalPages, setFavTotalPages] = useState(1);
+  const [favQ, setFavQ] = useState('');
+  const [favCategory, setFavCategory] = useState<string>('');
+
+  const loadFavorites = async (opts?: { toPage?: number }) => {
+    if (!isOwnProfile) return;
+    try {
+      setFavLoading(true);
+      const res: any = await favoritesApi.list({ page: opts?.toPage ?? favPage, limit: 20, q: favQ || undefined, category: favCategory || undefined });
+      if (res.success && res.data) {
+        setFavItems(res.data.items);
+        setFavPage(res.data.pagination.currentPage);
+        setFavTotalPages(res.data.pagination.totalPages);
+      } else if (res.items) {
+        setFavItems(res.items);
+      } else {
+        toast.error(res.message || '加载收藏失败');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || '加载收藏失败');
+    } finally {
+      setFavLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // 等待认证状态加载完成后再判断
+    if (authLoading) return;
+    
+    if (section === 'favorites' && isOwnProfile) {
+      loadFavorites({ toPage: 1 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section, favQ, favCategory, isOwnProfile, authLoading]);
+
   // 格式化时间
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
@@ -141,6 +191,166 @@ export default function UserPage() {
     };
     return statusMap[status as keyof typeof statusMap] || statusMap.inactive;
   };
+
+  // 收藏页（切换显示）
+  // 如果section是favorites，即使isOwnProfile还未确定，也先显示页面（等待认证加载）
+  if (section === 'favorites') {
+    // 如果认证还在加载中，显示加载状态
+    if (authLoading) {
+      return (
+        <div className="relative min-h-screen bg-background dark:bg-black">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">正在加载...</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // 如果不是自己的页面，显示无权限提示
+    if (!isOwnProfile) {
+      return (
+        <div className="relative min-h-screen bg-background dark:bg-black">
+          <div className="container mx-auto px-4 py-8 max-w-7xl">
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <h1 className="text-2xl font-bold mb-2">无权限访问</h1>
+                <p className="text-muted-foreground mb-4">您只能查看自己的收藏</p>
+                <Button onClick={() => navigate('/')}>返回首页</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    // 显示收藏页面
+    return (
+      <div className="relative min-h-screen bg-background dark:bg-black">
+        {/* Sticky 搜索栏 - 滚动时停在顶部 */}
+        <div className="sticky top-0 z-40 bg-background/95 dark:bg-black/95 backdrop-blur-md border-b border-border/30 shadow-sm">
+          <div className="container mx-auto px-4 py-3 md:py-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="max-w-7xl mx-auto"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                  className="rounded-full"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <h1 className="text-2xl font-bold">我的收藏</h1>
+              </div>
+              
+              <div className="flex flex-col md:flex-row gap-3">
+                <Input 
+                  placeholder="搜索收藏的工具（名称/描述/标签）" 
+                  value={favQ} 
+                  onChange={(e) => setFavQ(e.target.value)} 
+                  className="md:flex-1" 
+                />
+                <Select value={favCategory || 'all'} onValueChange={(v: string) => setFavCategory(v === 'all' ? '' : v)}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="分类筛选" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部分类</SelectItem>
+                    <SelectItem value="AI">AI</SelectItem>
+                    <SelectItem value="效率">效率</SelectItem>
+                    <SelectItem value="设计">设计</SelectItem>
+                    <SelectItem value="开发">开发</SelectItem>
+                    <SelectItem value="其他">其他</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* 工具区域 */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative z-10 bg-background dark:bg-black min-h-screen pt-8 md:pt-12 pb-8 md:pb-12"
+        >
+          <div className="container mx-auto px-4 max-w-7xl">
+            {favLoading ? (
+              <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+                <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+                <p className="text-muted-foreground">正在加载收藏...</p>
+              </div>
+            ) : favItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 text-center">
+                <div className="w-32 h-32 rounded-full bg-muted/30 flex items-center justify-center">
+                  <Search className="w-16 h-16 text-muted-foreground/50" />
+                </div>
+                <h3 className="text-xl font-semibold text-foreground">暂无收藏</h3>
+                <p className="text-muted-foreground max-w-md">
+                  {favQ || favCategory ? '没有找到匹配的收藏工具，请尝试其他关键词或分类' : '您还没有收藏任何工具'}
+                </p>
+              </div>
+            ) : (
+              <>
+                <ToolGrid 
+                  tools={favItems} 
+                  searchQuery={favQ}
+                />
+                
+                {/* 分页信息 */}
+                {favTotalPages > 1 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex items-center justify-between mt-8 pt-8 border-t border-border"
+                  >
+                    <div className="text-sm text-muted-foreground">
+                      第 <span className="font-medium text-foreground">{favPage}</span> / <span className="font-medium text-foreground">{favTotalPages}</span> 页
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => { 
+                          const p = Math.max(1, favPage - 1); 
+                          setFavPage(p); 
+                          loadFavorites({ toPage: p }); 
+                        }} 
+                        disabled={favPage <= 1}
+                      >
+                        上一页
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => { 
+                          const p = Math.min(favTotalPages, favPage + 1); 
+                          setFavPage(p); 
+                          loadFavorites({ toPage: p }); 
+                        }} 
+                        disabled={favPage >= favTotalPages}
+                      >
+                        下一页
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   // 加载状态
   if (loading) {

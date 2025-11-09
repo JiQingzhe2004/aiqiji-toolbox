@@ -1,6 +1,8 @@
 import Tool from '../models/Tool.js';
+import Favorite from '../models/Favorite.js';
 import { deleteFile, getFileUrl } from '../middleware/upload.js';
 import { cleanToolData, validateToolData, cleanTagsData } from '../utils/dataValidator.js';
+import { Op } from 'sequelize';
 
 /**
  * 工具控制器
@@ -49,13 +51,21 @@ export const getAllTools = async (req, res) => {
     const totalPages = Math.ceil(result.count / parseInt(limit));
 
     // 处理图标URL
-    const tools = result.rows.map(tool => {
+    let tools = result.rows.map(tool => {
       const toolData = tool.toJSON();
       if (toolData.icon_file) {
         toolData.icon_url = getFileUrl(toolData.icon_file);
       }
       return toolData;
     });
+
+    // 若已认证，附加收藏标志 favorited
+    if (req.user && tools.length > 0) {
+      const ids = tools.map(t => t.id);
+      const favs = await Favorite.findAll({ where: { user_id: req.user.id, tool_id: { [Op.in]: ids } } });
+      const favSet = new Set(favs.map(f => f.tool_id));
+      tools = tools.map(t => ({ ...t, favorited: favSet.has(t.id) }));
+    }
 
     res.json({
       success: true,

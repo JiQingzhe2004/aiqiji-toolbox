@@ -14,6 +14,7 @@ import {
   PlusCircle, 
   Settings, 
   User, 
+  Heart,
   LogIn, 
   LogOut, 
   Menu,
@@ -57,6 +58,7 @@ interface NavigationItem {
 
 const navigationItems: NavigationItem[] = [
   { id: 'home', label: '首页', icon: Home, href: '/' },
+  { id: 'favorites', label: '我的收藏', icon: Heart, href: '/me/favorites', requireAuth: true },
   { id: 'submit', label: '提交工具', icon: PlusCircle, href: '/submit-tool' },
   { id: 'friends', label: '友情链接', icon: Link, href: '/friends' },
 ];
@@ -136,7 +138,16 @@ export function AppSidebar({ children }: SidebarProps) {
     if (item.external) {
       window.open(item.href, '_blank', 'noopener noreferrer');
     } else {
-      navigate(item.href);
+      if (item.id === 'favorites') {
+        if (user?.username) {
+          navigate(`/user?username=${user.username}&section=favorites`);
+        } else {
+          setShowLoginModal(true);
+          return;
+        }
+      } else {
+        navigate(item.href);
+      }
       setIsMobileOpen(false);
     }
   };
@@ -150,6 +161,17 @@ export function AppSidebar({ children }: SidebarProps) {
 
     if (user?.username) {
       navigate(`/user?username=${user.username}`);
+      setIsMobileOpen(false);
+    }
+  };
+
+  const handleFavorites = () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+    if (user?.username) {
+      navigate(`/user?username=${user.username}&section=favorites`);
       setIsMobileOpen(false);
     }
   };
@@ -263,6 +285,54 @@ export function AppSidebar({ children }: SidebarProps) {
                       }}
                     />
                   </div>
+
+                  {/* 我的收藏按钮 - 独占一行 */}
+                  <div className={cn(
+                    "flex",
+                    isCollapsed ? "justify-center" : "w-full"
+                  )}>
+                    {isCollapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="w-10 h-10 p-0"
+                            onClick={handleFavorites}
+                          >
+                            <Heart className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="right" 
+                          className="bg-popover text-popover-foreground border border-border shadow-md px-3 py-1.5 text-sm font-medium"
+                          sideOffset={5}
+                        >
+                          <p>我的收藏</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={handleFavorites}
+                      >
+                        <Heart className="w-4 h-4" />
+                        <AnimatePresence mode="wait">
+                          <motion.span
+                            initial={{ opacity: 0, x: -5 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -5 }}
+                            transition={{ duration: 0.2, ease: 'easeInOut' }}
+                            className="ml-2"
+                          >
+                            我的收藏
+                          </motion.span>
+                        </AnimatePresence>
+                      </Button>
+                    )}
+                  </div>
                   <div className="flex flex-col">
                     <div className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
                       {websiteInfo?.site_name || "AiQiji·工具箱"}
@@ -365,6 +435,17 @@ export function AppSidebar({ children }: SidebarProps) {
                     >
                       <User className="w-4 h-4 mr-2" />
                       个人中心
+                    </Button>
+
+                    {/* 我的收藏按钮 - 独占一行 */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={handleFavorites}
+                    >
+                      <Heart className="w-4 h-4 mr-2" />
+                      我的收藏
                     </Button>
                     
                     {/* 退出按钮 - 独占一行 */}

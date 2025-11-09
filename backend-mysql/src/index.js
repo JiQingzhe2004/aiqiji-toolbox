@@ -20,7 +20,10 @@ import importRoutes from './routes/importRoutes.js';
 import friendLinkRoutes from './routes/friendLinkRoutes.js';
 import toolSubmissionRoutes from './routes/toolSubmissionRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import favoritesRoutes from './routes/favoritesRoutes.js';
 import emailRoutes from './routes/emailRoutes.js';
+// 注册Sequelize模型（确保在syncDatabase之前已加载）
+import './models/Favorite.js';
 
 // 加载环境变量
 dotenv.config();
@@ -220,6 +223,9 @@ class Server {
     // 用户管理（管理员）
     this.app.use(`${this.apiPrefix}/users`, userRoutes);
 
+    // 用户收藏
+    this.app.use(`${this.apiPrefix}/favorites`, favoritesRoutes);
+
     // 根路径
     this.app.get('/', (req, res) => {
       res.json({
@@ -316,6 +322,17 @@ class Server {
 
       // 同步数据库模型
       await syncDatabase();
+
+      // 保障性同步：确保 favorites 表已创建（有些环境下模型注册时序可能导致漏同步）
+      try {
+        const { default: FavoriteModel } = await import('./models/Favorite.js');
+        await FavoriteModel.sync();
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ 已单独同步 favorites 表');
+        }
+      } catch (e) {
+        console.warn('⚠️ 同步 favorites 表时出现问题（将继续启动）:', e?.message || e);
+      }
 
       // 自动运行数据库初始化和升级
       console.log('🔄 正在自动检查和升级数据库...');

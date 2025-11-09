@@ -16,7 +16,8 @@ import {
   Tag,
   Info,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  Heart
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,8 @@ import type { Tool } from '@/types';
 import { cn, formatDate } from '@/lib/utils';
 import { getToolIconUrl } from '@/utils/imageUtils';
 import toast from 'react-hot-toast';
+import { favoritesApi } from '@/services/favoritesApi';
+import { useAuth } from '@/contexts/AuthContext';
 
 function ToolDetailPage() {
   const { toolId } = useParams<{ toolId: string }>();
@@ -45,6 +48,8 @@ function ToolDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showVpnIndicator, setShowVpnIndicator] = useState(true);
+  const { isAuthenticated } = useAuth();
+  const [favorited, setFavorited] = useState(false);
 
   // 获取工具详情
   useEffect(() => {
@@ -81,6 +86,18 @@ function ToolDetailPage() {
 
     fetchTool();
   }, [toolId]);
+
+  // 初始化收藏状态
+  useEffect(() => {
+    const checkFav = async () => {
+      if (!toolId || !isAuthenticated) { setFavorited(false); return; }
+      try {
+        const res: any = await favoritesApi.exists(toolId);
+        if (res.success && res.data) setFavorited(!!res.data.favorited);
+      } catch {}
+    };
+    checkFav();
+  }, [toolId, isAuthenticated]);
 
   // 复制链接功能
   const copyLink = useCallback(async () => {
@@ -202,8 +219,19 @@ function ToolDetailPage() {
                       )}
                       className={cn(
                         "w-20 h-20 object-contain rounded-xl",
-                        (tool.icon_theme === 'auto-dark' || tool.icon_theme === 'auto' || tool.icon_theme === 'dark' || !tool.icon_theme) && "dark:invert",
-                        (tool.icon_theme === 'auto-light' || tool.icon_theme === 'light') && "invert dark:invert-0"
+                        // 主题适配逻辑：根据图标原始颜色类型进行适配，与首页MagicCard保持一致
+                        // 优先使用 icon_theme（数据库字段），兼容 logoTheme（转换后的字段）
+                        (() => {
+                          const theme = tool.icon_theme || tool.logoTheme;
+                          if (theme === 'auto-light' || theme === 'light') {
+                            return "invert dark:invert-0"; // 浅色图标
+                          }
+                          if (theme === 'none') {
+                            return ""; // 不添加任何样式，保持原色
+                          }
+                          // 默认：auto-dark, auto, dark 或未设置时，深色图标
+                          return "dark:invert";
+                        })()
                       )}
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
@@ -218,7 +246,9 @@ function ToolDetailPage() {
               {/* 右侧：工具信息 */}
               <div className="flex-1 space-y-4">
                 {/* 工具名称 */}
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{tool.name || '工具名称'}</h1>
+                <div>
+                  <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{tool.name || '工具名称'}</h1>
+                </div>
                 
                 {/* 状态标识、标签、分类在同一行 */}
                 <div className="flex flex-wrap items-center gap-3">
@@ -318,25 +348,56 @@ function ToolDetailPage() {
                   </div>
                 )}
 
-                {/* 前往按钮 */}
-                <div className="pt-4">
-                  <InteractiveHoverButton 
+                {/* 前往按钮和收藏按钮 */}
+                <div className="pt-4 flex items-center gap-3">
+                  <div className="flex-1">
+                    <InteractiveHoverButton 
+                      className={cn(
+                        "text-lg px-6 py-3 rounded-full w-full",
+                        tool.status === 'inactive' && "opacity-50 cursor-not-allowed"
+                      )}
+                      hoverText={
+                        tool.status === 'active' 
+                          ? `前往 ${tool.name || '工具'}` 
+                          : tool.status === 'inactive' 
+                            ? '工具已停用' 
+                            : `前往 ${tool.name || '工具'}（维护中）`
+                      }
+                      onClick={goToTool}
+                    >
+                      {tool.status === 'active' ? '前往工具' : 
+                       tool.status === 'inactive' ? '已停用' : '前往工具'}
+                    </InteractiveHoverButton>
+                  </div>
+                  {/* 收藏按钮 - 圆形 */}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={async () => {
+                      if (!isAuthenticated) { toast.error('请先登录后再收藏'); return; }
+                      try {
+                        if (!favorited) {
+                          setFavorited(true);
+                          const r: any = await favoritesApi.add(tool.id);
+                          if (!r.success) { setFavorited(false); toast.error(r.message || '收藏失败'); } else toast.success('已收藏');
+                        } else {
+                          setFavorited(false);
+                          const r: any = await favoritesApi.remove(tool.id);
+                          if (!r.success) { setFavorited(true); toast.error(r.message || '取消失败'); } else toast.success('已取消收藏');
+                        }
+                      } catch (e: any) { toast.error(e?.message || '操作失败'); }
+                    }}
+                    title={favorited ? '取消收藏' : '收藏'}
+                    aria-label={favorited ? '取消收藏' : '收藏'}
                     className={cn(
-                      "text-lg px-6 py-3 rounded-full w-full",
-                      tool.status === 'inactive' && "opacity-50 cursor-not-allowed"
+                      "rounded-full aspect-square w-12 h-12 transition-all duration-200",
+                      favorited 
+                        ? 'text-white bg-red-500 hover:bg-red-600 border-red-500' 
+                        : 'hover:bg-red-500/10 hover:text-red-500 hover:border-red-500'
                     )}
-                    hoverText={
-                      tool.status === 'active' 
-                        ? `前往 ${tool.name || '工具'}` 
-                        : tool.status === 'inactive' 
-                          ? '工具已停用' 
-                          : `前往 ${tool.name || '工具'}（维护中）`
-                    }
-                    onClick={goToTool}
                   >
-                    {tool.status === 'active' ? '前往工具' : 
-                     tool.status === 'inactive' ? '已停用' : '前往工具'}
-                  </InteractiveHoverButton>
+                    <Heart className={cn('w-5 h-5', favorited ? 'fill-current' : '')} />
+                  </Button>
                 </div>
               </div>
             </header>

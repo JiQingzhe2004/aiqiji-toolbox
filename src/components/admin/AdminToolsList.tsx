@@ -128,10 +128,10 @@ export function AdminToolsList({
   return (
     <>
       {/* 移动端简化布局 - 减少嵌套 */}
-      <div className="block md:hidden space-y-3 overflow-x-hidden">
+      <div className="block md:hidden space-y-3">
         {tools.map((tool) => (
           <div key={tool.id} className="bg-card border rounded-lg p-3">
-            <div className="flex gap-3 mb-3">
+            <div className="flex gap-3 mb-3 min-w-0">
               {getToolIconUrl(tool) ? (
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center p-1 flex-shrink-0">
                   <img
@@ -146,20 +146,20 @@ export function AdminToolsList({
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-medium text-base truncate">{tool.name || '未命名工具'}</h3>
+                <div className="flex items-center gap-2 mb-1 min-w-0">
+                  <h3 className="font-medium text-base truncate flex-1 min-w-0">{tool.name || '未命名工具'}</h3>
                   {tool.featured && (
                     <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-2 break-words">
                   {tool.description || '暂无描述'}
                 </p>
-                <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
-                  <span>权重：</span>
-                  <div className="relative inline-flex items-center">
+                <div className="text-xs text-muted-foreground mb-2 flex flex-wrap items-center gap-2">
+                  <span className="flex-shrink-0">权重：</span>
+                  <div className="relative inline-flex items-center max-w-[120px]">
                     <Input
-                      className="h-7 w-36 pr-12 pl-12 text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+                      className="h-7 w-24 max-w-[120px] pr-10 pl-10 text-center text-xs [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
                       type="number"
                       value={weightEdits[tool.id] ?? String(tool.sort_order ?? 0)}
                       onChange={(e) => setWeightEdits(prev => ({ ...prev, [tool.id]: e.target.value }))}
@@ -170,7 +170,7 @@ export function AdminToolsList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute left-0 h-7 w-7 rounded-full hover:bg-muted"
+                      className="absolute left-0 h-7 w-7 rounded-full hover:bg-muted flex-shrink-0"
                       onClick={() => {
                         const current = Number(weightEdits[tool.id] ?? tool.sort_order ?? 0);
                         setWeightEdits(prev => ({ ...prev, [tool.id]: String(current - 1) }));
@@ -183,7 +183,7 @@ export function AdminToolsList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute right-0 h-7 w-7 rounded-full hover:bg-muted"
+                      className="absolute right-0 h-7 w-7 rounded-full hover:bg-muted flex-shrink-0"
                       onClick={() => {
                         const current = Number(weightEdits[tool.id] ?? tool.sort_order ?? 0);
                         setWeightEdits(prev => ({ ...prev, [tool.id]: String(current + 1) }));
@@ -196,7 +196,7 @@ export function AdminToolsList({
                   </div>
                 </div>
                 {/* 状态和分类一行 */}
-                <div className="flex items-center gap-2 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <Badge className={cn(getStatusColor(tool.status), "text-xs flex-shrink-0")}>
                     {tool.status === 'active' ? '正常' : 
                      tool.status === 'inactive' ? '停用' : '维护'}
@@ -207,23 +207,49 @@ export function AdminToolsList({
                     </Badge>
                   ))}
                 </div>
-                {/* 标签单独一行 */}
+                {/* 标签单独一行 - 允许横向滚动但不影响卡片宽度 */}
                 {tool.tags && tool.tags.length > 0 && (
-                  <div className="flex gap-1 mb-2 overflow-x-auto scrollbar-hide -mx-3 px-3">
-                    {tool.tags.map((tag, index) => (
-                      <Badge key={`${tool.id}-tag-${index}`} variant="secondary" className="text-xs flex-shrink-0">
-                        {tag}
-                      </Badge>
-                    ))}
+                  <div className="mb-2 w-0 min-w-full">
+                    <div
+                      className="flex flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden scrollbar-hide -mx-1 px-1"
+                      style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain', touchAction: 'pan-x' }}
+                    >
+                      {tool.tags.map((tag, index) => (
+                        <Badge
+                          key={`${tool.id}-tag-${index}`}
+                          variant="secondary"
+                          className="text-xs flex-shrink-0 whitespace-nowrap"
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {/* 创建时间 */}
-                <p className="text-xs text-muted-foreground">
-                  {tool.created_at ? new Date(tool.created_at).toLocaleDateString('zh-CN') : '未知时间'}
+                <p className="text-xs text-muted-foreground truncate">
+                  {(() => {
+                    const dateString = tool.created_at || tool.createdAt;
+                    if (!dateString) return '未知时间';
+                    
+                    try {
+                      const date = new Date(dateString);
+                      if (isNaN(date.getTime())) {
+                        return '未知时间';
+                      }
+                      return date.toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      });
+                    } catch (error) {
+                      return '未知时间';
+                    }
+                  })()}
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 mt-3">
               {onUpdate && (
                 <ToolContentEditor
                   tool={tool}
@@ -235,7 +261,7 @@ export function AdminToolsList({
                 variant="outline"
                 size="sm"
                 onClick={() => onEdit(tool)}
-                className="flex-1"
+                className="flex-1 min-w-[80px]"
               >
                 <Edit className="w-4 h-4 mr-1" />
                 编辑
@@ -244,7 +270,7 @@ export function AdminToolsList({
                 variant="outline"
                 size="sm"
                 onClick={() => window.open(tool.url, '_blank')}
-                className="flex-1"
+                className="flex-1 min-w-[80px]"
               >
                 <ExternalLink className="w-4 h-4 mr-1" />
                 访问
@@ -254,7 +280,7 @@ export function AdminToolsList({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-destructive hover:text-destructive-foreground hover:bg-destructive flex-1"
+                    className="text-destructive hover:text-destructive-foreground hover:bg-destructive flex-1 min-w-[80px]"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -284,8 +310,8 @@ export function AdminToolsList({
 
       {/* 桌面端表格布局 */}
       <div className="hidden md:block border rounded-md overflow-hidden">
-        <div className="overflow-x-auto overflow-y-visible">
-          <Table className="table-fixed w-full">
+        <div className="overflow-x-auto">
+          <Table className="w-full min-w-[900px]">
         <TableHeader>
           <TableRow>
             {onSelectAll && (
@@ -296,12 +322,12 @@ export function AdminToolsList({
                 />
               </TableHead>
             )}
-            <TableHead className="w-2/5">工具信息</TableHead>
-            <TableHead className="w-20">分类</TableHead>
-            <TableHead className="w-20">状态</TableHead>
-            <TableHead className="w-40">权重</TableHead>
-            <TableHead className="w-24">创建时间</TableHead>
-            <TableHead className="flex-1">操作</TableHead>
+            <TableHead className="min-w-[200px]">工具信息</TableHead>
+            <TableHead className="min-w-[80px]">分类</TableHead>
+            <TableHead className="min-w-[80px]">状态</TableHead>
+            <TableHead className="min-w-[120px]">权重</TableHead>
+            <TableHead className="min-w-[100px]">创建时间</TableHead>
+            <TableHead className="min-w-[180px]">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -315,10 +341,10 @@ export function AdminToolsList({
                   />
                 </TableCell>
               )}
-              <TableCell className="w-2/5">
+              <TableCell className="min-w-[200px]">
                 <div className="flex items-start space-x-3">
                   {getToolIconUrl(tool) ? (
-                    <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center p-2">
+                    <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center p-2 flex-shrink-0">
                       <img
                         src={getToolIconUrl(tool)}
                         alt={tool.name || '工具图标'}
@@ -326,7 +352,7 @@ export function AdminToolsList({
                       />
                     </div>
                   ) : (
-                    <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
                       <span className="text-sm font-medium text-blue-800">{tool.name?.charAt(0) || '?'}</span>
                     </div>
                   )}
@@ -337,13 +363,13 @@ export function AdminToolsList({
                         <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground truncate max-w-full">
+                    <p className="text-xs text-muted-foreground truncate">
                       {tool.description || '暂无描述'}
                     </p>
                     {tool.tags && tool.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1 max-w-full overflow-hidden">
+                      <div className="flex flex-wrap gap-1 mt-1">
                         {tool.tags.slice(0, 2).map((tag, index) => (
-                          <Badge key={`${tool.id}-tag-${index}`} variant="secondary" className="text-xs truncate max-w-20">
+                          <Badge key={`${tool.id}-tag-${index}`} variant="secondary" className="text-xs">
                             {tag}
                           </Badge>
                         ))}
@@ -357,7 +383,7 @@ export function AdminToolsList({
                   </div>
                 </div>
               </TableCell>
-              <TableCell className="w-20">
+              <TableCell className="min-w-[80px]">
                 <div className="flex flex-wrap gap-1">
                   {(Array.isArray(tool.category) ? tool.category : [tool.category]).map((cat, index) => (
                     <Badge key={`${tool.id}-cat-${index}`} className={cn(getCategoryColor(cat), "text-xs")}>
@@ -366,16 +392,16 @@ export function AdminToolsList({
                   ))}
                 </div>
               </TableCell>
-              <TableCell className="w-20">
+              <TableCell className="min-w-[80px]">
                 <Badge className={cn(getStatusColor(tool.status), "text-xs")}>
                   {tool.status === 'active' ? '正常' : 
                    tool.status === 'inactive' ? '停用' : '维护'}
                 </Badge>
               </TableCell>
-              <TableCell className="w-40">
-                <div className="relative inline-flex items-center w-full">
+              <TableCell className="min-w-[120px]">
+                <div className="relative inline-flex items-center w-full max-w-[140px]">
                   <Input
-                    className="h-8 w-full max-w-40 pr-10 pl-10 text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+                    className="h-8 w-full pr-10 pl-10 text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
                     type="number"
                     value={weightEdits[tool.id] ?? String(tool.sort_order ?? 0)}
                     onChange={(e) => setWeightEdits(prev => ({ ...prev, [tool.id]: e.target.value }))}
@@ -413,8 +439,8 @@ export function AdminToolsList({
                   </Button>
                 </div>
               </TableCell>
-              <TableCell className="w-24">
-                <div className="text-xs text-muted-foreground">
+              <TableCell className="min-w-[100px]">
+                <div className="text-xs text-muted-foreground whitespace-nowrap">
                   {(() => {
                     const dateString = tool.created_at || tool.createdAt;
                     if (!dateString) return '-';
@@ -437,7 +463,7 @@ export function AdminToolsList({
                   })()}
                 </div>
               </TableCell>
-              <TableCell className="flex-1">
+              <TableCell className="min-w-[180px]">
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"

@@ -55,10 +55,10 @@ export function AIConfigCard({ config, onChange, onSave, onConfigReload, loading
     try {
       setLoadingPresets(true);
       const response = await emailApi.getAiModels();
-      console.log('加载预设响应:', response);
+      // console.log('加载预设响应:', response);
       if (response.success && response.data) {
         const items = response.data.items || [];
-        console.log('加载到预设数量:', items.length);
+        // console.log('加载到预设数量:', items.length);
         setPresets(items);
       } else {
         console.error('加载预设失败:', response);
@@ -195,15 +195,15 @@ export function AIConfigCard({ config, onChange, onSave, onConfigReload, loading
       let response;
       if (editingPreset) {
         // 更新预设
-        console.log('更新预设:', editingPreset.id, presetForm);
+        // console.log('更新预设:', editingPreset.id, presetForm);
         response = await emailApi.updateAiModel(editingPreset.id!, presetForm);
       } else {
         // 创建预设
-        console.log('创建预设:', presetForm);
+        // console.log('创建预设:', presetForm);
         response = await emailApi.createAiModel(presetForm);
       }
       
-      console.log('API响应:', response);
+      // console.log('API响应:', response);
       
       if (response && response.success) {
         toast.success(editingPreset ? '预设更新成功' : '预设创建成功');

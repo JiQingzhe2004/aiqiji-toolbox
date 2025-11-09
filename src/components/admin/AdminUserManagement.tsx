@@ -146,16 +146,16 @@ export function AdminUserManagement() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-4">
+      <Card className="md:border md:bg-card border-0 bg-transparent shadow-none md:shadow-sm">
+        <CardHeader className="md:pb-6 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <CardTitle className="text-lg">用户管理</CardTitle>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Input placeholder="搜索用户名/邮箱/昵称" value={search} onChange={(e) => setSearch(e.target.value)} className="w-56" />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-initial">
+                <Input placeholder="搜索用户名/邮箱/昵称" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full sm:w-56" />
               </div>
               <Select value={role} onValueChange={(v: any) => setRole(v)}>
-                <SelectTrigger className="w-28"><SelectValue placeholder="角色" /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-28"><SelectValue placeholder="角色" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部角色</SelectItem>
                   <SelectItem value="admin">管理员</SelectItem>
@@ -163,7 +163,7 @@ export function AdminUserManagement() {
                 </SelectContent>
               </Select>
               <Select value={status} onValueChange={(v: any) => setStatus(v)}>
-                <SelectTrigger className="w-28"><SelectValue placeholder="状态" /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-28"><SelectValue placeholder="状态" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部状态</SelectItem>
                   <SelectItem value="active">正常</SelectItem>
@@ -171,13 +171,14 @@ export function AdminUserManagement() {
                   <SelectItem value="suspended">挂起</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" onClick={() => load({ silent: true })} disabled={refreshing} title="刷新">
-                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-              </Button>
-              <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" onClick={openCreate} className="gap-2"><Plus className="w-4 h-4" />新增用户</Button>
-                </DialogTrigger>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => load({ silent: true })} disabled={refreshing} title="刷新" className="flex-shrink-0">
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                </Button>
+                <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" onClick={openCreate} className="gap-2 flex-shrink-0"><Plus className="w-4 h-4" /><span className="hidden sm:inline">新增用户</span><span className="sm:hidden">新增</span></Button>
+                  </DialogTrigger>
                 <DialogContent className="max-w-md">
                   <DialogHeader><DialogTitle>{editing ? '编辑用户' : '新增用户'}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
@@ -255,88 +256,149 @@ export function AdminUserManagement() {
                   </div>
                 </DialogContent>
               </Dialog>
+              </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="md:pt-0 pt-0">
           {loading ? (
             <div className="py-10 text-center text-muted-foreground">加载中...</div>
           ) : users.length === 0 ? (
             <div className="py-10 text-center text-muted-foreground">暂无用户</div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>头像/用户名</TableHead>
-                    <TableHead>昵称/邮箱</TableHead>
-                    <TableHead>角色</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>创建时间</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map(u => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            {u.avatar_url ? (
-                              <AvatarImage src={u.avatar_url} alt={u.username} />
-                            ) : (
-                              <AvatarFallback>{(u.display_name || u.username || '?').slice(0,1).toUpperCase()}</AvatarFallback>
-                            )}
-                          </Avatar>
-                          <span>{u.username}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col text-xs">
-                          {u.display_name && <span>{u.display_name}</span>}
-                          {u.email && <span className="text-muted-foreground">{u.email}</span>}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{u.role === 'admin' ? '管理员' : '普通用户'}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Select value={u.status} onValueChange={(v: any) => toggleStatus(u, v)}>
-                          <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">正常</SelectItem>
-                            <SelectItem value="inactive">停用</SelectItem>
-                            <SelectItem value="suspended">挂起</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button size="sm" variant="outline" onClick={() => openEdit(u)}><Edit className="w-4 h-4 mr-1" />编辑</Button>
-                          <Button size="sm" variant="outline" onClick={() => setResetOpen(u.id)}><KeyRound className="w-4 h-4 mr-1" />重置密码</Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="outline" className="text-red-600"><Trash2 className="w-4 h-4" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>确认删除</AlertDialogTitle>
-                                <AlertDialogDescription>确定要删除用户 {u.username} 吗？此操作不可撤销。</AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>取消</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => remove(u.id)} className="bg-red-600 hover:bg-red-700">删除</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
+            <>
+              {/* 移动端卡片布局 */}
+              <div className="block md:hidden space-y-4">
+                {users.map(u => (
+                  <div key={u.id} className="bg-card border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        {u.avatar_url ? (
+                          <AvatarImage src={u.avatar_url} alt={u.username} />
+                        ) : (
+                          <AvatarFallback>{(u.display_name || u.username || '?').slice(0,1).toUpperCase()}</AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{u.username}</div>
+                        {u.display_name && <div className="text-sm text-muted-foreground truncate">{u.display_name}</div>}
+                        {u.email && <div className="text-xs text-muted-foreground truncate">{u.email}</div>}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">{u.role === 'admin' ? '管理员' : '普通用户'}</Badge>
+                      <Select value={u.status} onValueChange={(v: any) => toggleStatus(u, v)}>
+                        <SelectTrigger className="w-full sm:w-32"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">正常</SelectItem>
+                          <SelectItem value="inactive">停用</SelectItem>
+                          <SelectItem value="suspended">挂起</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {u.created_at && (
+                      <div className="text-xs text-muted-foreground">
+                        创建时间: {new Date(u.created_at).toLocaleDateString()}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2 pt-2 border-t">
+                      <Button size="sm" variant="outline" onClick={() => openEdit(u)} className="flex-1"><Edit className="w-4 h-4 mr-1" />编辑</Button>
+                      <Button size="sm" variant="outline" onClick={() => setResetOpen(u.id)} className="flex-1"><KeyRound className="w-4 h-4 mr-1" />重置密码</Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="outline" className="text-red-600 flex-1"><Trash2 className="w-4 h-4 mr-1" />删除</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>确认删除</AlertDialogTitle>
+                            <AlertDialogDescription>确定要删除用户 {u.username} 吗？此操作不可撤销。</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>取消</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => remove(u.id)} className="bg-red-600 hover:bg-red-700">删除</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 桌面端表格布局 */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>头像/用户名</TableHead>
+                      <TableHead>昵称/邮箱</TableHead>
+                      <TableHead>角色</TableHead>
+                      <TableHead>状态</TableHead>
+                      <TableHead>创建时间</TableHead>
+                      <TableHead className="text-right">操作</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map(u => (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              {u.avatar_url ? (
+                                <AvatarImage src={u.avatar_url} alt={u.username} />
+                              ) : (
+                                <AvatarFallback>{(u.display_name || u.username || '?').slice(0,1).toUpperCase()}</AvatarFallback>
+                              )}
+                            </Avatar>
+                            <span>{u.username}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col text-xs">
+                            {u.display_name && <span>{u.display_name}</span>}
+                            {u.email && <span className="text-muted-foreground">{u.email}</span>}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{u.role === 'admin' ? '管理员' : '普通用户'}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Select value={u.status} onValueChange={(v: any) => toggleStatus(u, v)}>
+                            <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">正常</SelectItem>
+                              <SelectItem value="inactive">停用</SelectItem>
+                              <SelectItem value="suspended">挂起</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button size="sm" variant="outline" onClick={() => openEdit(u)}><Edit className="w-4 h-4 mr-1" />编辑</Button>
+                            <Button size="sm" variant="outline" onClick={() => setResetOpen(u.id)}><KeyRound className="w-4 h-4 mr-1" />重置密码</Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="outline" className="text-red-600"><Trash2 className="w-4 h-4" /></Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>确认删除</AlertDialogTitle>
+                                  <AlertDialogDescription>确定要删除用户 {u.username} 吗？此操作不可撤销。</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>取消</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => remove(u.id)} className="bg-red-600 hover:bg-red-700">删除</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
 
           {totalPages > 1 && (

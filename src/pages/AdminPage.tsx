@@ -334,13 +334,13 @@ function AdminPage() {
             {/* 手机端简化标题和搜索 */}
             <div className="md:hidden">
               <div className="flex items-center gap-2 mb-4">
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
                     placeholder="搜索工具..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 w-full"
                   />
                 </div>
                 <Button 
@@ -571,7 +571,7 @@ function AdminPage() {
              </Card>
             
             {/* 手机端工具列表 - 不支持批量操作 */}
-            <div className="md:hidden">
+            <div className="md:hidden w-full">
               <AdminToolsList
                 tools={paginatedTools}
                 loading={loading}
@@ -585,7 +585,7 @@ function AdminPage() {
             </div>
             
              {/* 手机端每页显示条数选择和分页控件 */}
-             <div className="md:hidden flex flex-col gap-4 mt-4">
+             <div className="md:hidden flex flex-col gap-4 mt-4 -mx-2 sm:mx-0 px-2 sm:px-0">
                <div className="flex items-center justify-center gap-2">
                  <span className="text-xs text-muted-foreground">每页：</span>
                  <Select value={String(itemsPerPage)} onValueChange={(value) => {

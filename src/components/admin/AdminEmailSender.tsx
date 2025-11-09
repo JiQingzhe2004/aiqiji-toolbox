@@ -162,17 +162,17 @@ export function AdminEmailSender() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <CardTitle className="text-lg">收件人</CardTitle>
-            <div className="relative">
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索用户名/昵称/邮箱" className="pl-9 w-64" />
+            <div className="relative w-full sm:w-auto">
+              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索用户名/昵称/邮箱" className="pl-9 w-full sm:w-64" />
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="md:col-span-2 flex items-center justify-between">
+            <div className="md:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="text-sm text-muted-foreground">共 {filtered.length} 个用户，可选 {filtered.filter(u=>!!u.email).length} 个有邮箱的用户</div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
@@ -205,7 +205,30 @@ export function AdminEmailSender() {
               </ShadSelect>
             </div>
           </div>
-          <div className="max-h-72 overflow-auto rounded-md border">
+          
+          {/* 移动端卡片布局 */}
+          <div className="block md:hidden space-y-3 max-h-72 overflow-y-auto">
+            {loadingUsers ? (
+              <div className="text-center text-muted-foreground py-8">加载中...</div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">暂无数据</div>
+            ) : filtered.map(u => (
+              <div key={u.id} className="border rounded-lg p-3 flex items-center gap-3">
+                <Checkbox disabled={!u.email} checked={selectedIds.has(u.id)} onCheckedChange={(c:any)=>{
+                  setSelectedIds(prev => { const s = new Set(prev); if (c) s.add(u.id); else s.delete(u.id); return s; });
+                }} />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{u.display_name || u.username}</div>
+                  <div className="text-sm text-muted-foreground truncate">
+                    {u.email ? u.email : <span className="text-muted-foreground">无邮箱</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 桌面端表格布局 */}
+          <div className="hidden md:block max-h-72 overflow-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -328,13 +351,13 @@ export function AdminEmailSender() {
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-2">
                     {attachments.map((f, idx) => (
-                      <div key={idx} className="flex items-center gap-2 px-2 py-1 rounded-full bg-muted text-xs">
-                        <Paperclip className="w-3 h-3" />
-                        <span className="max-w-[200px] truncate" title={f.name}>{f.name}</span>
-                        <span className="opacity-70">({formatSize(f.size)})</span>
+                      <div key={idx} className="flex items-center gap-2 px-2 py-1 rounded-full bg-muted text-xs max-w-full">
+                        <Paperclip className="w-3 h-3 flex-shrink-0" />
+                        <span className="max-w-[120px] sm:max-w-[200px] truncate" title={f.name}>{f.name}</span>
+                        <span className="opacity-70 flex-shrink-0">({formatSize(f.size)})</span>
                         <button
                           type="button"
-                          className="ml-1 p-0.5 hover:text-red-600"
+                          className="ml-1 p-0.5 hover:text-red-600 flex-shrink-0"
                           onClick={() => removeAttachment(idx)}
                           aria-label="移除附件"
                         >

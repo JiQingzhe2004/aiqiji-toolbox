@@ -6,6 +6,8 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { EmailController } from '../controllers/EmailController.js';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { uploadAttachments } from '../middleware/upload.js';
 
 const router = express.Router();
 const emailController = new EmailController();
@@ -28,26 +30,54 @@ router.post('/send-verification', [
     .withMessage('模板名称必须是字符串')
 ], async (req, res) => {
   try {
-    // 验证输入
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: '输入验证失败',
-        errors: errors.array()
-      });
+      return res.status(400).json({ success: false, message: '输入验证失败', errors: errors.array() });
     }
-
     await emailController.sendVerificationCode(req, res);
   } catch (error) {
     console.error('发送验证码失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '发送验证码失败',
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: '发送验证码失败', error: error.message });
   }
 });
+
+/**
+ * 正式发送邮件（支持多收件人、模板、附件）
+ * POST /api/v1/email/send
+ */
+router.post('/send', authenticateToken, requireAdmin, (req, res, next) => {
+  uploadAttachments(req, res, function(err) {
+    if (err) {
+      return res.status(400).json({ success: false, message: err.message || '附件上传失败' });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    await emailController.sendEmail(req, res);
+  } catch (error) {
+    console.error('正式发送邮件失败:', error);
+    res.status(500).json({ success: false, message: '发送失败', error: error.message });
+  }
+});
+
+/** 模板管理 */
+router.get('/templates', authenticateToken, requireAdmin, async (req, res) => emailController.listTemplates(req, res));
+router.post('/templates', authenticateToken, requireAdmin, [
+  body('name').isString().isLength({ min: 1, max: 100 }),
+  body('subject').isString().isLength({ min: 1, max: 200 })
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ success: false, message: '输入验证失败', errors: errors.array() });
+  return emailController.createTemplate(req, res);
+});
+router.put('/templates/:id', authenticateToken, requireAdmin, async (req, res) => emailController.updateTemplate(req, res));
+router.delete('/templates/:id', authenticateToken, requireAdmin, async (req, res) => emailController.deleteTemplate(req, res));
+
+/** 日志管理 */
+router.get('/logs', authenticateToken, requireAdmin, async (req, res) => emailController.listLogs(req, res));
+router.get('/logs/export', authenticateToken, requireAdmin, async (req, res) => emailController.exportLogs(req, res));
+router.get('/logs/:id', authenticateToken, requireAdmin, async (req, res) => emailController.getLog(req, res));
 
 /**
  * 验证邮箱验证码

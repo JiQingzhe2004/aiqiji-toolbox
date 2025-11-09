@@ -6,6 +6,9 @@
 import { EmailService } from '../services/EmailService.js';
 import { VerificationCodeService } from '../services/VerificationCodeService.js';
 import { SettingsService } from '../services/SettingsService.js';
+import EmailTemplate from '../models/EmailTemplate.js';
+import EmailLog from '../models/EmailLog.js';
+import { Op } from 'sequelize';
 
 export class EmailController {
   constructor() {
@@ -205,6 +208,195 @@ export class EmailController {
         message: '获取邮箱状态失败',
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
+    }
+  }
+
+  /**
+   * 正式发送邮件（支持多收件人、模板、附件），并记录日志
+   */
+  async sendEmail(req, res) {
+    try {
+      const { recipients, subject, html, text, template_id } = req.body;
+
+      // 解析收件人
+      let to = [];
+      if (Array.isArray(recipients)) to = recipients;
+      else if (typeof recipients === 'string') {
+        try {
+          const parsed = JSON.parse(recipients);
+          if (Array.isArray(parsed)) to = parsed;
+          else to = recipients.split(/[\s,;\n]+/).filter(Boolean);
+        } catch {
+          to = recipients.split(/[\s,;\n]+/).filter(Boolean);
+        }
+      }
+
+      if (!to.length) {
+        return res.status(400).json({ success: false, message: '请提供至少一个收件人' });
+      }
+
+      // 模板处理（可被前端字段覆盖）
+      let finalSubject = subject;
+      let finalHtml = html;
+      let finalText = text;
+      if (template_id) {
+        const tpl = await EmailTemplate.findByPk(template_id);
+        if (tpl) {
+          if (!finalSubject) finalSubject = tpl.subject;
+          if (!finalHtml && tpl.html) finalHtml = tpl.html;
+          if (!finalText && tpl.text) finalText = tpl.text;
+        }
+      }
+
+      if (!finalSubject) {
+        return res.status(400).json({ success: false, message: '邮件主题不能为空' });
+      }
+
+      // 处理附件
+      const files = (req.files || []).map(f => ({ filename: f.originalname, path: f.path, contentType: f.mimetype }));
+
+      // 发送
+      const result = await this.emailService.sendEmail({ to, subject: finalSubject, html: finalHtml, text: finalText, attachments: files });
+
+      // 记录日志
+      const log = await EmailLog.create({
+        recipients: JSON.stringify(to),
+        subject: finalSubject,
+        html: finalHtml || null,
+        text: finalText || null,
+        attachments: files.length ? JSON.stringify(files.map(f => ({ filename: f.filename, path: f.path, mime: f.contentType }))) : null,
+        status: result.failCount === 0 ? 'success' : (result.successCount > 0 ? 'partial' : 'failed'),
+        success_count: result.successCount,
+        fail_count: result.failCount,
+        error: result.errors ? result.errors.join('\n') : null
+      });
+
+      res.json({ success: true, data: { logId: log.id, success_count: result.successCount, fail_count: result.failCount } });
+    } catch (error) {
+      console.error('正式发送邮件失败:', error);
+      res.status(500).json({ success: false, message: '发送失败', error: process.env.NODE_ENV === 'development' ? error.message : undefined });
+    }
+  }
+
+  /** 模板列表 */
+  async listTemplates(req, res) {
+    try {
+      const { q, page = 1, limit = 20, active } = req.query;
+      const where = {};
+      if (active === 'true') where.is_active = true;
+      if (active === 'false') where.is_active = false;
+      if (q) where.name = { [Op.like]: `%${q}%` };
+      const offset = (Number(page) - 1) * Number(limit);
+      const { rows, count } = await EmailTemplate.findAndCountAll({ where, order: [['created_at', 'DESC']], offset, limit: Number(limit) });
+      res.json({ success: true, data: { items: rows, pagination: { total: count, page: Number(page), limit: Number(limit) } } });
+    } catch (e) {
+      res.status(500).json({ success: false, message: e?.message || '获取模板失败' });
+    }
+  }
+
+  /** 新建模板 */
+  async createTemplate(req, res) {
+    try {
+      const { name, subject, html, text, is_active = true } = req.body;
+      if (!name || !subject) return res.status(400).json({ success: false, message: '名称与主题必填' });
+      const exists = await EmailTemplate.findOne({ where: { name } });
+      if (exists) return res.status(400).json({ success: false, message: '模板名称已存在' });
+      const created = await EmailTemplate.create({ name, subject, html: html || null, text: text || null, is_active: !!is_active });
+      res.json({ success: true, data: { template: created } });
+    } catch (e) {
+      res.status(500).json({ success: false, message: e?.message || '创建模板失败' });
+    }
+  }
+
+  /** 更新模板 */
+  async updateTemplate(req, res) {
+    try {
+      const { id } = req.params;
+      const { name, subject, html, text, is_active } = req.body;
+      const tpl = await EmailTemplate.findByPk(id);
+      if (!tpl) return res.status(404).json({ success: false, message: '模板不存在' });
+      if (name && name !== tpl.name) {
+        const exists = await EmailTemplate.findOne({ where: { name } });
+        if (exists) return res.status(400).json({ success: false, message: '模板名称已被占用' });
+      }
+      await tpl.update({
+        ...(name !== undefined ? { name } : {}),
+        ...(subject !== undefined ? { subject } : {}),
+        ...(html !== undefined ? { html } : {}),
+        ...(text !== undefined ? { text } : {}),
+        ...(is_active !== undefined ? { is_active: !!is_active } : {}),
+      });
+      res.json({ success: true, data: { template: tpl } });
+    } catch (e) {
+      res.status(500).json({ success: false, message: e?.message || '更新模板失败' });
+    }
+  }
+
+  /** 删除模板 */
+  async deleteTemplate(req, res) {
+    try {
+      const { id } = req.params;
+      const tpl = await EmailTemplate.findByPk(id);
+      if (!tpl) return res.status(404).json({ success: false, message: '模板不存在' });
+      await tpl.destroy();
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ success: false, message: e?.message || '删除模板失败' });
+    }
+  }
+
+  /** 日志列表 */
+  async listLogs(req, res) {
+    try {
+      const { page = 1, limit = 20, status, q, from, to } = req.query;
+      const where = {};
+      if (status) where.status = status;
+      if (from || to) {
+        where.created_at = {};
+        if (from) where.created_at[Op.gte] = new Date(from);
+        if (to) where.created_at[Op.lte] = new Date(to);
+      }
+      if (q) where.subject = { [Op.like]: `%${q}%` };
+      const offset = (Number(page) - 1) * Number(limit);
+      const { rows, count } = await EmailLog.findAndCountAll({ where, order: [['created_at', 'DESC']], offset, limit: Number(limit) });
+      res.json({ success: true, data: { items: rows, pagination: { total: count, page: Number(page), limit: Number(limit) } } });
+    } catch (e) {
+      res.status(500).json({ success: false, message: e?.message || '获取日志失败' });
+    }
+  }
+
+  /** 日志详情 */
+  async getLog(req, res) {
+    try {
+      const { id } = req.params;
+      const log = await EmailLog.findByPk(id);
+      if (!log) return res.status(404).json({ success: false, message: '日志不存在' });
+      res.json({ success: true, data: { log } });
+    } catch (e) {
+      res.status(500).json({ success: false, message: e?.message || '获取日志失败' });
+    }
+  }
+
+  /** 导出日志为CSV */
+  async exportLogs(req, res) {
+    try {
+      const { status, from, to } = req.query;
+      const where = {};
+      if (status) where.status = status;
+      if (from || to) {
+        where.created_at = {};
+        if (from) where.created_at[Op.gte] = new Date(from);
+        if (to) where.created_at[Op.lte] = new Date(to);
+      }
+      const rows = await EmailLog.findAll({ where, order: [['created_at', 'DESC']], limit: 5000 });
+      const header = 'created_at,subject,recipients,success_count,fail_count,status,error\n';
+      const esc = (s) => '"' + String(s ?? '').replace(/"/g, '""') + '"';
+      const csv = header + rows.map(r => [r.created_at?.toISOString() || '', r.subject || '', (JSON.parse(r.recipients || '[]') || []).join('; '), r.success_count || 0, r.fail_count || 0, r.status || '', (r.error || '').replace(/\n/g, ' | ')].map(esc).join(',')).join('\n');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="email_logs.csv"');
+      res.send('\ufeff' + csv);
+    } catch (e) {
+      res.status(500).json({ success: false, message: e?.message || '导出失败' });
     }
   }
 }

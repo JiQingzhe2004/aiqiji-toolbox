@@ -73,6 +73,7 @@ const adminNavigationItems: NavigationItem[] = [
   { id: 'admin-import', label: '批量导入', icon: FileSpreadsheet, href: '/admin?tab=import' },
   { id: 'admin-stats', label: '统计数据', icon: BarChart3, href: '/admin?tab=stats' },
   { id: 'admin-submissions', label: '工具提交', icon: Send, href: '/admin?tab=submissions' },
+  { id: 'admin-email', label: '邮件发送', icon: MailCheck, href: '/admin?tab=email' },
   { id: 'admin-friendlinks', label: '友链管理', icon: Link, href: '/admin?tab=friendlinks' },
   { id: 'admin-users', label: '用户管理', icon: Users, href: '/admin?tab=users' },
   { id: 'admin-settings', label: '系统设置', icon: Settings, href: '/admin?tab=settings' },

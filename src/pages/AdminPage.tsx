@@ -37,6 +37,7 @@ import { AdminFriendLinkManager } from '@/components/admin/AdminFriendLinkManage
 import { AdminProfileSettings } from '@/components/admin/AdminProfileSettings';
 import { AdminUserManagement } from '@/components/admin/AdminUserManagement';
 import { ToolSubmissionManagement } from '@/components/admin/ToolSubmissionManagement';
+import { AdminEmailSender } from '@/components/admin/AdminEmailSender';
 import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import { toolsApi } from '@/services/toolsApi';
 import { useAuth } from '@/contexts/AuthContext';
@@ -686,6 +687,11 @@ function AdminPage() {
           {/* 系统设置 */}
           <TabsContent value="settings">
             <AdminSystemSettings />
+          </TabsContent>
+
+          {/* 邮件发送 */}
+          <TabsContent value="email">
+            <AdminEmailSender />
           </TabsContent>
 
           {/* 个人设置 */}

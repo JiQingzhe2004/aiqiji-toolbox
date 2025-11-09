@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 const uploadDir = process.env.UPLOAD_DIR || 'uploads';
 const iconDir = path.join(uploadDir, 'icons');
 const avatarDir = path.join(uploadDir, 'avatars');
+const attachmentsDir = path.join(uploadDir, 'attachments');
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -23,6 +24,10 @@ if (!fs.existsSync(iconDir)) {
 
 if (!fs.existsSync(avatarDir)) {
   fs.mkdirSync(avatarDir, { recursive: true });
+}
+
+if (!fs.existsSync(attachmentsDir)) {
+  fs.mkdirSync(attachmentsDir, { recursive: true });
 }
 
 // 文件存储配置
@@ -39,7 +44,7 @@ const storage = multer.diskStorage({
 
 // 文件过滤器
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/gif,image/svg+xml,image/webp').split(',');
+  const allowedTypes = (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/gif,image/svg+xml,image/webp,application/pdf,application/zip,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/plain').split(',');
   
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
@@ -89,6 +94,32 @@ export const uploadIcon = upload.single('iconFile');
  * 头像上传中间件
  */
 export const uploadAvatar = avatarUpload.single('avatar');
+
+// 附件上传配置
+const attachmentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, attachmentsDir);
+  },
+  filename: (req, file, cb) => {
+    const fileExtension = path.extname(file.originalname);
+    const fileName = `att_${uuidv4()}${fileExtension}`;
+    cb(null, fileName);
+  }
+});
+
+const attachmentsUpload = multer({
+  storage: attachmentStorage,
+  fileFilter,
+  limits: {
+    fileSize: parseInt(process.env.MAX_ATTACHMENT_SIZE) || 10 * 1024 * 1024, // 10MB
+    files: parseInt(process.env.MAX_ATTACHMENT_COUNT) || 5
+  }
+});
+
+/**
+ * 附件上传中间件（多文件）
+ */
+export const uploadAttachments = attachmentsUpload.array('attachments');
 
 /**
  * 图像处理中间件

@@ -94,6 +94,108 @@ export class EmailApiService {
   }
 
   /**
+   * 正式发送邮件（支持多收件人、模板、附件）
+   */
+  async sendEmail(params: { recipients: string[]; subject: string; html?: string; text?: string; template_id?: string; attachments?: File[] }): Promise<ApiResponse<{ logId: string; success_count: number; fail_count: number }>> {
+    try {
+      const form = new FormData();
+      form.append('recipients', JSON.stringify(params.recipients));
+      form.append('subject', params.subject);
+      if (params.html) form.append('html', params.html);
+      if (params.text) form.append('text', params.text);
+      if (params.template_id) form.append('template_id', params.template_id);
+      if (params.attachments && params.attachments.length) {
+        params.attachments.forEach(f => form.append('attachments', f));
+      }
+      const res = await fetch(`${this.baseUrl}/send`, {
+        method: 'POST',
+        headers: {
+          ...(localStorage.getItem('auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+        },
+        body: form
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || '发送失败');
+      return data;
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : '发送失败' };
+    }
+  }
+
+  // 模板管理
+  async getTemplates(params?: { q?: string; page?: number; limit?: number; active?: boolean }): Promise<ApiResponse<{ items: any[]; pagination: any }>> {
+    const qs = new URLSearchParams();
+    if (params?.q) qs.append('q', params.q);
+    if (params?.page) qs.append('page', String(params.page));
+    if (params?.limit) qs.append('limit', String(params.limit));
+    if (params?.active !== undefined) qs.append('active', String(params.active));
+    const res = await fetch(`${this.baseUrl}/templates${qs.toString() ? `?${qs.toString()}` : ''}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+      }
+    });
+    return res.json();
+  }
+
+  async createTemplate(data: { name: string; subject: string; html?: string; text?: string; is_active?: boolean }): Promise<ApiResponse<{ template: any }>> {
+    const res = await fetch(`${this.baseUrl}/templates`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+      },
+      body: JSON.stringify(data)
+    });
+    return res.json();
+  }
+
+  async updateTemplate(id: string, data: Partial<{ name: string; subject: string; html: string; text: string; is_active: boolean }>): Promise<ApiResponse<{ template: any }>> {
+    const res = await fetch(`${this.baseUrl}/templates/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+      },
+      body: JSON.stringify(data)
+    });
+    return res.json();
+  }
+
+  async deleteTemplate(id: string): Promise<ApiResponse> {
+    const res = await fetch(`${this.baseUrl}/templates/${id}`, {
+      method: 'DELETE',
+      headers: {
+        ...(localStorage.getItem('auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+      },
+    });
+    return res.json();
+  }
+
+  // 日志
+  async getLogs(params?: { page?: number; limit?: number; status?: string; q?: string; from?: string; to?: string }): Promise<ApiResponse<{ items: any[]; pagination: any }>> {
+    const qs = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k, v]) => { if (v !== undefined && v !== null) qs.append(k, String(v)); });
+    const res = await fetch(`${this.baseUrl}/logs${qs.toString() ? `?${qs.toString()}` : ''}`, {
+      headers: {
+        ...(localStorage.getItem('auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+      }
+    });
+    return res.json();
+  }
+
+  async exportLogs(params?: { status?: string; from?: string; to?: string }): Promise<Blob> {
+    const qs = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k, v]) => { if (v !== undefined && v !== null) qs.append(k, String(v)); });
+    const res = await fetch(`${this.baseUrl}/logs/export${qs.toString() ? `?${qs.toString()}` : ''}`, {
+      headers: {
+        ...(localStorage.getItem('auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+      }
+    });
+    const blob = await res.blob();
+    return blob;
+  }
+  /**
    * 验证邮箱验证码
    */
   async verifyCode(request: VerifyCodeRequest): Promise<ApiResponse> {

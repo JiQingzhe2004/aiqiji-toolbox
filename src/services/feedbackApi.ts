@@ -2,7 +2,7 @@
  * 意见反馈 API 服务
  */
 
-import { apiPost } from '@/lib/api';
+import { apiPost, type ApiResponse } from '@/lib/api';
 
 export interface FeedbackData {
   name: string;
@@ -12,14 +12,7 @@ export interface FeedbackData {
   verification_code: string;
 }
 
-export interface FeedbackResponse {
-  success: boolean;
-  message?: string;
-  data?: {
-    id: string;
-    submitted_at: string;
-  };
-}
+export type FeedbackResponse = ApiResponse<{ id: string; submitted_at: string }>;
 
 /**
  * 意见反馈 API 类
@@ -30,10 +23,10 @@ export class FeedbackApi {
   /**
    * 提交意见反馈
    */
-  async submitFeedback(data: FeedbackData): Promise<FeedbackResponse> {
+  async submitFeedback(data: FeedbackData): Promise<ApiResponse<{ id: string; submitted_at: string }>> {
     try {
-      const response = await apiPost<FeedbackResponse>(`${this.baseUrl}/submit`, data);
-      return response;
+      const response = await apiPost<{ id: string; submitted_at: string }>(`${this.baseUrl}/submit`, data);
+      return response as FeedbackResponse;
     } catch (error) {
       console.error('提交意见反馈失败:', error);
       throw error;

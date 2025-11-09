@@ -840,4 +840,99 @@ AiQiji工具箱团队
       return { success: false, message: error.message };
     }
   }
+
+  /**
+   * 生成带固定样式的HTML（用于纯文本发送时包裹）
+   */
+  generateStyledTextHTML(text = '', subject = '通知邮件') {
+    const safe = String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />');
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${subject}</title>
+  <style>
+    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif; margin:0; padding:0; background:#f5f5f7; color:#111827}
+    .container{max-width:640px;margin:24px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.1)}
+    .header{background:#111827;color:#fff;padding:18px 24px}
+    .header h1{margin:0;font-size:18px;font-weight:600;letter-spacing:.2px}
+    .content{padding:24px 24px 8px 24px;line-height:1.7;font-size:14px;color:#374151}
+    .content h2{margin:0 0 12px 0;font-size:16px;color:#111827}
+    .card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px}
+    .footer{padding:16px 24px 24px 24px;color:#6b7280;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h1>AiQiji工具箱</h1></div>
+    <div class="content">
+      <div class="card">${safe}</div>
+    </div>
+    <div class="footer">此邮件由管理员发送。</div>
+  </div>
+  
+</body>
+</html>`;
+  }
+
+  /**
+   * 通用正式邮件发送：支持多收件人与附件
+   * @param {{ to: string[]; subject: string; html?: string; text?: string; attachments?: any[] }} opts
+   * @returns {Promise<{ success: boolean; successCount: number; failCount: number; errors?: string[] }>}
+   */
+  async sendEmail({ to, subject, html, text, attachments }) {
+    try {
+      const settings = await this.getEmailSettings();
+      if (!settings.email_enabled) {
+        return { success: false, successCount: 0, failCount: Array.isArray(to) ? to.length : 0, errors: ['邮件功能未启用'] };
+      }
+
+      const transporter = await this.createTransporter();
+      const fromAddress = await this.getFromAddress();
+      const recipients = Array.isArray(to) ? to : (to ? [to] : []);
+      let successCount = 0, failCount = 0;
+      const errors = [];
+
+      // 并发与限流配置
+      const MAX_CONCURRENCY = parseInt(process.env.EMAIL_CONCURRENCY || '5', 10); // 同时发送数
+      const MAX_RPS = parseInt(process.env.EMAIL_RPS || '10', 10); // 每秒最多发送数
+
+      // 简单令牌桶实现
+      let tokens = MAX_RPS;
+      setInterval(() => { tokens = MAX_RPS; }, 1000).unref?.();
+
+      const acquireToken = async () => {
+        while (tokens <= 0) {
+          await new Promise(r => setTimeout(r, 50));
+        }
+        tokens -= 1;
+      };
+
+      // 并发执行器
+      const queue = [...recipients];
+      const workers = Array.from({ length: Math.min(MAX_CONCURRENCY, queue.length) }).map(async () => {
+        while (queue.length) {
+          const rcpt = queue.shift();
+          if (!rcpt) break;
+          try {
+            await acquireToken();
+            const finalHtml = html || this.generateStyledTextHTML(text, subject);
+            await transporter.sendMail({ from: fromAddress, to: rcpt, subject, text, html: finalHtml, attachments });
+            successCount++;
+          } catch (err) {
+            failCount++;
+            errors.push(`${rcpt}: ${err?.message || '发送失败'}`);
+          }
+        }
+      });
+
+      await Promise.all(workers);
+
+      return { success: failCount === 0, successCount, failCount, ...(errors.length ? { errors } : {}) };
+    } catch (error) {
+      return { success: false, successCount: 0, failCount: Array.isArray(to) ? to.length : 0, errors: [error?.message || '发送失败'] };
+    }
+  }
 }

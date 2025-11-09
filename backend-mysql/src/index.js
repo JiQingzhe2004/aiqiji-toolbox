@@ -25,6 +25,8 @@ import emailRoutes from './routes/emailRoutes.js';
 import feedbackRoutes from './routes/feedbackRoutes.js';
 // 注册Sequelize模型（确保在syncDatabase之前已加载）
 import './models/Favorite.js';
+import './models/EmailTemplate.js';
+import './models/EmailLog.js';
 
 // 加载环境变量
 dotenv.config();
@@ -327,7 +329,7 @@ class Server {
       // 同步数据库模型
       await syncDatabase();
 
-      // 保障性同步：确保 favorites 表已创建（有些环境下模型注册时序可能导致漏同步）
+      // 保障性同步：确保部分表已创建（有些环境下模型注册时序可能导致漏同步）
       try {
         const { default: FavoriteModel } = await import('./models/Favorite.js');
         await FavoriteModel.sync();
@@ -336,6 +338,26 @@ class Server {
         }
       } catch (e) {
         console.warn('⚠️ 同步 favorites 表时出现问题（将继续启动）:', e?.message || e);
+      }
+
+      try {
+        const { default: EmailTemplate } = await import('./models/EmailTemplate.js');
+        await EmailTemplate.sync();
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ 已单独同步 email_templates 表');
+        }
+      } catch (e) {
+        console.warn('⚠️ 同步 email_templates 表时出现问题（将继续启动）:', e?.message || e);
+      }
+
+      try {
+        const { default: EmailLog } = await import('./models/EmailLog.js');
+        await EmailLog.sync();
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ 已单独同步 email_logs 表');
+        }
+      } catch (e) {
+        console.warn('⚠️ 同步 email_logs 表时出现问题（将继续启动）:', e?.message || e);
       }
 
       // 自动运行数据库初始化和升级

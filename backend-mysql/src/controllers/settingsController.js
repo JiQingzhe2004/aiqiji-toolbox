@@ -123,6 +123,7 @@ export const applyAiModel = async (req, res) => {
     const preset = list.find(x => x.id === id);
     if (!preset) return res.status(404).json({ success: false, message: '预设不存在' });
     const updates = [
+      { setting_key: 'ai_enabled', setting_value: true, setting_type: 'boolean' },
       { setting_key: 'ai_base_url', setting_value: preset.base_url, setting_type: 'string' },
       { setting_key: 'ai_api_key', setting_value: preset.api_key, setting_type: 'string' },
       { setting_key: 'ai_model', setting_value: preset.model, setting_type: 'string' },

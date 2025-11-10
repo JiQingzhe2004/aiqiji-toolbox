@@ -197,17 +197,26 @@ export class SettingsService {
         // 确定正确的分类
         const category = this.getSettingCategory(setting_key);
 
-        // 先尝试更新，如果不存在则插入
-        const [updateResult] = await sequelize.query(
-          `UPDATE ${this.tableName} SET setting_value = ?, setting_type = ?, category = ?, updated_at = NOW() WHERE setting_key = ?`,
+        // 先检查记录是否存在
+        const [existingRecords] = await sequelize.query(
+          `SELECT id FROM ${this.tableName} WHERE setting_key = ?`,
           {
-            replacements: [stringValue, setting_type, category, setting_key],
+            replacements: [setting_key],
             transaction
           }
         );
 
-        // 如果更新没有影响行数（即记录不存在），则插入
-        if (updateResult.affectedRows === 0) {
+        if (existingRecords.length > 0) {
+          // 记录存在，执行更新
+          await sequelize.query(
+            `UPDATE ${this.tableName} SET setting_value = ?, setting_type = ?, category = ?, updated_at = NOW() WHERE setting_key = ?`,
+            {
+              replacements: [stringValue, setting_type, category, setting_key],
+              transaction
+            }
+          );
+        } else {
+          // 记录不存在，执行插入
           const id = `${setting_key}-${Date.now()}`;
           await sequelize.query(
             `INSERT INTO ${this.tableName} (id, setting_key, setting_value, setting_type, category, description, is_public, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
@@ -239,7 +248,8 @@ export class SettingsService {
     
     const emailKeys = [
       'smtp_host', 'smtp_port', 'smtp_secure', 'smtp_user', 'smtp_pass',
-      'from_name', 'from_email', 'email_enabled'
+      'from_name', 'from_email', 'email_enabled',
+      'ai_enabled', 'ai_base_url', 'ai_api_key', 'ai_model'
     ];
     
     if (websiteKeys.includes(settingKey)) {
@@ -264,6 +274,10 @@ export class SettingsService {
       'from_name': '发件人名称',
       'from_email': '发件人邮箱',
       'email_enabled': '是否启用邮件功能',
+      'ai_enabled': '是否启用AI渲染',
+      'ai_base_url': 'AI API Base URL',
+      'ai_api_key': 'AI API Key',
+      'ai_model': 'AI模型名称',
       'ai_models': 'AI模型预设列表'
     };
     
@@ -274,13 +288,14 @@ export class SettingsService {
    * 获取设置是否公开
    */
   getSettingIsPublic(settingKey) {
-    const emailKeys = [
+    const privateKeys = [
       'smtp_host', 'smtp_port', 'smtp_secure', 'smtp_user', 'smtp_pass',
-      'from_name', 'from_email', 'email_enabled'
+      'from_name', 'from_email', 'email_enabled',
+      'ai_enabled', 'ai_base_url', 'ai_api_key', 'ai_model'
     ];
     
-    // 邮箱设置不公开
-    return emailKeys.includes(settingKey) ? 0 : 1;
+    // 邮箱和AI设置不公开
+    return privateKeys.includes(settingKey) ? 0 : 1;
   }
 
   /**

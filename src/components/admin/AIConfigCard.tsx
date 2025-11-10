@@ -122,42 +122,6 @@ export function AIConfigCard({ config, onChange, onSave, onConfigReload, loading
     }
   };
 
-  // 应用预设
-  const handleApplyPreset = async () => {
-    if (!selectedPresetId || selectedPresetId === 'manual') {
-      toast.error('请先选择一个预设');
-      return;
-    }
-    try {
-      const response = await emailApi.applyAiModel(selectedPresetId);
-      if (response.success) {
-        toast.success('预设应用成功');
-        
-        // 获取应用的预设配置
-        const preset = presets.find(p => p.id === selectedPresetId);
-        if (preset) {
-          // 立即更新本地配置
-          onChange({
-            ...config,
-            ai_base_url: preset.base_url,
-            ai_api_key: preset.api_key,
-            ai_model: preset.model
-          });
-        }
-        
-        // 如果有重新加载配置的回调，调用它
-        if (onConfigReload) {
-          await onConfigReload();
-        }
-      } else {
-        toast.error(response.message || '应用预设失败');
-      }
-    } catch (error) {
-      console.error('应用预设失败:', error);
-      toast.error('应用预设失败');
-    }
-  };
-
   // 打开创建/编辑预设表单对话框
   const openPresetFormDialog = (preset?: AiModelPreset) => {
     if (preset) {
@@ -309,6 +273,40 @@ export function AIConfigCard({ config, onChange, onSave, onConfigReload, loading
     }
   };
 
+  // 保存配置（如果选择了预设，先应用预设）
+  const handleSaveConfig = async () => {
+    try {
+      // 如果选择了预设，先应用预设并更新本地状态
+      if (selectedPresetId && selectedPresetId !== 'manual') {
+        const response = await emailApi.applyAiModel(selectedPresetId);
+        if (!response.success) {
+          toast.error(response.message || '应用预设失败');
+          return;
+        }
+        
+        // 应用成功后，更新本地配置状态（无需刷新页面）
+        const preset = presets.find(p => p.id === selectedPresetId);
+        if (preset) {
+          onChange({
+            ...config,
+            ai_enabled: true,
+            ai_base_url: preset.base_url,
+            ai_api_key: preset.api_key,
+            ai_model: preset.model
+          });
+        }
+      }
+      
+      // 调用父组件的保存方法
+      await onSave();
+      
+      // 不调用 onConfigReload，避免刷新整个页面
+    } catch (error) {
+      console.error('保存配置失败:', error);
+      toast.error('保存配置失败');
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -332,7 +330,7 @@ export function AIConfigCard({ config, onChange, onSave, onConfigReload, loading
               {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
               测试配置
             </Button>
-            <Button onClick={onSave} size="sm" disabled={loading} className="flex items-center gap-2">
+            <Button onClick={handleSaveConfig} size="sm" disabled={loading} className="flex items-center gap-2">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               保存
             </Button>
@@ -399,15 +397,6 @@ export function AIConfigCard({ config, onChange, onSave, onConfigReload, loading
           {selectedPresetId && selectedPresetId !== 'manual' && (
             <div className="flex items-center gap-2">
               <Button
-                onClick={handleApplyPreset}
-                size="sm"
-                variant="default"
-                className="flex items-center gap-1"
-              >
-                <Settings className="w-3 h-3" />
-                应用预设
-              </Button>
-              <Button
                 onClick={() => {
                   const preset = presets.find(p => p.id === selectedPresetId);
                   if (preset) openPresetFormDialog(preset);
@@ -417,7 +406,7 @@ export function AIConfigCard({ config, onChange, onSave, onConfigReload, loading
                 className="flex items-center gap-1"
               >
                 <Edit className="w-3 h-3" />
-                编辑
+                编辑预设
               </Button>
               <Button
                 onClick={() => {
@@ -432,7 +421,7 @@ export function AIConfigCard({ config, onChange, onSave, onConfigReload, loading
                 className="flex items-center gap-1 text-destructive hover:text-destructive"
               >
                 <Trash2 className="w-3 h-3" />
-                删除
+                删除预设
               </Button>
             </div>
           )}

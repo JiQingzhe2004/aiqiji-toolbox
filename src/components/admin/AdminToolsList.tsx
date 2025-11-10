@@ -356,14 +356,14 @@ export function AdminToolsList({
                       <span className="text-sm font-medium text-blue-800">{tool.name?.charAt(0) || '?'}</span>
                     </div>
                   )}
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 max-w-[300px]">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-sm truncate">{tool.name || '未命名工具'}</p>
                       {tool.featured && (
                         <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate max-w-full">
                       {tool.description || '暂无描述'}
                     </p>
                     {tool.tags && tool.tags.length > 0 && (

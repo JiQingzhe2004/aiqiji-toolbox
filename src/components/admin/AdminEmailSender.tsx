@@ -12,6 +12,7 @@ import { adminUserApi, type AdminUser } from '@/services/adminUserApi';
 import { emailApi } from '@/services/emailApi';
 import toast from 'react-hot-toast';
 import { Loader2, Mail, Search, UploadCloud, Paperclip, X } from 'lucide-react';
+import { AIStreamDialog } from './AIStreamDialog';
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -32,6 +33,7 @@ export function AdminEmailSender() {
   const [aiDraft, setAiDraft] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [streamDialogOpen, setStreamDialogOpen] = useState(false);
 
   const maxCount = 5;
   const maxSize = 10 * 1024 * 1024; // 10MB
@@ -159,7 +161,7 @@ export function AdminEmailSender() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-x-hidden">
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -171,18 +173,18 @@ export function AdminEmailSender() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="md:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="text-sm text-muted-foreground">共 {filtered.length} 个用户，可选 {filtered.filter(u=>!!u.email).length} 个有邮箱的用户</div>
-              <div className="flex items-center gap-3">
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-sm text-muted-foreground truncate">共 {filtered.length} 个用户，可选 {filtered.filter(u=>!!u.email).length} 个有邮箱的用户</div>
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-2">
                   <Checkbox id="selectAll" checked={selectedIds.size>0 && filtered.filter(u=>!!u.email).every(u=>selectedIds.has(u.id))} onCheckedChange={(c:any)=>toggleAll(!!c)} />
-                  <Label htmlFor="selectAll">全选</Label>
+                  <Label htmlFor="selectAll" className="text-sm">全选</Label>
                 </div>
-                <Button variant="outline" size="sm" onClick={()=>setSelectedIds(new Set())}>清空选择</Button>
+                <Button variant="outline" size="sm" onClick={()=>setSelectedIds(new Set())}>清空</Button>
               </div>
             </div>
-            <div className="space-y-1">
+            <div className="w-full">
               <ShadSelect value={selectedTemplateId} onValueChange={(id)=>{
                 setSelectedTemplateId(id);
                 if (id === 'none') return;
@@ -259,33 +261,24 @@ export function AdminEmailSender() {
 
           {/* AI 文案 -> HTML 生成 */}
           <div className="space-y-2">
-            <Label>AI 文案（输入要表达的内容，点击生成将转为带样式的HTML）</Label>
-            <Textarea rows={4} value={aiDraft} onChange={(e)=>setAiDraft(e.target.value)} placeholder="请输入要发送的主要内容/要点，AI 将自动包装为美观的邮件HTML..." />
+            <Label className="text-sm sm:text-base break-words">AI 文案（输入要表达的内容，点击生成将转为带样式的HTML）</Label>
+            <Textarea rows={4} value={aiDraft} onChange={(e)=>setAiDraft(e.target.value)} placeholder="请输入要发送的主要内容/要点，AI 将自动包装为美观的邮件HTML..." className="text-sm sm:text-base" />
             <div className="flex justify-end">
-              <Button variant="outline" size="sm" onClick={async()=>{
-                if (!aiDraft.trim() && !body.trim()) { toast.error('请填写 AI 文案或邮件内容'); return; }
-                try {
-                  toast.loading('AI 正在生成HTML...', { id: 'ai-gen' });
-                  const res: any = await emailApi.renderEmailByAI({ subject, text: aiDraft || body });
-                  if (res?.success && res.data?.html) {
-                    setContentMode('html');
-                    setBody(res.data.html);
-                    toast.success('已生成HTML', { id: 'ai-gen' });
-                  } else {
-                    toast.error(res?.message || 'AI 生成失败', { id: 'ai-gen' });
-                  }
-                } catch (e: any) {
-                  toast.error(e?.message || 'AI 生成失败', { id: 'ai-gen' });
+              <Button variant="outline" size="sm" onClick={()=>{
+                if (!aiDraft.trim() && !body.trim()) { 
+                  toast.error('请填写 AI 文案或邮件内容'); 
+                  return; 
                 }
-              }}>用AI生成HTML</Button>
+                setStreamDialogOpen(true);
+              }} className="w-full sm:w-auto">用AI生成HTML</Button>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>手动添加收件人（多个用逗号、分号或换行分隔）</Label>
-            <Textarea rows={3} value={manualInput} onChange={e=>setManualInput(e.target.value)} placeholder="a@example.com; b@example.com" />
+            <Label className="text-sm sm:text-base break-words">手动添加收件人（多个用逗号、分号或换行分隔）</Label>
+            <Textarea rows={3} value={manualInput} onChange={e=>setManualInput(e.target.value)} placeholder="a@example.com; b@example.com" className="text-sm sm:text-base" />
             {allRecipients.length > 0 && (
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs sm:text-sm text-muted-foreground">
                 将发送至 {allRecipients.length} 个收件人
                 {invalidEmails.length > 0 && (
                   <span className="text-red-600 ml-2">（含 {invalidEmails.length} 个无效邮箱）</span>
@@ -304,28 +297,28 @@ export function AdminEmailSender() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>主题</Label>
-            <Input value={subject} onChange={e=>setSubject(e.target.value)} placeholder="请输入邮件主题" />
+            <Label className="text-sm sm:text-base">主题</Label>
+            <Input value={subject} onChange={e=>setSubject(e.target.value)} placeholder="请输入邮件主题" className="text-sm sm:text-base" />
           </div>
 
           <div className="space-y-2">
             <Tabs value={contentMode} onValueChange={(v:any)=>setContentMode(v)}>
-              <TabsList>
-                <TabsTrigger value="html">HTML</TabsTrigger>
-                <TabsTrigger value="text">纯文本</TabsTrigger>
+              <TabsList className="w-full sm:w-auto">
+                <TabsTrigger value="html" className="flex-1 sm:flex-none">HTML</TabsTrigger>
+                <TabsTrigger value="text" className="flex-1 sm:flex-none">纯文本</TabsTrigger>
               </TabsList>
               <TabsContent value="html">
-                <Textarea rows={10} value={body} onChange={e=>setBody(e.target.value)} placeholder="支持HTML，例如 <b>加粗</b>、<a href='https://...'>链接</a> 等" />
+                <Textarea rows={10} value={body} onChange={e=>setBody(e.target.value)} placeholder="支持HTML，例如 <b>加粗</b>、<a href='https://...'>链接</a> 等" className="text-sm sm:text-base" />
               </TabsContent>
               <TabsContent value="text">
-                <Textarea rows={10} value={body} onChange={e=>setBody(e.target.value)} placeholder="请输入纯文本内容" />
+                <Textarea rows={10} value={body} onChange={e=>setBody(e.target.value)} placeholder="请输入纯文本内容" className="text-sm sm:text-base" />
               </TabsContent>
             </Tabs>
           </div>
 
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label>附件（可选，最多{maxCount}个，每个 ≤ {formatSize(maxSize)})</Label>
+              <Label className="text-sm sm:text-base break-words">附件（可选，最多{maxCount}个，每个 ≤ {formatSize(maxSize)})</Label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -335,23 +328,23 @@ export function AdminEmailSender() {
                 onChange={(e) => handleAddFiles(Array.from(e.target.files || []))}
               />
               <div
-                className="border border-dashed rounded-md p-4 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/30 transition cursor-pointer"
+                className="border border-dashed rounded-md p-3 sm:p-4 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/30 transition cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); }}
                 onDrop={(e) => { e.preventDefault(); handleAddFiles(Array.from(e.dataTransfer.files || [])); }}
                 role="button"
                 aria-label="上传附件"
               >
-                <UploadCloud className="w-5 h-5 mb-1" />
-                <div className="text-sm">拖拽文件到此处，或点击选择</div>
-                <div className="text-xs mt-1">支持类型：{acceptTypes}</div>
+                <UploadCloud className="w-4 h-4 sm:w-5 sm:h-5 mb-1" />
+                <div className="text-xs sm:text-sm">拖拽文件到此处，或点击选择</div>
+                <div className="text-xs mt-1 text-center px-2 break-all">支持：{acceptTypes}</div>
               </div>
 
               {attachments.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-2">
                     {attachments.map((f, idx) => (
-                      <div key={idx} className="flex items-center gap-2 px-2 py-1 rounded-full bg-muted text-xs max-w-full">
+                      <div key={idx} className="flex items-center gap-2 px-2 py-1 rounded-full bg-muted text-xs max-w-full min-w-0">
                         <Paperclip className="w-3 h-3 flex-shrink-0" />
                         <span className="max-w-[120px] sm:max-w-[200px] truncate" title={f.name}>{f.name}</span>
                         <span className="opacity-70 flex-shrink-0">({formatSize(f.size)})</span>
@@ -374,7 +367,7 @@ export function AdminEmailSender() {
               )}
             </div>
             <div className="flex justify-end">
-              <Button onClick={sendEmails} disabled={sending} className="gap-2">
+              <Button onClick={sendEmails} disabled={sending} className="gap-2 w-full sm:w-auto">
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
                 {sending ? '发送中...' : '发送邮件'}
               </Button>
@@ -382,6 +375,18 @@ export function AdminEmailSender() {
           </div>
         </CardContent>
       </Card>
+
+      {/* AI 流式生成对话框 */}
+      <AIStreamDialog
+        open={streamDialogOpen}
+        onOpenChange={setStreamDialogOpen}
+        subject={subject}
+        text={aiDraft || body}
+        onComplete={(html) => {
+          setContentMode('html');
+          setBody(html);
+        }}
+      />
     </div>
   );
 }

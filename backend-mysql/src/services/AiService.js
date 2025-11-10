@@ -23,14 +23,33 @@ export class AiService {
   }
 
   buildSystemPrompt(siteName) {
-    return `你是邮件排版助手，请把用户的纯文本内容包装成规范的营销/通知邮件HTML。
-要求：
-- 只输出 <html>...</html> 完整HTML，内联样式即可。
-- 使用简洁现代风格，含头部标题、内容区、分隔、页脚说明。
-- 样式现代化，使用最新的HTML5语义化标签，要美观好看，有质感，边角尽量使用圆角。
-- 不要使用md的代码片段输出，不要使用markdown语法，只输出html。 
-- 尽量适配邮件客户端（避免外链CSS与复杂布局）。
-- 网站名称：${siteName || 'AiQiji·工具箱'}`;
+    const currentYear = new Date().getFullYear();
+    return `你是专业邮件HTML生成专家。将用户文本转为精美的营销/通知邮件HTML。
+
+【输出格式】
+- 直接输出HTML代码，首字符<，末字符>
+- 禁止markdown语法和代码块标签（如\`\`\`html）
+
+【视觉设计】
+- 现代简约风格，色彩和谐有层次
+- 行高1.5-1.6，段落间距适中
+- 圆角8-12px，细腻阴影（box-shadow: 0 2px 10px rgba(0,0,0,0.05)）
+- 留白充足，避免拥挤
+
+【结构要求】
+- 头部：品牌标识"${siteName || 'AiQiji·工具箱'}"
+- 主体：标题 + 内容区 + 分隔线
+- 页脚：版权信息"© ${currentYear} ${siteName || 'AiQiji·工具箱'}"
+- 使用语义化标签：<header>、<main>、<section>、<footer>
+
+【技术规范】
+- 所有样式用内联style属性
+- 兼容Outlook/Gmail/Apple Mail
+- 使用table+div混合布局
+- 颜色用十六进制，背景可用rgba
+- 禁止按钮、链接、地址信息
+
+立即输出HTML：`;
   }
 
   async renderEmailHTML({ subject, text }) {
@@ -53,6 +72,57 @@ export class AiService {
       return { success: true, html };
     } catch (e) {
       return { success: false, message: e?.message || 'AI 生成失败' };
+    }
+  }
+
+  /**
+   * 流式渲染邮件HTML
+   * @param {Object} params - 参数对象
+   * @param {string} params.subject - 邮件主题
+   * @param {string} params.text - 邮件文本内容
+   * @returns {AsyncGenerator} 返回流式生成器
+   */
+  async *renderEmailHTMLStream({ subject, text }) {
+    // 并行获取所有配置，减少等待时间
+    const [client, model, siteName] = await Promise.all([
+      this.getClient(),
+      this.getModel(),
+      this.settingsService.getSettingValue('site_name').then(name => name || 'AiQiji工具箱')
+    ]);
+    
+    const sys = this.buildSystemPrompt(siteName);
+    const user = `主题：${subject || '通知'}\n内容：\n${text || ''}`;
+    
+    try {
+      const stream = await client.chat.completions.create({
+        model,
+        messages: [
+          { role: 'system', content: sys },
+          { role: 'user', content: user }
+        ],
+        temperature: 0.7,
+        stream: true,
+        stream_options: {
+          include_usage: false
+        }
+      });
+      
+      for await (const chunk of stream) {
+        // 检查是否有思考链内容（reasoning）
+        const reasoning = chunk.choices?.[0]?.delta?.reasoning_content || '';
+        if (reasoning) {
+          yield { type: 'thinking', content: reasoning };
+        }
+        
+        // 检查是否有实际内容
+        const content = chunk.choices?.[0]?.delta?.content || '';
+        if (content) {
+          yield { type: 'content', content };
+        }
+      }
+    } catch (e) {
+      console.error('[AiService] AI生成失败:', e);
+      throw new Error(e?.message || 'AI 生成失败');
     }
   }
 

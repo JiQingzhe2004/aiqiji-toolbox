@@ -136,8 +136,16 @@ class Server {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-    // 压缩响应
-    this.app.use(compression());
+    // 压缩响应（排除流式路由）
+    this.app.use(compression({
+      filter: (req, res) => {
+        // 不压缩流式响应
+        if (req.path.includes('/ai-render-stream')) {
+          return false;
+        }
+        return compression.filter(req, res);
+      }
+    }));
 
     // 静态文件服务
     const uploadDir = process.env.UPLOAD_DIR || 'uploads';

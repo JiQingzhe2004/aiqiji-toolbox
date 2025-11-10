@@ -417,6 +417,66 @@ export class EmailController {
     }
   }
 
+  /** 使用AI流式渲染HTML（Server-Sent Events） */
+  async aiRenderStream(req, res) {
+    try {
+      const { subject, text } = req.body || {};
+      
+      // 设置SSE响应头
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no'); // 禁用nginx缓冲
+      
+      // 立即发送响应头
+      res.flushHeaders();
+      
+      // 发送初始连接成功消息
+      res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
+      
+      // 发送思考中消息
+      res.write(`data: ${JSON.stringify({ type: 'thinking', message: 'AI正在思考中...' })}\n\n`);
+      
+      try {
+        const stream = this.aiService.renderEmailHTMLStream({ subject, text });
+        
+        let contentChunkCount = 0;
+        let hasStartedGenerating = false;
+        
+        for await (const chunk of stream) {
+          if (chunk.type === 'thinking') {
+            // 发送思考链内容
+            res.write(`data: ${JSON.stringify({ type: 'thinking', content: chunk.content })}\n\n`);
+          } else if (chunk.type === 'content') {
+            contentChunkCount++;
+            
+            if (contentChunkCount === 1 && !hasStartedGenerating) {
+              // 发送开始生成消息
+              res.write(`data: ${JSON.stringify({ type: 'generating', message: 'AI开始生成内容...' })}\n\n`);
+              hasStartedGenerating = true;
+            }
+            
+            // 发送内容块
+            res.write(`data: ${JSON.stringify({ type: 'content', content: chunk.content })}\n\n`);
+          }
+        }
+        
+        // 发送完成消息
+        res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+        res.end();
+      } catch (streamError) {
+        // 发送错误消息
+        res.write(`data: ${JSON.stringify({ type: 'error', message: streamError.message || 'AI 生成失败' })}\n\n`);
+        res.end();
+      }
+    } catch (e) {
+      console.error('AI 流式渲染失败:', e);
+      if (!res.headersSent) {
+        return res.status(500).json({ success: false, message: e?.message || 'AI 流式渲染失败' });
+      }
+    }
+  }
+
   /** 测试AI配置可用性（不做限流） */
   async aiTest(req, res) {
     try {

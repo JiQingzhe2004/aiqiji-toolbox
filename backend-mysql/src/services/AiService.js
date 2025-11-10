@@ -5,16 +5,22 @@ export class AiService {
   constructor() {
     this.settingsService = new SettingsService();
     this.client = null;
+    this.clientConfigKey = null;
   }
 
   async getClient() {
-    if (this.client) return this.client;
     const enabled = await this.settingsService.getSettingValue('ai_enabled');
     if (!enabled) throw new Error('AI 未启用');
     const apiKey = await this.settingsService.getSettingValue('ai_api_key');
     const baseURL = (await this.settingsService.getSettingValue('ai_base_url')) || 'https://open.bigmodel.cn/api/paas/v4';
     if (!apiKey) throw new Error('未配置 AI API Key');
-    this.client = new OpenAI({ apiKey, baseURL });
+    const nextConfigKey = `${baseURL}::${apiKey}`;
+
+    if (!this.client || this.clientConfigKey !== nextConfigKey) {
+      this.client = new OpenAI({ apiKey, baseURL });
+      this.clientConfigKey = nextConfigKey;
+    }
+
     return this.client;
   }
 

@@ -144,8 +144,32 @@ export const createTool = async (req, res) => {
       needs_vpn
     } = req.body;
 
+    // 自动生成工具ID（如果未提供）
+    const generateToolId = (name) => {
+      if (!name) {
+        // 如果没有名称，使用时间戳
+        return `tool-${Date.now()}`;
+      }
+      const baseName = name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim();
+      
+      // 添加时间戳确保唯一性
+      const timestamp = Date.now();
+      return `${baseName}-${timestamp}`;
+    };
+
+    // 如果ID不存在或为空，自动生成
+    let finalId = id;
+    if (!finalId || finalId.trim() === '') {
+      finalId = generateToolId(name);
+    }
+
     // 检查ID是否已存在
-    const existingTool = await Tool.findByPk(id);
+    const existingTool = await Tool.findByPk(finalId);
     if (existingTool) {
       return res.status(400).json({
         success: false,
@@ -155,7 +179,7 @@ export const createTool = async (req, res) => {
 
     // 清理和验证数据
     const rawData = {
-      id,
+      id: finalId,
       name,
       description,
       icon,

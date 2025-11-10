@@ -59,8 +59,10 @@ export function AIStreamDialog({ open, onOpenChange, subject, text, mode = 'html
         };
 
         const requestBody = JSON.stringify({ subject, text, mode });
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+        const endpoint = `${apiBaseUrl.replace(/\/$/, '')}/email/ai-render-stream`;
 
-        let response = await fetch('/api/v1/email/ai-render-stream', {
+        let response = await fetch(endpoint, {
           method: 'POST',
           headers,
           body: requestBody
@@ -73,7 +75,7 @@ export function AIStreamDialog({ open, onOpenChange, subject, text, mode = 'html
           if (text) params.set('text', text);
           if (mode) params.set('mode', mode);
 
-          response = await fetch(`/api/v1/email/ai-render-stream?${params.toString()}`, {
+          response = await fetch(`${endpoint}?${params.toString()}`, {
             method: 'GET',
             headers: {
               ...(token ? { 'Authorization': `Bearer ${token}` } : {}),

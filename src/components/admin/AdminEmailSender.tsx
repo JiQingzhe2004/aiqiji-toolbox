@@ -8,10 +8,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select as ShadSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { adminUserApi, type AdminUser } from '@/services/adminUserApi';
 import { emailApi } from '@/services/emailApi';
 import toast from 'react-hot-toast';
-import { Loader2, Mail, Search, UploadCloud, Paperclip, X } from 'lucide-react';
+import { Loader2, Mail, Search, UploadCloud, Paperclip, X, Eye, Code, Save, Trash2, Sparkles } from 'lucide-react';
 import { AIStreamDialog } from './AIStreamDialog';
 
 function isValidEmail(email: string) {
@@ -34,6 +35,13 @@ export function AdminEmailSender() {
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [streamDialogOpen, setStreamDialogOpen] = useState(false);
+  const [htmlPreviewMode, setHtmlPreviewMode] = useState<'code' | 'preview'>('code');
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [deletingTemplate, setDeletingTemplate] = useState(false);
+  const [generatingSubject, setGeneratingSubject] = useState(false);
+  const [saveTemplateDialogOpen, setSaveTemplateDialogOpen] = useState(false);
+  const [deleteTemplateDialogOpen, setDeleteTemplateDialogOpen] = useState(false);
+  const [templateName, setTemplateName] = useState('');
 
   const maxCount = 5;
   const maxSize = 10 * 1024 * 1024; // 10MB
@@ -160,6 +168,107 @@ export function AdminEmailSender() {
     }
   };
 
+  const openSaveTemplateDialog = () => {
+    if (!subject.trim()) { toast.error('请填写邮件主题'); return; }
+    if (!body.trim()) { toast.error('请填写邮件内容'); return; }
+    setTemplateName('');
+    setSaveTemplateDialogOpen(true);
+  };
+
+  const saveAsTemplate = async () => {
+    if (!templateName.trim()) {
+      toast.error('模板名称不能为空');
+      return;
+    }
+
+    try {
+      setSavingTemplate(true);
+      toast.loading('正在保存模板...', { id: 'save-template' });
+      const res = await emailApi.createTemplate({
+        name: templateName.trim(),
+        subject: subject.trim(),
+        ...(contentMode === 'html' ? { html: body } : { text: body }),
+        is_active: true
+      });
+      
+      if (res?.success) {
+        toast.success('模板保存成功', { id: 'save-template' });
+        setSaveTemplateDialogOpen(false);
+        setTemplateName('');
+        // 重新加载模板列表
+        const templatesRes: any = await emailApi.getTemplates({ page: 1, limit: 100, active: true });
+        if (templatesRes?.success && templatesRes.data?.items) {
+          setTemplates(templatesRes.data.items);
+        }
+      } else {
+        toast.error(res?.message || '保存模板失败', { id: 'save-template' });
+      }
+    } catch (e: any) {
+      toast.error(e?.message || '保存模板失败', { id: 'save-template' });
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const generateSubject = async () => {
+    if (!body.trim() && !aiDraft.trim()) {
+      toast.error('请先填写邮件内容或AI文案');
+      return;
+    }
+
+    try {
+      setGeneratingSubject(true);
+      toast.loading('AI正在生成主题...', { id: 'gen-subject' });
+      
+      const content = body.trim() || aiDraft.trim();
+      const res = await emailApi.generateSubject(content);
+      
+      if (res?.success && res.data?.subject) {
+        setSubject(res.data.subject);
+        toast.success('主题生成成功', { id: 'gen-subject' });
+      } else {
+        toast.error(res?.message || '生成主题失败', { id: 'gen-subject' });
+      }
+    } catch (e: any) {
+      toast.error(e?.message || '生成主题失败', { id: 'gen-subject' });
+    } finally {
+      setGeneratingSubject(false);
+    }
+  };
+
+  const openDeleteTemplateDialog = () => {
+    if (selectedTemplateId === 'none') {
+      toast.error('请先选择要删除的模板');
+      return;
+    }
+    setDeleteTemplateDialogOpen(true);
+  };
+
+  const deleteTemplate = async () => {
+    try {
+      setDeletingTemplate(true);
+      toast.loading('正在删除模板...', { id: 'delete-template' });
+      const res = await emailApi.deleteTemplate(selectedTemplateId);
+      
+      if (res?.success) {
+        toast.success('模板删除成功', { id: 'delete-template' });
+        setDeleteTemplateDialogOpen(false);
+        setSelectedTemplateId('none');
+        // 重新加载模板列表
+        const templatesRes: any = await emailApi.getTemplates({ page: 1, limit: 100, active: true });
+        if (templatesRes?.success && templatesRes.data?.items) {
+          setTemplates(templatesRes.data.items);
+        }
+      } else {
+        toast.error(res?.message || '删除模板失败', { id: 'delete-template' });
+      }
+    } catch (e: any) {
+      toast.error(e?.message || '删除模板失败', { id: 'delete-template' });
+    } finally {
+      setDeletingTemplate(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
       <Card>
@@ -183,28 +292,6 @@ export function AdminEmailSender() {
                 </div>
                 <Button variant="outline" size="sm" onClick={()=>setSelectedIds(new Set())}>清空</Button>
               </div>
-            </div>
-            <div className="w-full">
-              <ShadSelect value={selectedTemplateId} onValueChange={(id)=>{
-                setSelectedTemplateId(id);
-                if (id === 'none') return;
-                const tpl = templates.find((t:any)=>t.id===id);
-                if (tpl) {
-                  if (!subject) setSubject(tpl.subject || '');
-                  if (contentMode === 'html' && !body && tpl.html) setBody(tpl.html);
-                  if (contentMode === 'text' && !body && tpl.text) setBody(tpl.text);
-                }
-              }}>
-                <SelectTrigger className="w-full h-9">
-                  <SelectValue placeholder="选择模板（可选）" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">不使用模板</SelectItem>
-                  {templates.map((t:any) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </ShadSelect>
             </div>
           </div>
           
@@ -259,21 +346,6 @@ export function AdminEmailSender() {
             </Table>
           </div>
 
-          {/* AI 文案 -> HTML 生成 */}
-          <div className="space-y-2">
-            <Label className="text-sm sm:text-base break-words">AI 文案（输入要表达的内容，点击生成将转为带样式的HTML）</Label>
-            <Textarea rows={4} value={aiDraft} onChange={(e)=>setAiDraft(e.target.value)} placeholder="请输入要发送的主要内容/要点，AI 将自动包装为美观的邮件HTML..." className="text-sm sm:text-base" />
-            <div className="flex justify-end">
-              <Button variant="outline" size="sm" onClick={()=>{
-                if (!aiDraft.trim() && !body.trim()) { 
-                  toast.error('请填写 AI 文案或邮件内容'); 
-                  return; 
-                }
-                setStreamDialogOpen(true);
-              }} className="w-full sm:w-auto">用AI生成HTML</Button>
-            </div>
-          </div>
-
           <div className="space-y-2">
             <Label className="text-sm sm:text-base break-words">手动添加收件人（多个用逗号、分号或换行分隔）</Label>
             <Textarea rows={3} value={manualInput} onChange={e=>setManualInput(e.target.value)} placeholder="a@example.com; b@example.com" className="text-sm sm:text-base" />
@@ -293,12 +365,110 @@ export function AdminEmailSender() {
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
             <CardTitle className="text-lg">邮件内容</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={openSaveTemplateDialog}
+              disabled={savingTemplate || !subject.trim() || !body.trim()}
+              className="gap-2"
+            >
+              {savingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              保存为模板
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* 模板选择 */}
+          <div className="space-y-2">
+            <Label className="text-sm sm:text-base">邮件模板</Label>
+            <div className="flex gap-2">
+              <ShadSelect value={selectedTemplateId} onValueChange={(id)=>{
+                setSelectedTemplateId(id);
+                if (id === 'none') return;
+                const tpl = templates.find((t:any)=>t.id===id);
+                if (tpl) {
+                  setSubject(tpl.subject || '');
+                  if (contentMode === 'html' && tpl.html) {
+                    setBody(tpl.html);
+                    setHtmlPreviewMode('code'); // 切换到代码模式以便查看模板内容
+                  }
+                  if (contentMode === 'text' && tpl.text) {
+                    setBody(tpl.text);
+                  }
+                }
+              }}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="选择模板（可选）" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">不使用模板</SelectItem>
+                  {templates.map((t:any) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </ShadSelect>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openDeleteTemplateDialog}
+                disabled={deletingTemplate || selectedTemplateId === 'none'}
+                className="gap-2 flex-shrink-0"
+                title="删除当前选中的模板"
+              >
+                {deletingTemplate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* AI 文案 -> 内容生成 */}
+          <div className="space-y-2">
+            <Label className="text-sm sm:text-base break-words">AI 文案生成</Label>
+            <div className="relative">
+              <Textarea 
+                rows={4} 
+                value={aiDraft} 
+                onChange={(e)=>setAiDraft(e.target.value)} 
+                placeholder={contentMode === 'html' ? "输入要表达的内容/要点，AI 将自动生成美观的邮件 HTML..." : "输入要表达的内容/要点，AI 将自动生成纯文本邮件..."}
+                className="text-sm sm:text-base pr-24" 
+              />
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={()=>{
+                  if (!aiDraft.trim() && !body.trim()) { 
+                    toast.error('请填写 AI 文案或邮件内容'); 
+                    return; 
+                  }
+                  setStreamDialogOpen(true);
+                }} 
+                className="absolute right-2 bottom-2 gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                生成{contentMode === 'html' ? 'HTML' : '文本'}
+              </Button>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label className="text-sm sm:text-base">主题</Label>
-            <Input value={subject} onChange={e=>setSubject(e.target.value)} placeholder="请输入邮件主题" className="text-sm sm:text-base" />
+            <div className="relative">
+              <Input 
+                value={subject} 
+                onChange={e=>setSubject(e.target.value)} 
+                placeholder="请输入邮件主题" 
+                className="text-sm sm:text-base pr-10" 
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={generateSubject}
+                disabled={generatingSubject || (!body.trim() && !aiDraft.trim())}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                title="AI生成主题"
+              >
+                {generatingSubject ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -307,8 +477,47 @@ export function AdminEmailSender() {
                 <TabsTrigger value="html" className="flex-1 sm:flex-none">HTML</TabsTrigger>
                 <TabsTrigger value="text" className="flex-1 sm:flex-none">纯文本</TabsTrigger>
               </TabsList>
-              <TabsContent value="html">
-                <Textarea rows={10} value={body} onChange={e=>setBody(e.target.value)} placeholder="支持HTML，例如 <b>加粗</b>、<a href='https://...'>链接</a> 等" className="text-sm sm:text-base" />
+              <TabsContent value="html" className="space-y-3">
+                {/* HTML 编辑/预览切换 */}
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">邮件HTML内容</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={htmlPreviewMode === 'code' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setHtmlPreviewMode('code')}
+                      className="gap-2"
+                    >
+                      <Code className="w-4 h-4" />
+                      代码
+                    </Button>
+                    <Button
+                      variant={htmlPreviewMode === 'preview' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setHtmlPreviewMode('preview')}
+                      className="gap-2"
+                      disabled={!body.trim()}
+                    >
+                      <Eye className="w-4 h-4" />
+                      预览
+                    </Button>
+                  </div>
+                </div>
+                
+                {htmlPreviewMode === 'code' ? (
+                  <Textarea 
+                    rows={10} 
+                    value={body} 
+                    onChange={e=>setBody(e.target.value)} 
+                    placeholder="支持HTML，例如 <b>加粗</b>、<a href='https://...'>链接</a> 等" 
+                    className="text-sm sm:text-base font-mono"
+                  />
+                ) : (
+                  <div className="border rounded-md p-4 bg-white dark:bg-gray-900 min-h-[400px] max-h-[600px] overflow-auto">
+                    <div className="text-xs text-muted-foreground mb-2 pb-2 border-b">预览效果（实际邮件显示）</div>
+                    <div dangerouslySetInnerHTML={{ __html: body }} />
+                  </div>
+                )}
               </TabsContent>
               <TabsContent value="text">
                 <Textarea rows={10} value={body} onChange={e=>setBody(e.target.value)} placeholder="请输入纯文本内容" className="text-sm sm:text-base" />
@@ -382,11 +591,120 @@ export function AdminEmailSender() {
         onOpenChange={setStreamDialogOpen}
         subject={subject}
         text={aiDraft || body}
-        onComplete={(html) => {
-          setContentMode('html');
-          setBody(html);
+        mode={contentMode}
+        onComplete={(content) => {
+          setBody(content);
+          if (contentMode === 'html') {
+            setHtmlPreviewMode('code');
+          }
         }}
       />
+
+      {/* 保存模板对话框 */}
+      <Dialog open={saveTemplateDialogOpen} onOpenChange={setSaveTemplateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>保存为模板</DialogTitle>
+            <DialogDescription>
+              为当前邮件内容创建一个可重复使用的模板
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="template-name">模板名称</Label>
+              <Input
+                id="template-name"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="例如：欢迎邮件、活动通知等"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !savingTemplate && templateName.trim()) {
+                    saveAsTemplate();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>• 主题：{subject}</p>
+              <p>• 内容类型：{contentMode === 'html' ? 'HTML' : '纯文本'}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSaveTemplateDialogOpen(false)}
+              disabled={savingTemplate}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={saveAsTemplate}
+              disabled={savingTemplate || !templateName.trim()}
+            >
+              {savingTemplate ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  保存中...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  保存模板
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除模板确认对话框 */}
+      <Dialog open={deleteTemplateDialogOpen} onOpenChange={setDeleteTemplateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>删除模板</DialogTitle>
+            <DialogDescription>
+              此操作不可恢复，确定要删除该模板吗？
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="rounded-lg bg-muted p-4 space-y-2">
+              <p className="font-medium">
+                {templates.find((t: any) => t.id === selectedTemplateId)?.name}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                主题：{templates.find((t: any) => t.id === selectedTemplateId)?.subject}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteTemplateDialogOpen(false)}
+              disabled={deletingTemplate}
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteTemplate}
+              disabled={deletingTemplate}
+            >
+              {deletingTemplate ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  确认删除
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

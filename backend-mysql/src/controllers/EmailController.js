@@ -402,6 +402,29 @@ export class EmailController {
     }
   }
 
+  /**
+   * AI 生成邮件主题
+   */
+  async aiGenerateSubject(req, res) {
+    try {
+      const { content } = req.body;
+      
+      if (!content || !content.trim()) {
+        return res.status(400).json({ success: false, message: '邮件内容不能为空' });
+      }
+
+      const subject = await this.aiService.generateSubject(content.trim());
+      
+      return res.json({ 
+        success: true, 
+        data: { subject }
+      });
+    } catch (e) {
+      console.error('AI 生成主题失败:', e);
+      return res.status(500).json({ success: false, message: e?.message || 'AI 生成主题失败' });
+    }
+  }
+
   /** 使用AI将纯文本渲染为HTML */
   async aiRender(req, res) {
     try {
@@ -420,7 +443,7 @@ export class EmailController {
   /** 使用AI流式渲染HTML（Server-Sent Events） */
   async aiRenderStream(req, res) {
     try {
-      const { subject, text } = req.body || {};
+      const { subject, text, mode = 'html' } = req.body;
       
       // 设置SSE响应头
       res.setHeader('Content-Type', 'text/event-stream');
@@ -438,7 +461,7 @@ export class EmailController {
       res.write(`data: ${JSON.stringify({ type: 'thinking', message: 'AI正在思考中...' })}\n\n`);
       
       try {
-        const stream = this.aiService.renderEmailHTMLStream({ subject, text });
+        const stream = this.aiService.renderEmailHTMLStream({ subject, text, mode });
         
         let contentChunkCount = 0;
         let hasStartedGenerating = false;

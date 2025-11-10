@@ -175,6 +175,21 @@ export class EmailApiService {
     return res.json();
   }
 
+  /**
+   * AI生成邮件主题
+   */
+  async generateSubject(content: string): Promise<ApiResponse<{ subject: string }>> {
+    const res = await fetch(`${this.baseUrl}/ai/generate-subject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('auth_token') ? { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` } : {}),
+      },
+      body: JSON.stringify({ content })
+    });
+    return res.json();
+  }
+
   // 日志
   async getLogs(params?: { page?: number; limit?: number; status?: string; q?: string; from?: string; to?: string }): Promise<ApiResponse<{ items: any[]; pagination: any }>> {
     const qs = new URLSearchParams();

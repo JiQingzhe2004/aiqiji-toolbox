@@ -1026,7 +1026,7 @@ export function AppSidebar({ children }: SidebarProps) {
       </motion.aside>
 
       {/* 主内容区域 */}
-      <div className="flex-1 flex flex-col overflow-hidden md:overflow-hidden overflow-visible">
+      <div className="flex-1 flex flex-col min-h-0">
         {/* 移动端顶部栏 */}
         <div className="lg:hidden flex items-center justify-between px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-border/50 bg-background/80 backdrop-blur-md min-h-[64px] sticky top-0 z-50">
           <Button
@@ -1060,7 +1060,7 @@ export function AppSidebar({ children }: SidebarProps) {
         </div>
 
         {/* 主内容 */}
-        <main id="app-main" className="flex-1 overflow-visible md:overflow-auto">
+        <main id="app-main" className="flex-1 overflow-y-auto overflow-x-hidden">
           {children}
         </main>
       </div>

@@ -22,8 +22,57 @@ export class AiService {
     return (await this.settingsService.getSettingValue('ai_model')) || 'glm-4.5';
   }
 
-  buildSystemPrompt(siteName) {
+  /**
+   * 生成邮件主题
+   */
+  async generateSubject(content) {
+    const client = await this.getClient();
+    const model = await this.getModel();
+    
+    const prompt = `请根据以下邮件内容，生成一个简洁、吸引人的邮件主题。要求：
+- 主题长度控制在15-30个字符
+- 突出邮件核心内容
+- 语气专业且友好
+- 直接输出主题文字，不要加引号或其他符号
+
+邮件内容：
+${content}`;
+
+    const completion = await client.chat.completions.create({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 100
+    });
+
+    const subject = completion.choices[0]?.message?.content?.trim() || '邮件通知';
+    return subject;
+  }
+
+  buildSystemPrompt(siteName, mode = 'html') {
     const currentYear = new Date().getFullYear();
+    
+    if (mode === 'text') {
+      return `你是专业邮件文案编写专家。将用户的要点转为结构清晰、语气专业的纯文本邮件。
+
+【输出要求】
+- 直接输出纯文本内容，不要HTML标签
+- 不要markdown语法（如**、##等）
+- 使用简单的文本格式：换行、空行分段
+
+【结构要求】
+- 开头：简短问候语
+- 主体：清晰表达核心内容，分段合理
+- 结尾：礼貌用语 + 签名行
+
+【语气风格】
+- 专业且友好
+- 简洁明了，避免冗余
+- 符合邮件礼仪
+
+立即输出纯文本邮件：`;
+    }
+    
     return `你是专业邮件HTML生成专家。将用户文本转为精美的营销/通知邮件HTML。
 
 【输出格式】
@@ -76,13 +125,14 @@ export class AiService {
   }
 
   /**
-   * 流式渲染邮件HTML
+   * 流式渲染邮件HTML或纯文本
    * @param {Object} params - 参数对象
    * @param {string} params.subject - 邮件主题
    * @param {string} params.text - 邮件文本内容
+   * @param {string} params.mode - 生成模式：'html' 或 'text'
    * @returns {AsyncGenerator} 返回流式生成器
    */
-  async *renderEmailHTMLStream({ subject, text }) {
+  async *renderEmailHTMLStream({ subject, text, mode = 'html' }) {
     // 并行获取所有配置，减少等待时间
     const [client, model, siteName] = await Promise.all([
       this.getClient(),
@@ -90,7 +140,7 @@ export class AiService {
       this.settingsService.getSettingValue('site_name').then(name => name || 'AiQiji工具箱')
     ]);
     
-    const sys = this.buildSystemPrompt(siteName);
+    const sys = this.buildSystemPrompt(siteName, mode);
     const user = `主题：${subject || '通知'}\n内容：\n${text || ''}`;
     
     try {

@@ -9,10 +9,11 @@ interface AIStreamDialogProps {
   onOpenChange: (open: boolean) => void;
   subject?: string;
   text: string;
+  mode?: 'html' | 'text';
   onComplete?: (html: string) => void;
 }
 
-export function AIStreamDialog({ open, onOpenChange, subject, text, onComplete }: AIStreamDialogProps) {
+export function AIStreamDialog({ open, onOpenChange, subject, text, mode = 'html', onComplete }: AIStreamDialogProps) {
   const [status, setStatus] = useState<'connecting' | 'thinking' | 'generating' | 'streaming' | 'done' | 'error'>('connecting');
   const [content, setContent] = useState('');
   const [thinkingContent, setThinkingContent] = useState('');
@@ -58,7 +59,7 @@ export function AIStreamDialog({ open, onOpenChange, subject, text, onComplete }
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ subject, text }),
+          body: JSON.stringify({ subject, text, mode })
         });
 
         if (!response.ok) {

@@ -209,6 +209,25 @@ router.post('/ai-render-stream', authenticateToken, requireAdmin, [
 });
 
 /**
+ * AI生成邮件主题
+ * POST /api/v1/email/ai/generate-subject
+ */
+router.post('/ai/generate-subject', authenticateToken, requireAdmin, [
+  body('content').isString().isLength({ min: 1 }).withMessage('邮件内容不能为空')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, message: '输入验证失败', errors: errors.array() });
+    }
+    await emailController.aiGenerateSubject(req, res);
+  } catch (error) {
+    console.error('AI生成主题失败:', error);
+    res.status(500).json({ success: false, message: 'AI生成主题失败', error: error.message });
+  }
+});
+
+/**
  * 测试AI配置可用性
  * POST /api/v1/email/ai-test
  */

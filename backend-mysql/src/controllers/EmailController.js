@@ -443,7 +443,9 @@ export class EmailController {
   /** 使用AI流式渲染HTML（Server-Sent Events） */
   async aiRenderStream(req, res) {
     try {
-      const { subject, text, mode = 'html' } = req.body;
+      // 兼容 GET 与 POST：优先使用 body，其次使用 query
+      const payload = (req.body && Object.keys(req.body).length > 0) ? req.body : (req.query || {});
+      const { subject, text, mode = 'html' } = payload;
       
       // 设置SSE响应头
       res.setHeader('Content-Type', 'text/event-stream');

@@ -209,6 +209,30 @@ router.post('/ai-render-stream', authenticateToken, requireAdmin, [
 });
 
 /**
+ * 使用AI流式渲染HTML (Server-Sent Events) - 兼容 GET
+ * GET /api/v1/email/ai-render-stream
+ */
+router.get('/ai-render-stream', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    // GET 查询参数的基本校验（轻量）
+    const { subject, text } = req.query || {};
+    if (subject && typeof subject !== 'string') {
+      return res.status(400).json({ success: false, message: 'subject 必须是字符串' });
+    }
+    if (text && typeof text !== 'string') {
+      return res.status(400).json({ success: false, message: 'text 必须是字符串' });
+    }
+
+    await emailController.aiRenderStream(req, res);
+  } catch (error) {
+    console.error('AI流式渲染失败(GET):', error);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: 'AI流式渲染失败', error: error.message });
+    }
+  }
+});
+
+/**
  * AI生成邮件主题
  * POST /api/v1/email/ai/generate-subject
  */

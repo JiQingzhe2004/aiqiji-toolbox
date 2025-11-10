@@ -53,13 +53,16 @@ export function AIStreamDialog({ open, onOpenChange, subject, text, mode = 'html
         setErrorMessage('');
 
         const token = localStorage.getItem('auth_token');
-        const response = await fetch('/api/v1/email/ai-render-stream', {
-          method: 'POST',
+        const params = new URLSearchParams();
+        if (subject) params.set('subject', subject);
+        if (text) params.set('text', text);
+        if (mode) params.set('mode', mode);
+
+        const response = await fetch(`/api/v1/email/ai-render-stream?${params.toString()}`, {
+          method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ subject, text, mode })
+          }
         });
 
         if (!response.ok) {

@@ -53,17 +53,33 @@ export function AIStreamDialog({ open, onOpenChange, subject, text, mode = 'html
         setErrorMessage('');
 
         const token = localStorage.getItem('auth_token');
-        const params = new URLSearchParams();
-        if (subject) params.set('subject', subject);
-        if (text) params.set('text', text);
-        if (mode) params.set('mode', mode);
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        };
 
-        const response = await fetch(`/api/v1/email/ai-render-stream?${params.toString()}`, {
-          method: 'GET',
-          headers: {
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          }
+        const requestBody = JSON.stringify({ subject, text, mode });
+
+        let response = await fetch('/api/v1/email/ai-render-stream', {
+          method: 'POST',
+          headers,
+          body: requestBody
         });
+
+        // 某些代理/部署环境可能只允许 GET 访问，遇到 405 时回退为 GET
+        if (response.status === 405) {
+          const params = new URLSearchParams();
+          if (subject) params.set('subject', subject);
+          if (text) params.set('text', text);
+          if (mode) params.set('mode', mode);
+
+          response = await fetch(`/api/v1/email/ai-render-stream?${params.toString()}`, {
+            method: 'GET',
+            headers: {
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            }
+          });
+        }
 
         if (!response.ok) {
           throw new Error('请求失败');

@@ -25,7 +25,7 @@ const FriendLinkApplicationPage = lazy(() => import('./pages/FriendLinkApplicati
 const ToolSubmissionPage = lazy(() => import('./pages/ToolSubmissionPage'));
 const ToolDetailPage = lazy(() => import('./pages/ToolDetailPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
-
+const RevokeEmailChange = lazy(() => import('./pages/RevokeEmailChange'));
 
 /**
  * 简单加载组件 - 用于其他场景
@@ -103,6 +103,13 @@ function AppContent() {
       <Route path="/external-link" element={
         <Suspense fallback={<LoadingSpinner />}>
           <ExternalLinkPage />
+        </Suspense>
+      } />
+      
+      {/* 撤销邮箱变更页面 - 独立布局，无侧边栏 */}
+      <Route path="/auth/revoke-email-change" element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <RevokeEmailChange />
         </Suspense>
       } />
       

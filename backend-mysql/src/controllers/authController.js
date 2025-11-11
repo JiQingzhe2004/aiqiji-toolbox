@@ -5,8 +5,12 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
+import crypto from 'crypto';
 import User from '../models/User.js';
+import EmailChangeLog from '../models/EmailChangeLog.js';
 import { VerificationCodeService } from '../services/VerificationCodeService.js';
+import { EmailService } from '../services/EmailService.js';
+import { validateEmail } from '../utils/emailValidator.js';
 
 // JWT配置
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
@@ -27,11 +31,16 @@ export const login = async (req, res) => {
       });
     }
 
-    // 查找用户 - 支持用户名或邮箱登录（不按状态过滤，以便返回更准确提示）
+    // 仅支持邮箱登录
     const isEmail = username.includes('@');
-    const whereCondition = isEmail 
-      ? { email: username.toLowerCase().trim() }
-      : { username: username.toLowerCase().trim() };
+    if (!isEmail) {
+      return res.status(400).json({
+        success: false,
+        message: '仅支持邮箱登录，请使用邮箱地址'
+      });
+    }
+    const whereCondition = { email: username.toLowerCase().trim() };
+
     const user = await User.findOne({ where: whereCondition });
 
     if (!user) {
@@ -211,14 +220,14 @@ export const validateToken = async (req, res) => {
  */
 export const register = async (req, res) => {
   try {
-    const { username, email, password, displayName, verificationCode, role = 'user' } = req.body;
+    const { email, password, displayName, verificationCode, role = 'user' } = req.body;
     const verificationCodeService = new VerificationCodeService();
 
     // 验证输入
-    if (!username || !password || !email || !verificationCode || !displayName) {
+    if (!password || !email || !verificationCode || !displayName) {
       return res.status(400).json({
         success: false,
-        message: '用户名、邮箱、昵称、密码和验证码不能为空'
+        message: '邮箱、昵称、密码和验证码不能为空'
       });
     }
 
@@ -258,18 +267,6 @@ export const register = async (req, res) => {
     // 标记验证码为已使用
     await verificationCodeService.markCodeAsUsed(email, verificationCode, 'register');
 
-    // 检查用户名是否已存在
-    const existingUser = await User.findOne({
-      where: { username: username.toLowerCase().trim() }
-    });
-
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: '用户名已存在'
-      });
-    }
-
     // 检查邮箱是否已存在
     if (email) {
       const existingEmail = await User.findOne({
@@ -288,9 +285,22 @@ export const register = async (req, res) => {
     const saltRounds = 12;
     const password_hash = await bcrypt.hash(password, saltRounds);
 
+    // 自动生成唯一用户名（基于时间戳，必要时附加序号）
+    const base = `u${Date.now().toString(36)}`;
+    let generatedUsername = base;
+    let tries = 0;
+    // 确保唯一性（理论上时间戳已基本唯一，这里再做保险）
+    // 最多尝试50次避免极端情况的死循环
+    while (tries < 50) {
+      const exists = await User.findOne({ where: { username: generatedUsername } });
+      if (!exists) break;
+      tries += 1;
+      generatedUsername = `${base}${tries}`;
+    }
+
     // 创建用户
     const user = await User.create({
-      username: username.toLowerCase().trim(),
+      username: generatedUsername,
       email: email?.toLowerCase().trim(),
       display_name: displayName?.trim(),
       password_hash,
@@ -657,25 +667,36 @@ export const requestPasswordChangeCode = async (req, res) => {
       });
     }
     
-    // 发送验证码
-    const result = await VerificationCodeService.sendCode(
-      user.email,
-      'password_change',
-      req.ip,
-      req.get('User-Agent')
-    );
-    
-    if (result.success) {
-      res.json({
-        success: true,
-        message: '验证码已发送到您的邮箱'
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: result.message
-      });
+    // 发送频率限制
+    const vService = new VerificationCodeService();
+    const limit = await vService.checkSendLimit(user.email, 'password_change');
+    if (!limit.allowed) {
+      return res.status(429).json({ success: false, message: `请${limit.remainingTime}秒后再试` });
     }
+
+    // 生成验证码并记录
+    const code = await vService.generateCode(user.email, 'password_change');
+    
+    // 发送验证码邮件
+    const emailService = new EmailService();
+    const emailResult = await emailService.sendVerificationCode({
+      to: user.email,
+      code: code,
+      type: 'password_change'
+    });
+    
+    if (!emailResult.success) {
+      console.error('发送验证码邮件失败:', emailResult.message);
+      return res.status(500).json({ success: false, message: '验证码发送失败，请稍后重试' });
+    }
+    
+    console.log(`密码修改验证码已发送: ${user.email}`);
+    await vService.recordSendTime(user.email, 'password_change');
+
+    res.json({
+      success: true,
+      message: '验证码已发送到您的邮箱'
+    });
     
   } catch (error) {
     console.error('Request password change code error:', error);
@@ -736,18 +757,11 @@ export const changePassword = async (req, res) => {
       });
     }
     
-    // 验证验证码
-    const codeVerification = await VerificationCodeService.verifyCode(
-      user.email,
-      verificationCode,
-      'password_change'
-    );
-    
-    if (!codeVerification.success) {
-      return res.status(400).json({
-        success: false,
-        message: codeVerification.message
-      });
+    // 验证验证码（boolean 返回）
+    const vService = new VerificationCodeService();
+    const valid = await vService.verifyCode(user.email, verificationCode, 'password_change');
+    if (!valid) {
+      return res.status(400).json({ success: false, message: '验证码无效或已过期' });
     }
     
     // 生成新密码哈希
@@ -833,7 +847,7 @@ export const uploadUserAvatar = async (req, res) => {
       message: '服务器内部错误'
     });
   }
-};
+}
 
 /**
  * 请求邮箱修改验证码
@@ -850,13 +864,18 @@ export const requestEmailChangeCode = async (req, res) => {
       });
     }
 
-    // 验证邮箱格式
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newEmail)) {
+    // 严格验证邮箱格式和域名
+    const emailValidation = await validateEmail(newEmail, { checkDomain: true });
+    if (!emailValidation.valid) {
       return res.status(400).json({
         success: false,
-        message: '邮箱格式不正确'
+        message: emailValidation.message
       });
+    }
+    
+    // 如果有警告信息，记录但继续
+    if (emailValidation.warning) {
+      console.warn('邮箱验证警告:', emailValidation.warning);
     }
 
     // 检查新邮箱是否已被使用
@@ -868,13 +887,33 @@ export const requestEmailChangeCode = async (req, res) => {
       });
     }
 
-    // 生成并发送验证码
-    const code = VerificationCodeService.generateCode();
-    await VerificationCodeService.storeCode(userId, 'email_change', code, { newEmail });
+    // 发送频率限制（60秒一次）
+    const vService = new VerificationCodeService();
+    const limit = await vService.checkSendLimit(newEmail, 'email_change');
+    if (!limit.allowed) {
+      return res.status(429).json({ success: false, message: `请${limit.remainingTime}秒后再试` });
+    }
 
-    // 这里需要发送邮件到新邮箱
-    // TODO: 实现发送邮件功能
-    console.log(`邮箱修改验证码: ${code}, 新邮箱: ${newEmail}`);
+    // 生成并持久化验证码（加密存储）
+    const code = await vService.generateCode(newEmail, 'email_change');
+
+    // 发送验证码邮件
+    const emailService = new EmailService();
+    const emailResult = await emailService.sendVerificationCode({
+      to: newEmail,
+      code: code,
+      type: 'email_change'
+    });
+    
+    if (!emailResult.success) {
+      console.error('发送验证码邮件失败:', emailResult.message);
+      return res.status(500).json({ success: false, message: '验证码发送失败，请稍后重试' });
+    }
+    
+    console.log(`邮箱修改验证码已发送: ${newEmail}`);
+
+    // 记录发送时间计数
+    await vService.recordSendTime(newEmail, 'email_change');
 
     res.json({
       success: true,
@@ -905,32 +944,133 @@ export const changeEmail = async (req, res) => {
       });
     }
 
-    // 验证验证码
-    const isValid = await VerificationCodeService.verifyCode(userId, 'email_change', verificationCode);
-    if (!isValid) {
-      return res.status(400).json({
-        success: false,
-        message: '验证码无效或已过期'
-      });
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      return res.status(400).json({ success: false, message: '邮箱格式不正确' });
     }
 
     // 再次检查新邮箱是否已被使用
-    const existingUser = await User.findOne({ where: { email: newEmail } });
+    const existingUser = await User.findOne({ where: { email: newEmail.toLowerCase().trim() } });
     if (existingUser && existingUser.id !== userId) {
-      return res.status(400).json({
-        success: false,
-        message: '该邮箱已被其他用户使用'
-      });
+      return res.status(409).json({ success: false, message: '该邮箱已被其他用户使用' });
+    }
+
+    // 验证验证码（以新邮箱为校验主体）
+    const vService = new VerificationCodeService();
+    const valid = await vService.verifyCode(newEmail, verificationCode, 'email_change');
+    if (!valid) {
+      return res.status(400).json({ success: false, message: '验证码无效或已过期' });
     }
 
     // 更新用户邮箱
     const user = await User.findByPk(userId);
-    await user.update({ email: newEmail });
+    if (!user) {
+      return res.status(404).json({ success: false, message: '用户不存在' });
+    }
+    
+    const oldEmail = user.email;
+    
+    // 生成撤销令牌（48小时有效期）
+    const revokeToken = crypto.randomBytes(32).toString('hex');
+    const revokeExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48小时后
+    
+    // 创建邮箱变更日志
+    const changeLog = await EmailChangeLog.create({
+      user_id: userId,
+      old_email: oldEmail,
+      new_email: newEmail.toLowerCase().trim(),
+      status: 'pending',
+      revoke_token: revokeToken,
+      revoke_expires_at: revokeExpiresAt,
+      ip_address: req.ip || req.connection.remoteAddress,
+      user_agent: req.get('User-Agent')
+    });
+    
+    // 更新用户邮箱
+    await user.update({ email: newEmail.toLowerCase().trim() });
 
-    // 清除验证码
-    await VerificationCodeService.clearCode(userId, 'email_change');
+    // 标记验证码为已使用
+    await vService.markCodeAsUsed(newEmail, verificationCode, 'email_change');
 
-    res.json({
+    // 向旧邮箱发送通知（如果旧邮箱存在）
+    if (oldEmail) {
+      try {
+        const emailService = new EmailService();
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const revokeUrl = `${frontendUrl}/auth/revoke-email-change?token=${revokeToken}`;
+        
+        await emailService.sendEmail({
+          to: [oldEmail],
+          subject: '【爱奇迹工具箱】邮箱变更通知 - 48小时内可撤销',
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+                .content { background: #fff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; }
+                .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+                .info-box { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                .button { display: inline-block; background: #dc3545; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
+                .button:hover { background: #c82333; }
+                .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
+                .highlight { color: #667eea; font-weight: bold; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1 style="margin: 0;">邮箱变更通知</h1>
+                </div>
+                <div class="content">
+                  <p>您好，</p>
+                  <p>您的账号邮箱已从 <strong>${oldEmail}</strong> 变更为 <strong>${newEmail}</strong>。</p>
+                  
+                  <div class="warning">
+                    <strong>⚠️ 重要提示</strong><br>
+                    如果这<strong>不是</strong>您本人的操作，或者您输错了新邮箱地址，请立即点击下方按钮撤销此次变更。
+                  </div>
+                  
+                  <div class="info-box">
+                    <p style="margin: 0;"><strong>冷静期说明：</strong></p>
+                    <ul style="margin: 10px 0;">
+                      <li>您有 <span class="highlight">48 小时</span>的时间撤销此次邮箱变更</li>
+                      <li>撤销后，您的邮箱将恢复为 <strong>${oldEmail}</strong></li>
+                      <li>48 小时后，变更将自动生效且无法撤销</li>
+                    </ul>
+                  </div>
+                  
+                  <div style="text-align: center;">
+                    <a href="${revokeUrl}" class="button">立即撤销邮箱变更</a>
+                  </div>
+                  
+                  <p style="font-size: 12px; color: #666; margin-top: 20px;">
+                    如果按钮无法点击，请复制以下链接到浏览器打开：<br>
+                    <code style="background: #f5f5f5; padding: 5px; display: inline-block; margin-top: 5px; word-break: break-all;">${revokeUrl}</code>
+                  </p>
+                  
+                  <div class="footer">
+                    <p>此邮件由系统自动发送，请勿直接回复。</p>
+                    <p>© ${new Date().getFullYear()} 爱奇迹工具箱 版权所有</p>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+          `
+        });
+        console.log(`邮箱变更通知已发送到旧邮箱: ${oldEmail}，撤销令牌: ${revokeToken}`);
+      } catch (emailError) {
+        console.error('发送邮箱变更通知失败:', emailError);
+        // 不影响主流程，但记录日志
+      }
+    }
+
+    return res.json({
       success: true,
       message: '邮箱修改成功',
       data: {
@@ -945,12 +1085,118 @@ export const changeEmail = async (req, res) => {
         updated_at: user.updated_at
       }
     });
-
   } catch (error) {
     console.error('Change email error:', error);
-    res.status(500).json({
-      success: false,
-      message: '服务器内部错误'
+    return res.status(500).json({ success: false, message: '服务器内部错误' });
+  }
+};
+
+/**
+ * 撤销邮箱变更
+ */
+export const revokeEmailChange = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, message: '撤销令牌不能为空' });
+    }
+
+    // 查找变更日志
+    const changeLog = await EmailChangeLog.findOne({
+      where: {
+        revoke_token: token,
+        status: 'pending'
+      }
     });
+
+    if (!changeLog) {
+      return res.status(404).json({ success: false, message: '撤销令牌无效或已使用' });
+    }
+
+    // 检查是否过期
+    if (new Date() > new Date(changeLog.revoke_expires_at)) {
+      await changeLog.update({ status: 'confirmed', confirmed_at: new Date() });
+      return res.status(400).json({ success: false, message: '撤销期限已过，邮箱变更已生效' });
+    }
+
+    // 查找用户
+    const user = await User.findByPk(changeLog.user_id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: '用户不存在' });
+    }
+
+    // 恢复旧邮箱
+    await user.update({ email: changeLog.old_email });
+
+    // 更新日志状态
+    await changeLog.update({
+      status: 'revoked',
+      revoked_at: new Date()
+    });
+
+    // 向新邮箱发送通知（告知撤销）
+    try {
+      const emailService = new EmailService();
+      await emailService.sendEmail({
+        to: [changeLog.new_email],
+        subject: '【爱奇迹工具箱】邮箱变更已撤销',
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">邮箱变更已撤销</h2>
+            <p>您好，</p>
+            <p>您的账号邮箱变更已被撤销，邮箱已恢复为 <strong>${changeLog.old_email}</strong>。</p>
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+              此邮件由系统自动发送，请勿直接回复。<br>
+              © ${new Date().getFullYear()} 爱奇迹工具箱
+            </p>
+          </div>
+        `
+      });
+    } catch (emailError) {
+      console.error('发送撤销通知失败:', emailError);
+    }
+
+    // 向旧邮箱发送确认通知
+    if (changeLog.old_email) {
+      try {
+        const emailService = new EmailService();
+        await emailService.sendEmail({
+          to: [changeLog.old_email],
+          subject: '【爱奇迹工具箱】邮箱变更撤销成功',
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #28a745;">✓ 邮箱变更撤销成功</h2>
+              <p>您好，</p>
+              <p>您的账号邮箱变更已成功撤销，您的邮箱仍然是 <strong>${changeLog.old_email}</strong>。</p>
+              <p style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0;">
+                <strong>✓ 您的账号安全</strong><br>
+                如果这是您本人的操作，说明您已成功保护了账号安全。
+              </p>
+              <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                此邮件由系统自动发送，请勿直接回复。<br>
+                © ${new Date().getFullYear()} 爱奇迹工具箱
+              </p>
+            </div>
+          `
+        });
+      } catch (emailError) {
+        console.error('发送撤销确认通知失败:', emailError);
+      }
+    }
+
+    console.log(`邮箱变更已撤销: 用户 ${user.id}, 从 ${changeLog.new_email} 恢复为 ${changeLog.old_email}`);
+
+    return res.json({
+      success: true,
+      message: '邮箱变更已成功撤销',
+      data: {
+        old_email: changeLog.old_email,
+        revoked_at: changeLog.revoked_at
+      }
+    });
+  } catch (error) {
+    console.error('Revoke email change error:', error);
+    return res.status(500).json({ success: false, message: '服务器内部错误' });
   }
 };

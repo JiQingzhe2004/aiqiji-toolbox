@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { User, Camera, Lock, Mail, Eye, EyeOff, Shuffle, MessageCircle } from 'lucide-react';
+import { User, Camera, Lock, Mail, Eye, EyeOff, Shuffle, MessageCircle, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -250,11 +250,29 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
       return;
     }
 
-    // 验证邮箱格式
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newEmail)) {
-      toast.error('邮箱格式不正确');
+    // 严格验证邮箱格式
+    const strictEmailRegex = /^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$/;
+    if (!strictEmailRegex.test(newEmail)) {
+      toast.error('邮箱格式不符合规范，请检查是否有拼写错误');
       return;
+    }
+
+    // 检查常见的邮箱拼写错误
+    const commonTypos = [
+      { wrong: '@gmial.com', correct: '@gmail.com' },
+      { wrong: '@gmai.com', correct: '@gmail.com' },
+      { wrong: '@163.con', correct: '@163.com' },
+      { wrong: '@qq.con', correct: '@qq.com' },
+      { wrong: '@126.con', correct: '@126.com' },
+      { wrong: '@outlok.com', correct: '@outlook.com' },
+      { wrong: '@hotmial.com', correct: '@hotmail.com' }
+    ];
+
+    for (const typo of commonTypos) {
+      if (newEmail.toLowerCase().endsWith(typo.wrong)) {
+        toast.error(`邮箱地址可能有误，您是否想输入 ${newEmail.replace(new RegExp(typo.wrong + '$', 'i'), typo.correct)}？`);
+        return;
+      }
     }
 
     setIsSendingEmailCode(true);
@@ -262,13 +280,14 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
       const response = await userApi.requestEmailChangeCode(newEmail);
       
       if (response.success) {
-        toast.success('验证码已发送到新邮箱');
+        toast.success('验证码已发送到新邮箱，请注意查收（包括垃圾邮件箱）');
         setEmailCodeSent(true);
       } else {
         toast.error(response.message || '发送验证码失败');
       }
-    } catch (error) {
-      toast.error('发送验证码失败');
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.message || '发送验证码失败';
+      toast.error(errorMsg);
     } finally {
       setIsSendingEmailCode(false);
     }
@@ -278,6 +297,15 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
   const handleChangeEmail = async () => {
     if (!newEmail.trim() || !emailVerificationCode.trim()) {
       toast.error('请填写所有必填字段');
+      return;
+    }
+
+    // 二次确认，防止用户输错邮箱
+    const confirmed = window.confirm(
+      `请确认新邮箱地址是否正确：\n\n${newEmail}\n\n验证码将发送到此邮箱，如果邮箱地址有误，您将无法收到验证码。\n\n确认无误后点击"确定"继续。`
+    );
+    
+    if (!confirmed) {
       return;
     }
 
@@ -370,12 +398,10 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
             <Avatar className="w-24 h-24">
               <AvatarImage src={avatarPreview || undefined} />
               <AvatarFallback className="text-xl">
-                {user.display_name?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase()}
+                {user.display_name?.charAt(0)?.toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            
             <div className="space-y-3 flex-1">
-              {/* 文件上传区域 */}
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
@@ -386,7 +412,6 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
                   <Camera className="w-4 h-4 mr-2" />
                   选择头像
                 </Button>
-                
                 {avatarFile && (
                   <Button
                     size="sm"
@@ -397,8 +422,6 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
                   </Button>
                 )}
               </div>
-
-              {/* 头像获取区域 */}
               <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
@@ -409,7 +432,6 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
                   <Shuffle className="w-4 h-4 mr-2" />
                   {isGeneratingAvatar ? '生成中...' : '随机头像'}
                 </Button>
-                
                 {user.email && checkIsQQEmail(user.email) && (
                   <Button
                     variant="outline"
@@ -422,8 +444,6 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
                   </Button>
                 )}
               </div>
-
-              {/* 头像确认区域 */}
               {pendingAvatarUrl && (
                 <div className="flex gap-2 p-3 bg-muted rounded-lg">
                   <div className="flex-1">
@@ -449,13 +469,11 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
                   </div>
                 </div>
               )}
-              
               <p className="text-sm text-muted-foreground">
                 支持 JPG、PNG、GIF 格式，文件大小不超过 2MB
               </p>
             </div>
           </div>
-          
           <input
             ref={fileInputRef}
             type="file"
@@ -477,16 +495,6 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="username">用户名</Label>
-              <Input
-                id="username"
-                value={user.username}
-                disabled
-                className="bg-muted"
-              />
-            </div>
-            
-            <div className="space-y-2">
               <Label htmlFor="email">当前邮箱</Label>
               <Input
                 id="email"
@@ -495,24 +503,29 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
                 className="bg-muted"
               />
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="displayName">昵称</Label>
-            <div className="flex gap-2">
-              <Input
-                id="displayName"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="请输入昵称"
-                maxLength={100}
-              />
-              <Button
-                onClick={handleUpdateProfile}
-                disabled={isUpdatingProfile || displayName === user.display_name}
-              >
-                {isUpdatingProfile ? '更新中...' : '更新'}
-              </Button>
+            <div className="space-y-2">
+              <Label htmlFor="displayName">昵称</Label>
+              <div className="relative">
+                <Input
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="请输入昵称"
+                  maxLength={100}
+                  className="pr-12"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                  onClick={handleUpdateProfile}
+                  disabled={isUpdatingProfile || displayName === user.display_name}
+                  title="保存昵称"
+                >
+                  <Check className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -536,6 +549,9 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
               onChange={(e) => setNewEmail(e.target.value)}
               placeholder="请输入新的邮箱地址"
             />
+            <p className="text-xs text-muted-foreground">
+              请仔细核对邮箱地址，验证码将发送到此邮箱
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -556,6 +572,11 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
                 {isSendingEmailCode ? '发送中...' : emailCodeSent ? '重新发送' : '发送验证码'}
               </Button>
             </div>
+            {emailCodeSent && (
+              <p className="text-xs text-muted-foreground">
+                验证码已发送到 <strong>{newEmail}</strong>，请查收邮件（包括垃圾邮件箱）
+              </p>
+            )}
           </div>
 
           <Button

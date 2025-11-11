@@ -419,7 +419,7 @@ export default function UserPage() {
     updated_at: userInfo.created_at
   };
 
-  // 处理用户信息更新
+  // 处理用户信息更新（保持编辑模式，不退出）
   const handleUserUpdate = (updatedUser: UserProfile) => {
     setUserInfo(prev => prev ? {
       ...prev,
@@ -429,7 +429,6 @@ export default function UserPage() {
         avatar: updatedUser.avatar_url
       }
     } : null);
-    setIsEditing(false);
   };
 
   return (
@@ -452,7 +451,7 @@ export default function UserPage() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold">
-                {isOwnProfile ? '个人中心' : `${userInfo.profile?.display_name || userInfo.username} 的资料`}
+                {isOwnProfile ? '个人中心' : `${userInfo.profile?.display_name || '个人资料'}`}
               </h1>
               <p className="text-muted-foreground">
                 {isOwnProfile ? '管理您的个人信息和账户设置' : '查看用户公开信息'}
@@ -491,14 +490,6 @@ export default function UserPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">用户名</p>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <User className="w-4 h-4" />
-                      <span>{userInfo.username}</span>
-                    </div>
-                  </div>
-                  
                   {userInfo.email && (
                     <div className="space-y-1">
                       <p className="text-sm font-medium">邮箱</p>
@@ -567,14 +558,12 @@ export default function UserPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="text-center space-y-4">
-                  {/* 用户名和昵称 */}
+                  {/* 用户昵称 */}
                   <div>
                     <h1 className="text-2xl font-bold mb-1">
-                      {userInfo.profile?.display_name || userInfo.username}
+                      {userInfo.profile?.display_name || '用户'}
                     </h1>
-                    {userInfo.profile?.display_name && (
-                      <p className="text-muted-foreground">@{userInfo.username}</p>
-                    )}
+                    {/* 不展示用户名 */}
                   </div>
 
                   {/* 角色和状态徽章 */}
@@ -667,13 +656,7 @@ export default function UserPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">用户名</p>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <User className="w-4 h-4" />
-                  <span>{userInfo.username}</span>
-                </div>
-              </div>
+              {/* 用户名不再展示 */}
               
               {/* 邮箱仅在用户自己的页面或管理员身份时显示 */}
               {userInfo.email && (isOwnProfile || currentUser?.role === 'admin') && (

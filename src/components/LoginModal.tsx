@@ -26,7 +26,7 @@ interface LoginModalProps {
 
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const [formData, setFormData] = useState({
-    username: '', // 支持用户名或邮箱
+    username: '', // 使用邮箱登录
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -44,6 +44,12 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     
     if (!formData.username.trim() || !formData.password.trim()) {
       toast.error('请填写完整的登录信息');
+      return;
+    }
+    // 仅支持邮箱登录
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.username.trim())) {
+      toast.error('仅支持邮箱登录，请输入有效的邮箱地址');
       return;
     }
 
@@ -127,18 +133,18 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
           onSubmit={handleSubmit} 
           className="space-y-5 px-2 pb-4"
         >
-          {/* 用户名输入 */}
+          {/* 邮箱输入 */}
           <div className="space-y-2">
             <Label htmlFor="username" className="text-sm font-semibold text-foreground flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-primary" />
-              用户名/邮箱
+              邮箱
             </Label>
             <Input
               id="username"
-              type="text"
+              type="email"
               value={formData.username}
               onChange={(e) => handleInputChange('username', e.target.value)}
-              placeholder="请输入用户名或邮箱地址"
+              placeholder="请输入邮箱地址"
               disabled={isLoading}
               autoComplete="username"
               required

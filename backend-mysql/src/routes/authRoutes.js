@@ -3,7 +3,7 @@
  */
 
 import express from 'express';
-import { login, register, validateToken, logout, changePassword, updateProfile, getProfile, getUserByUsername, checkEmailExists, checkUsernameExists, requestPasswordChangeCode, uploadUserAvatar, requestEmailChangeCode, changeEmail } from '../controllers/authController.js';
+import { login, register, validateToken, logout, changePassword, updateProfile, getProfile, getUserByUsername, checkEmailExists, checkUsernameExists, requestPasswordChangeCode, uploadUserAvatar, requestEmailChangeCode, changeEmail, revokeEmailChange } from '../controllers/authController.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { uploadAvatar, processAvatar, handleUploadError } from '../middleware/upload.js';
 
@@ -49,6 +49,9 @@ router.post('/request-email-change-code', authenticateToken, requestEmailChangeC
 
 // 修改邮箱
 router.post('/change-email', authenticateToken, changeEmail);
+
+// 撤销邮箱变更（无需登录，通过token验证）
+router.post('/revoke-email-change', revokeEmailChange);
 
 // 根据用户名获取公开用户信息（无需登录）
 router.get('/user/:username', getUserByUsername);

@@ -27,6 +27,7 @@ import feedbackRoutes from './routes/feedbackRoutes.js';
 import './models/Favorite.js';
 import './models/EmailTemplate.js';
 import './models/EmailLog.js';
+import './models/EmailChangeLog.js';
 
 // 加载环境变量
 dotenv.config();
@@ -366,6 +367,16 @@ class Server {
         }
       } catch (e) {
         console.warn('⚠️ 同步 email_logs 表时出现问题（将继续启动）:', e?.message || e);
+      }
+
+      try {
+        const { default: EmailChangeLog } = await import('./models/EmailChangeLog.js');
+        await EmailChangeLog.sync();
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ 已单独同步 email_change_logs 表');
+        }
+      } catch (e) {
+        console.warn('⚠️ 同步 email_change_logs 表时出现问题（将继续启动）:', e?.message || e);
       }
 
       // 自动运行数据库初始化和升级

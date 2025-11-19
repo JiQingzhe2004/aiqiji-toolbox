@@ -11,7 +11,8 @@ import {
   Link2,
   Globe,
   Image,
-  RefreshCw
+  RefreshCw,
+  Move
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,8 @@ export function AdminFriendLinkManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   
   // 友情链接弹窗状态
   const [modal, setModal] = useState({
@@ -198,6 +201,58 @@ export function AdminFriendLinkManager() {
     } catch (error) {
       console.error('保存友情链接失败:', error);
       toast.error('保存友情链接失败');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const reorderLinks = (fromIndex: number, toIndex: number) => {
+    const updated = [...friendLinks];
+    const [movedItem] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, movedItem);
+    return updated;
+  };
+
+  const handleDragStart = (index: number) => {
+    if (saving) return;
+    setDragIndex(index);
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnter = (index: number) => {
+    if (dragIndex === null || saving) return;
+    setDragOverIndex(index);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>, targetIndex: number) => {
+    event.preventDefault();
+    if (dragIndex === null || dragIndex === targetIndex) {
+      handleDragEnd();
+      return;
+    }
+
+    const previousLinks = [...friendLinks];
+    const reordered = reorderLinks(dragIndex, targetIndex);
+    setFriendLinks(reordered);
+    handleDragEnd();
+
+    try {
+      setSaving(true);
+      await saveFriendLinksToBackend(reordered);
+      toast.success('友情链接顺序已更新');
+    } catch (error) {
+      console.error('调整友情链接顺序失败:', error);
+      setFriendLinks(previousLinks);
+      toast.error('调整友情链接顺序失败');
     } finally {
       setSaving(false);
     }
@@ -366,8 +421,18 @@ export function AdminFriendLinkManager() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.2, delay: idx * 0.05 }}
+                  draggable={!saving}
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragEnter={() => handleDragEnter(idx)}
+                  onDragOver={handleDragOver}
+                  onDragEnd={handleDragEnd}
+                  onDrop={(event) => handleDrop(event, idx)}
                 >
-                  <Card className="border-2 hover:border-primary/30 transition-colors">
+                  <Card
+                    className={`border-2 transition-colors cursor-grab active:cursor-grabbing ${
+                      dragOverIndex === idx ? 'border-primary shadow-lg ring-2 ring-primary/40' : 'hover:border-primary/30'
+                    }`}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
@@ -398,7 +463,16 @@ export function AdminFriendLinkManager() {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap items-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="cursor-grab active:cursor-grabbing"
+                          title="拖动排序"
+                          disabled={saving}
+                        >
+                          <Move className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -458,7 +532,7 @@ export function AdminFriendLinkManager() {
             <li>网站图标支持 ico、png、jpg、svg 等格式</li>
             <li>建议图标尺寸为 16x16 或 32x32 像素</li>
             <li>友情链接添加、编辑、删除操作会立即生效</li>
-            <li>支持手动排序，按添加顺序显示</li>
+            <li>支持拖动卡片调整顺序，展示顺序可自定义</li>
           </ul>
         </AlertDescription>
       </Alert>

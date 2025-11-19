@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ExternalLink, Globe, Users, Heart, ArrowLeft, Home, Info } from 'lucide-react';
+import { ExternalLink, Globe, Users, Heart, ArrowLeft, Home, Info, Shuffle, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -26,6 +26,16 @@ export function FriendLinksPage() {
   const [loading, setLoading] = useState(true);
   const [showBackButton, setShowBackButton] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [randomLoading, setRandomLoading] = useState(false);
+  const [randomDisplayLink, setRandomDisplayLink] = useState<FriendLink | null>(null);
+  const [randomResultLink, setRandomResultLink] = useState<FriendLink | null>(null);
+  const [randomCountdown, setRandomCountdown] = useState<number | null>(null);
+  const [randomDialogOpen, setRandomDialogOpen] = useState(false);
+
+  const shuffleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const openTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 设置友情链接页SEO
   useSEO(SEOPresets.friendLinks());
@@ -121,6 +131,50 @@ export function FriendLinksPage() {
     }
   }, [websiteInfo]);
 
+  const friendLinks = websiteInfo?.friend_links || [];
+
+  const safeHostname = (url: string) => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  };
+
+  const clearRandomTimers = () => {
+    if (shuffleIntervalRef.current) {
+      clearInterval(shuffleIntervalRef.current);
+      shuffleIntervalRef.current = null;
+    }
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    if (openTimeoutRef.current) {
+      clearTimeout(openTimeoutRef.current);
+      openTimeoutRef.current = null;
+    }
+  };
+
+  const resetRandomState = () => {
+    clearRandomTimers();
+    setRandomLoading(false);
+    setRandomDisplayLink(null);
+    setRandomResultLink(null);
+    setRandomCountdown(null);
+    setRandomDialogOpen(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      resetRandomState();
+    };
+  }, []);
+
   // 生成SEO数据
   const seoData = websiteInfo ? {
     structuredData: {
@@ -180,7 +234,68 @@ export function FriendLinksPage() {
     );
   }
 
-  const friendLinks = websiteInfo?.friend_links || [];
+  const handleRandomVisit = () => {
+    if (!friendLinks.length || randomLoading) {
+      if (!friendLinks.length) {
+        toast('当前暂无可跳转的友链', {
+          icon: '🤔',
+          duration: 2500,
+          position: 'top-center'
+        });
+      }
+      return;
+    }
+
+    resetRandomState();
+    setRandomLoading(true);
+    setRandomDialogOpen(true);
+    setRandomResultLink(null);
+    setRandomCountdown(null);
+
+    toast('✨ 正在抽取幸运友链...', {
+      duration: 2000,
+      position: 'top-center'
+    });
+
+    const targetLink = friendLinks[Math.floor(Math.random() * friendLinks.length)];
+
+    shuffleIntervalRef.current = setInterval(() => {
+      const randomLink = friendLinks[Math.floor(Math.random() * friendLinks.length)];
+      setRandomDisplayLink(randomLink);
+    }, 120);
+
+    animationTimeoutRef.current = setTimeout(() => {
+      if (shuffleIntervalRef.current) {
+        clearInterval(shuffleIntervalRef.current);
+        shuffleIntervalRef.current = null;
+      }
+      setRandomDisplayLink(targetLink);
+      setRandomResultLink(targetLink);
+      setRandomCountdown(3);
+
+      countdownIntervalRef.current = setInterval(() => {
+        setRandomCountdown(prev => {
+          if (!prev || prev <= 1) {
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      openTimeoutRef.current = setTimeout(() => {
+        window.open(targetLink.url, '_blank', 'noopener,noreferrer');
+        toast(`🎉 即将前往：${targetLink.name}`, {
+          duration: 2000,
+          position: 'top-center'
+        });
+        resetRandomState();
+      }, 3000);
+    }, 2000);
+  };
 
   return (
     <>
@@ -262,6 +377,76 @@ export function FriendLinksPage() {
                     共收录 <span className="text-primary font-bold">{friendLinks.length}</span> 个优质站点
                   </span>
                 </div>
+                <div className="mt-4 flex flex-col items-center justify-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="relative gap-2 rounded-full px-6 py-5 text-base font-semibold tracking-wide bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90 hover:shadow-primary/40 transition-all duration-200"
+                    onClick={handleRandomVisit}
+                    disabled={!friendLinks.length || randomLoading}
+                  >
+                    {randomLoading ? (
+                      <span className="flex items-center gap-2 text-sm">
+                        <span className="w-3 h-3 rounded-full border-2 border-primary-foreground/80 border-t-transparent animate-spin" />
+                        正在为你挑选...
+                      </span>
+                    ) : (
+                      <>
+                        <Shuffle className="w-4 h-4" />
+                        随机跳转一个友链
+                      </>
+                    )}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    想不到去哪？试试随机跳转，发现有趣站点
+                  </span>
+                </div>
+              <Dialog
+                open={randomDialogOpen}
+                onOpenChange={(open) => {
+                  if (!randomLoading) {
+                    setRandomDialogOpen(open);
+                  }
+                }}
+              >
+                <DialogContent className="max-w-md rounded-2xl border border-primary/30 bg-gradient-to-b from-background to-muted/50 text-center">
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="flex items-center gap-2 text-primary font-semibold">
+                      <Sparkles className="w-4 h-4" />
+                      随机友链
+                    </div>
+                    <div className="relative w-48 h-48 flex items-center justify-center">
+                      <div className="absolute inset-2 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+                      <div className="absolute inset-6 rounded-full border border-dashed border-primary/30 animate-[spin_8s_linear_infinite]"></div>
+                      <div className="relative flex flex-col items-center justify-center gap-3">
+                        {randomDisplayLink?.icon ? (
+                          <img
+                            src={randomDisplayLink.icon}
+                            alt={randomDisplayLink.name}
+                            className="w-16 h-16 object-contain"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                            {(randomDisplayLink?.name?.charAt(0) || '友').toUpperCase()}
+                          </div>
+                        )}
+                        <p className="text-sm font-semibold px-4 truncate max-w-[8rem]">
+                          {randomDisplayLink?.name || '准备开始'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {randomResultLink
+                        ? randomCountdown && randomCountdown > 0
+                          ? `抽取完成，${randomCountdown}s 后自动跳转`
+                          : '正在跳转，请稍候...'
+                        : randomLoading
+                          ? '抽选进行中，请稍候...'
+                          : '准备开始抽选'}
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
               </motion.div>
 
               {/* 友情链接网格 */}

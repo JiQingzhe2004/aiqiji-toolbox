@@ -30,6 +30,33 @@ import { settingsApi } from '@/services/settingsApi';
 import type { WebsiteInfo } from '@/services/settingsApi';
 import packageJson from '../../package.json';
 
+type FriendLink = NonNullable<WebsiteInfo['friend_links']>[number];
+
+const FriendLinkIcon: React.FC<{ link: FriendLink }> = ({ link }) => {
+  const [iconError, setIconError] = useState(false);
+  const fallbackChar = (link.name?.trim()?.charAt(0) || '友').toUpperCase();
+
+  if (!link.icon || iconError) {
+    return (
+      <div
+        className="w-4 h-4 rounded-sm bg-muted text-[10px] font-semibold text-foreground/80 flex items-center justify-center uppercase"
+        aria-hidden="true"
+      >
+        {fallbackChar}
+      </div>
+    );
+  }
+
+  return (
+    <SEOImage
+      {...SEOImagePresets.friendLinkIcon(link.icon, link.name)}
+      className="w-4 h-4 object-contain rounded-sm"
+      description={`友情链接：${link.name}的网站图标`}
+      onError={() => setIconError(true)}
+    />
+  );
+};
+
 /**
  * 页面底部组件
  * 包含版权信息、作者信息、外部链接等
@@ -396,29 +423,10 @@ export function Footer() {
                   title={`访问 ${link.name}`}
                   aria-label={`访问友情链接：${link.name}`}
                 >
-                {link.icon ? (
-                  <SEOImage 
-                    {...SEOImagePresets.friendLinkIcon(link.icon, link.name)}
-                    className="w-4 h-4 object-contain rounded-sm"
-                    description={`友情链接：${link.name}的网站图标`}
-                    onError={(e) => {
-                      // 如果自定义图标加载失败，使用默认外链图标
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const parent = target.parentElement;
-                      if (parent) {
-                        const fallback = document.createElement('div');
-                        fallback.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>';
-                        parent.appendChild(fallback);
-                      }
-                    }}
-                  />
-                ) : (
-                  <ExternalLink className="w-4 h-4" />
-                )}
-                <span>{link.name}</span>
-              </a>
-            ))}
+                  <FriendLinkIcon link={link} />
+                  <span>{link.name}</span>
+                </a>
+              ))}
             </nav>
           </section>
           </>

@@ -45,6 +45,7 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
     sort_order: tool?.sort_order || 0,
     tags: tool?.tags || [] as string[],
     needs_vpn: tool?.needs_vpn || false,
+    is_cloud_storage: tool?.is_cloud_storage || false,  // 添加网盘链接标识字段
   });
 
   const [newTag, setNewTag] = useState('');
@@ -377,6 +378,20 @@ export function AdminToolForm({ tool, onSave, onClose, saving = false }: AdminTo
                 <Switch
                   checked={formData.needs_vpn}
                   onCheckedChange={(checked) => handleInputChange('needs_vpn', checked)}
+                />
+              </div>
+              
+              {/* 添加网盘链接标识开关 */}
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label>网盘链接</Label>
+                  <p className="text-sm text-muted-foreground">
+                    标记该工具是否为网盘链接
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.is_cloud_storage}
+                  onCheckedChange={(checked) => handleInputChange('is_cloud_storage', checked)}
                 />
               </div>
             </div>

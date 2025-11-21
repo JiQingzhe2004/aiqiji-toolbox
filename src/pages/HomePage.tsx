@@ -192,25 +192,6 @@ const HomePage = memo(function HomePage({ searchQuery: globalSearchQuery = '', o
         className="relative z-10 bg-background dark:bg-black min-h-screen pt-8 md:pt-12 pb-8 md:pb-12"
       >
         <div className="container mx-auto px-4 max-w-7xl">
-          {/* 平板端分类标签 */}
-          {!isLoading && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="hidden md:block xl:hidden mb-8"
-            >
-              <div className="flex justify-center">
-                <CategoryTabs
-                  categories={categories}
-                  activeCategory={activeCategory}
-                  onChange={handleCategoryChange}
-                  className="flex-wrap justify-center"
-                />
-              </div>
-            </motion.div>
-          )}
-
           {/* 动态页面标题 - 当有分类参数时显示 */}
           {currentCategory && (
             <motion.div

@@ -148,11 +148,11 @@ export function SidebarCategoryTabs({
           animate="visible"
           exit="exit"
           className={cn(
-            'fixed right-6 z-40',
+            'fixed z-40',
             'top-[35vh]', // 直接设置距离顶部35%的位置，视觉上更居中
-            'hidden xl:flex flex-col items-center justify-center',
-            // 确保在有侧边栏时调整位置
-            'xl:right-8', // 在大屏时稍微远离右边缘
+            'hidden md:flex xl:hidden flex-col items-center justify-center',
+            // 平板端显示，笔记本/桌面端隐藏
+            'md:right-6 lg:right-8', // 平板端稍微靠近边缘，大平板稍微远离
             className
           )}
         >

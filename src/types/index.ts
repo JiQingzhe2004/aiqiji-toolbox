@@ -37,6 +37,8 @@ export interface Tool {
   sort_order: number;
   /** 是否需要VPN访问 */
   needs_vpn: boolean;
+  /** 是否为网盘链接 */
+  is_cloud_storage: boolean;
   /** 创建时间 */
   created_at: string;
   /** 更新时间 */

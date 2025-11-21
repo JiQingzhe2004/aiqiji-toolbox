@@ -190,6 +190,13 @@ const Tool = sequelize.define('Tool', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
     comment: '是否需要VPN访问'
+  },
+  
+  // 添加网盘链接标识字段
+  is_cloud_storage: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    comment: '是否为网盘链接'
   }
 }, {
   tableName: 'tools',

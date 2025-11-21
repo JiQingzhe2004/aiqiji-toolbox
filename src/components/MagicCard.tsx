@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
-import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone, ShieldBan, ShieldAlert, X, Shield, Heart } from 'lucide-react';
+import { ExternalLink, Copy, Star, Calendar, CheckCircle, TabletSmartphone, ShieldBan, ShieldAlert, X, Shield, Heart, Cloud } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -447,40 +447,82 @@ export const MagicCard = memo(function MagicCard({
           </div>
           
           {/* 推荐标识和状态标识 */}
-          <div className="absolute top-3 right-3 flex flex-col gap-1.5">
-            {tool.featured && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/90 backdrop-blur-sm text-yellow-50 rounded-full text-xs font-medium shadow-sm">
-                <Star className="w-3 h-3 fill-current" />
-                推荐
-              </div>
-            )}
-            {/* VPN标识 */}
-            {showVpnIndicator && tool.needs_vpn && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/90 backdrop-blur-sm text-blue-50 rounded-full text-xs font-medium shadow-sm">
-                <Shield className="w-3 h-3" />
-                VPN
-              </div>
-            )}
-            {/* 状态标识 */}
-            {tool.status !== 'active' && (
-              <div className={cn(
-                "flex items-center gap-1 px-2 py-1 backdrop-blur-sm rounded-full text-xs font-medium shadow-sm",
-                tool.status === 'inactive' && "bg-red-500/90 text-red-50",
-                tool.status === 'maintenance' && "bg-yellow-600/90 text-yellow-50"
-              )}>
-                {tool.status === 'inactive' ? (
-                  <>
-                    <ShieldBan className="w-3 h-3" />
-                    停用
-                  </>
-                ) : (
-                  <>
-                    <ShieldAlert className="w-3 h-3" />
-                    维护
-                  </>
-                )}
-              </div>
-            )}
+          <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
+            <TooltipProvider delayDuration={0}>
+              {tool.featured && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/90 backdrop-blur-sm text-yellow-50 rounded-full text-xs font-medium shadow-sm cursor-help">
+                      <Star className="w-3 h-3 fill-current" />
+                      推荐
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-popover text-popover-foreground border border-border shadow-md">
+                    <p className="text-sm">站长推荐工具</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              {/* 网盘链接标识 */}
+              {tool.is_cloud_storage && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-green-500/90 backdrop-blur-sm text-green-50 rounded-full text-xs font-medium shadow-sm cursor-help">
+                      <Cloud className="w-3 h-3" />
+                      网盘
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-popover text-popover-foreground border border-border shadow-md">
+                    <p className="text-sm">此工具为网盘链接</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              {/* VPN标识 */}
+              {showVpnIndicator && tool.needs_vpn && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/90 backdrop-blur-sm text-blue-50 rounded-full text-xs font-medium shadow-sm cursor-help">
+                      <Shield className="w-3 h-3" />
+                      VPN
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-popover text-popover-foreground border border-border shadow-md">
+                    <p className="text-sm">可能需要VPN访问</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              {/* 状态标识 */}
+              {tool.status !== 'active' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={cn(
+                      "flex items-center gap-1 px-2 py-1 backdrop-blur-sm rounded-full text-xs font-medium shadow-sm cursor-help",
+                      tool.status === 'inactive' && "bg-red-500/90 text-red-50",
+                      tool.status === 'maintenance' && "bg-yellow-600/90 text-yellow-50"
+                    )}>
+                      {tool.status === 'inactive' ? (
+                        <>
+                          <ShieldBan className="w-3 h-3" />
+                          停用
+                        </>
+                      ) : (
+                        <>
+                          <ShieldAlert className="w-3 h-3" />
+                          维护
+                        </>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-popover text-popover-foreground border border-border shadow-md">
+                    <p className="text-sm">
+                      {tool.status === 'inactive' ? '工具已停用' : '工具维护中'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </TooltipProvider>
           </div>
           
           {/* Hover 效果 */}

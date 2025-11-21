@@ -583,7 +583,7 @@ async function initializeSystemSettings(sequelize) {
   // 初始化默认系统设置
   const defaultSettings = [
     {
-      id: 'icp-number-' + Date.now(),
+      id: 'icp-number-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'icp_number',
       setting_value: '',
       setting_type: 'string',
@@ -592,7 +592,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 1
     },
     {
-      id: 'show-icp-' + Date.now(),
+      id: 'show-icp-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'show_icp',
       setting_value: 'false',
       setting_type: 'boolean',
@@ -601,7 +601,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 1
     },
     {
-      id: 'site-name-' + Date.now(),
+      id: 'site-name-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'site_name',
       setting_value: 'AiQiji工具箱',
       setting_type: 'string',
@@ -610,7 +610,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 1
     },
     {
-      id: 'site-url-' + Date.now(),
+      id: 'site-url-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'site_url',
       setting_value: 'https://aiqiji.com',
       setting_type: 'string',
@@ -619,7 +619,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 1
     },
     {
-      id: 'site-icon-' + Date.now(),
+      id: 'site-icon-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'site_icon',
       setting_value: '/favicon.ico',
       setting_type: 'string',
@@ -628,7 +628,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 1
     },
     {
-      id: 'site-desc-' + Date.now(),
+      id: 'site-desc-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'site_description',
       setting_value: '为开发者、设计师和效率工具爱好者精心收集的工具导航站点',
       setting_type: 'string',
@@ -637,7 +637,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 1
     },
     {
-      id: 'friend-links-' + Date.now(),
+      id: 'friend-links-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'friend_links',
       setting_value: '[]',
       setting_type: 'json',
@@ -645,9 +645,19 @@ async function initializeSystemSettings(sequelize) {
       category: 'website',
       is_public: 1
     },
+    // 添加新的设置项，默认开启
+    {
+      id: 'allow-admin-login-' + Math.random().toString(36).substr(2, 9),
+      setting_key: 'allow_admin_username_login',
+      setting_value: 'true',  // 默认设置为true
+      setting_type: 'boolean',
+      description: '是否允许使用admin用户名登录',
+      category: 'general',
+      is_public: 0
+    },
     // 邮箱配置设置
     {
-      id: 'smtp-host-' + Date.now(),
+      id: 'smtp-host-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'smtp_host',
       setting_value: '',
       setting_type: 'string',
@@ -656,7 +666,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 0
     },
     {
-      id: 'smtp-port-' + Date.now() + 1,
+      id: 'smtp-port-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'smtp_port',
       setting_value: '587',
       setting_type: 'string',
@@ -665,7 +675,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 0
     },
     {
-      id: 'smtp-secure-' + Date.now() + 2,
+      id: 'smtp-secure-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'smtp_secure',
       setting_value: 'false',
       setting_type: 'boolean',
@@ -674,7 +684,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 0
     },
     {
-      id: 'smtp-user-' + Date.now() + 3,
+      id: 'smtp-user-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'smtp_user',
       setting_value: '',
       setting_type: 'string',
@@ -683,7 +693,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 0
     },
     {
-      id: 'smtp-pass-' + Date.now() + 4,
+      id: 'smtp-pass-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'smtp_pass',
       setting_value: '',
       setting_type: 'string',
@@ -692,7 +702,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 0
     },
     {
-      id: 'from-name-' + Date.now() + 5,
+      id: 'from-name-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'from_name',
       setting_value: 'AiQiji工具箱',
       setting_type: 'string',
@@ -701,7 +711,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 0
     },
     {
-      id: 'from-email-' + Date.now() + 6,
+      id: 'from-email-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'from_email',
       setting_value: '',
       setting_type: 'string',
@@ -710,7 +720,7 @@ async function initializeSystemSettings(sequelize) {
       is_public: 0
     },
     {
-      id: 'email-enabled-' + Date.now() + 7,
+      id: 'email-enabled-' + Math.random().toString(36).substr(2, 9),
       setting_key: 'email_enabled',
       setting_value: 'false',
       setting_type: 'boolean',

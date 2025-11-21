@@ -11,6 +11,7 @@ import EmailChangeLog from '../models/EmailChangeLog.js';
 import { VerificationCodeService } from '../services/VerificationCodeService.js';
 import { EmailService } from '../services/EmailService.js';
 import { validateEmail } from '../utils/emailValidator.js';
+import { SettingsService } from '../services/SettingsService.js';  // 添加这一行
 
 // JWT配置
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
@@ -31,15 +32,27 @@ export const login = async (req, res) => {
       });
     }
 
-    // 仅支持邮箱登录
+    // 获取系统设置以检查是否允许使用admin用户名登录
+    const settingsService = new SettingsService();
+    const allowAdminUsernameLogin = await settingsService.getSettingValue('allow_admin_username_login') || false;
+
+    // 检查是否为特殊用户名"admin"，如果是则允许通过用户名登录（仅当设置允许时）
+    let whereCondition;
     const isEmail = username.includes('@');
-    if (!isEmail) {
+    
+    if (!isEmail && username === 'admin' && allowAdminUsernameLogin) {
+      // 对于用户名精确匹配"admin"的情况，且设置允许时，允许通过用户名登录
+      whereCondition = { username: username.toLowerCase().trim() };
+    } else if (isEmail) {
+      // 其他用户仍只支持邮箱登录
+      whereCondition = { email: username.toLowerCase().trim() };
+    } else {
+      // 非admin用户名且非邮箱格式的情况
       return res.status(400).json({
         success: false,
         message: '仅支持邮箱登录，请使用邮箱地址'
       });
     }
-    const whereCondition = { email: username.toLowerCase().trim() };
 
     const user = await User.findOne({ where: whereCondition });
 

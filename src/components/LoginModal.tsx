@@ -46,9 +46,13 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
       toast.error('请填写完整的登录信息');
       return;
     }
-    // 仅支持邮箱登录
+    
+    // 检查是否为特殊用户名"admin"，如果是则允许通过用户名登录
+    // 否则仍只支持邮箱登录
+    const isExactAdmin = formData.username.trim() === 'admin';
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.username.trim())) {
+    
+    if (!isExactAdmin && !emailRegex.test(formData.username.trim())) {
       toast.error('仅支持邮箱登录，请输入有效的邮箱地址');
       return;
     }
@@ -133,18 +137,18 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
           onSubmit={handleSubmit} 
           className="space-y-5 px-2 pb-4"
         >
-          {/* 邮箱输入 */}
+          {/* 邮箱/用户名输入 */}
           <div className="space-y-2">
             <Label htmlFor="username" className="text-sm font-semibold text-foreground flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-primary" />
-              邮箱
+              邮箱或用户名
             </Label>
             <Input
               id="username"
-              type="email"
+              type="text"
               value={formData.username}
               onChange={(e) => handleInputChange('username', e.target.value)}
-              placeholder="请输入邮箱地址"
+              placeholder="请输入邮箱地址或用户名(admin)"
               disabled={isLoading}
               autoComplete="username"
               required

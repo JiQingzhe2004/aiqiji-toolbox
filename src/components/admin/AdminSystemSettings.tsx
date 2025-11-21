@@ -52,6 +52,7 @@ export function AdminSystemSettings() {
   const [savingIcp, setSavingIcp] = useState(false);
   const [savingVpn, setSavingVpn] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
+  const [savingAdminLogin, setSavingAdminLogin] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [formData, setFormData] = useState({
     site_name: '',
@@ -60,7 +61,8 @@ export function AdminSystemSettings() {
     site_description: '',
     icp_number: '',
     show_icp: false,
-    show_vpn_indicator: true
+    show_vpn_indicator: true,
+    allow_admin_username_login: false
   });
   
   // 邮箱配置表单数据
@@ -105,7 +107,8 @@ export function AdminSystemSettings() {
           site_description: websiteSettings.site_description?.value || '',
           icp_number: websiteSettings.icp_number?.value || '',
           show_icp: websiteSettings.show_icp?.value || false,
-          show_vpn_indicator: response.data.general?.show_vpn_indicator?.value ?? true
+          show_vpn_indicator: generalSettings.show_vpn_indicator?.value ?? true,
+          allow_admin_username_login: generalSettings.allow_admin_username_login?.value ?? true  // 默认设置为true
         });
         
         // 更新邮箱配置表单数据 - 从email分类或general分类获取
@@ -281,6 +284,48 @@ export function AdminSystemSettings() {
     }
   };
 
+  // 保存管理员用户名登录设置
+  const handleSaveAdminLogin = async () => {
+    try {
+      setSavingAdminLogin(true);
+      
+      const updates: SettingsUpdateData[] = [
+        {
+          setting_key: 'allow_admin_username_login',
+          setting_value: formData.allow_admin_username_login,
+          setting_type: 'boolean'
+        }
+      ];
+      
+      const response = await settingsApi.updateSettings(updates);
+      if (response.success) {
+        toast.success('管理员登录设置保存成功');
+        // 无感更新本地状态，避免重新加载
+        if (settings) {
+          setSettings(prev => ({
+            ...prev!,
+            general: {
+              ...prev!.general,
+              allow_admin_username_login: { 
+                value: formData.allow_admin_username_login, 
+                description: '允许admin用户名登录',
+                type: 'boolean',
+                is_public: false
+              }
+            }
+          }));
+        }
+      } else {
+        toast.error('保存管理员登录设置失败');
+      }
+    } catch (error) {
+      console.error('保存管理员登录设置失败:', error);
+      toast.error('保存管理员登录设置失败');
+    } finally {
+      setSavingAdminLogin(false);
+    }
+  };
+
   // 保存所有设置（保留作为备用）
   const handleSave = async () => {
     try {
@@ -346,7 +391,8 @@ export function AdminSystemSettings() {
         site_description: websiteSettings.site_description?.value || '',
         icp_number: websiteSettings.icp_number?.value || '',
         show_icp: websiteSettings.show_icp?.value || false,
-        show_vpn_indicator: generalSettings.show_vpn_indicator?.value ?? true
+        show_vpn_indicator: generalSettings.show_vpn_indicator?.value ?? true,
+        allow_admin_username_login: generalSettings.allow_admin_username_login?.value ?? true  // 默认设置为true
       });
       toast.success('表单已重置');
     }
@@ -659,28 +705,16 @@ export function AdminSystemSettings() {
           </CardContent>
         </Card>
 
-        {/* VPN设置 */}
+        {/* VPN设置和管理员登录设置 */}
         <Card>
           <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <CardTitle className="flex items-center space-x-2">
-                <Shield className="w-5 h-5" />
-                <span>VPN标识</span>
-              </CardTitle>
-              <Button
-                variant="blackWhite"
-                onClick={handleSaveVpn}
-                disabled={savingVpn}
-                size="sm"
-                className="flex items-center space-x-2 w-full sm:w-auto"
-              >
-                {savingVpn && <Loader2 className="w-4 h-4 animate-spin" />}
-                <Save className="w-4 h-4" />
-                <span>{savingVpn ? '保存中...' : '保存'}</span>
-              </Button>
-            </div>
+            <CardTitle className="flex items-center space-x-2">
+              <Shield className="w-5 h-5" />
+              <span>安全设置</span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* VPN设置 */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -704,6 +738,20 @@ export function AdminSystemSettings() {
                 />
               </div>
               
+              <div className="flex justify-end">
+                <Button
+                  variant="blackWhite"
+                  onClick={handleSaveVpn}
+                  disabled={savingVpn}
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  {savingVpn && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <Save className="w-4 h-4" />
+                  <span>{savingVpn ? '保存中...' : '保存'}</span>
+                </Button>
+              </div>
+              
               {formData.show_vpn_indicator && (
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
@@ -712,28 +760,53 @@ export function AdminSystemSettings() {
                 </div>
               )}
             </div>
+            
+            {/* 管理员用户名登录设置 */}
+            <div className="space-y-3 border-t pt-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="allow_admin_username_login" className="flex items-center space-x-2">
+                    {formData.allow_admin_username_login ? (
+                      <Eye className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <EyeOff className="w-4 h-4 text-gray-400" />
+                    )}
+                    <span>允许admin用户名登录</span>
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    当您配置完您的邮箱后，可以关闭此功能
+                  </p>
+                </div>
+                <Switch
+                  id="allow_admin_username_login"
+                  checked={formData.allow_admin_username_login}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allow_admin_username_login: checked }))}
+                  disabled={savingAdminLogin}
+                />
+              </div>
+              
+              <div className="flex justify-end">
+                <Button
+                  variant="blackWhite"
+                  onClick={handleSaveAdminLogin}
+                  disabled={savingAdminLogin}
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  {savingAdminLogin && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <Save className="w-4 h-4" />
+                  <span>{savingAdminLogin ? '保存中...' : '保存'}</span>
+                </Button>
+              </div>
+              
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  ⚠️ 启用后，用户名精确匹配"admin"的用户可以通过用户名登录，而非仅限邮箱登录。建议仅在必要时启用此功能。
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
-
-      </div>
-
-      {/* 保存提示 */}
-      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <div className="flex items-start space-x-3">
-          <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div>
-            <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
-              设置说明
-            </h4>
-            <ul className="mt-2 text-xs text-blue-800 dark:text-blue-200 space-y-1">
-              <li>• 每个设置区域都有独立的保存按钮，修改后点击对应的保存按钮即可</li>
-              <li>• 网站名称和描述将在前端页面中实时更新</li>
-              <li>• 备案号支持链接到工信部备案查询网站</li>
-              <li>• VPN标识帮助用户了解工具的访问要求</li>
-              <li>• 所有设置保存后立即生效，无需重启服务</li>
-            </ul>
-          </div>
-        </div>
       </div>
 
       {/* 邮箱配置卡片 */}

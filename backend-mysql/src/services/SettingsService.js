@@ -157,7 +157,8 @@ export class SettingsService {
       // 如果更新失败（记录不存在），尝试插入
       // 注意：这里假设 setting_key 有唯一约束，如果没有，可能需要先检查
       try {
-        const id = `${key}-${Date.now()}`;
+        // 生成更短的ID以避免超过数据库限制
+        const id = `${key}-${Math.random().toString(36).substr(2, 9)}`;
         await sequelize.query(
           `INSERT INTO ${this.tableName} (id, setting_key, setting_value, setting_type, description, category, is_public, created_at, updated_at) 
            VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
@@ -217,7 +218,8 @@ export class SettingsService {
           );
         } else {
           // 记录不存在，执行插入
-          const id = `${setting_key}-${Date.now()}`;
+          // 生成更短的ID以避免超过数据库限制
+          const id = `${setting_key}-${Math.random().toString(36).substr(2, 9)}`;
           await sequelize.query(
             `INSERT INTO ${this.tableName} (id, setting_key, setting_value, setting_type, category, description, is_public, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             {
@@ -252,10 +254,17 @@ export class SettingsService {
       'ai_enabled', 'ai_base_url', 'ai_api_key', 'ai_model'
     ];
     
+    // 添加新的设置项到general分类
+    const generalKeys = [
+      'allow_admin_username_login'
+    ];
+    
     if (websiteKeys.includes(settingKey)) {
       return 'website';
     } else if (emailKeys.includes(settingKey)) {
       return 'email';
+    } else if (generalKeys.includes(settingKey)) {
+      return 'general';
     }
     
     return 'general';
@@ -278,7 +287,8 @@ export class SettingsService {
       'ai_base_url': 'AI API Base URL',
       'ai_api_key': 'AI API Key',
       'ai_model': 'AI模型名称',
-      'ai_models': 'AI模型预设列表'
+      'ai_models': 'AI模型预设列表',
+      'allow_admin_username_login': '是否允许使用admin用户名登录'
     };
     
     return descriptions[settingKey] || '';
@@ -291,7 +301,8 @@ export class SettingsService {
     const privateKeys = [
       'smtp_host', 'smtp_port', 'smtp_secure', 'smtp_user', 'smtp_pass',
       'from_name', 'from_email', 'email_enabled',
-      'ai_enabled', 'ai_base_url', 'ai_api_key', 'ai_model'
+      'ai_enabled', 'ai_base_url', 'ai_api_key', 'ai_model',
+      'allow_admin_username_login'  // 新设置项不公开
     ];
     
     // 邮箱和AI设置不公开
@@ -304,7 +315,8 @@ export class SettingsService {
   async createSetting(key, value, type = 'string', description = '', category = 'general', isPublic = false) {
     try {
       const stringValue = this.valueToString(value, type);
-      const id = `${key}-${Date.now()}`;
+      // 生成更短的ID以避免超过数据库限制
+      const id = `${key}-${Math.random().toString(36).substr(2, 9)}`;
 
       await sequelize.query(
         `INSERT INTO ${this.tableName} (id, setting_key, setting_value, setting_type, description, category, is_public, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,

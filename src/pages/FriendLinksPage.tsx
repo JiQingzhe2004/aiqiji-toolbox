@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ExternalLink, Globe, Users, Heart, ArrowLeft, Home, Info, Shuffle, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { useSEO, SEOPresets } from '@/hooks/useSEO';
 import { settingsApi } from '@/services/settingsApi';
 import toast from 'react-hot-toast';
@@ -31,6 +31,7 @@ export function FriendLinksPage() {
   const [randomResultLink, setRandomResultLink] = useState<FriendLink | null>(null);
   const [randomCountdown, setRandomCountdown] = useState<number | null>(null);
   const [randomDialogOpen, setRandomDialogOpen] = useState(false);
+  const [showJumpButton, setShowJumpButton] = useState(false);
 
   const shuffleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -167,6 +168,7 @@ export function FriendLinksPage() {
     setRandomResultLink(null);
     setRandomCountdown(null);
     setRandomDialogOpen(false);
+    setShowJumpButton(false);
   };
 
   useEffect(() => {
@@ -287,12 +289,18 @@ export function FriendLinksPage() {
       }, 1000);
 
       openTimeoutRef.current = setTimeout(() => {
-        window.open(targetLink.url, '_blank', 'noopener,noreferrer');
-        toast(`🎉 即将前往：${targetLink.name}`, {
-          duration: 2000,
-          position: 'top-center'
-        });
-        resetRandomState();
+        // 倒计时结束，显示跳转按钮
+        setShowJumpButton(true);
+        setRandomCountdown(0);
+        
+        // 同时尝试自动跳转（可能被浏览器阻止）
+        setTimeout(() => {
+          try {
+            window.open(targetLink.url, '_blank', 'noopener,noreferrer');
+          } catch (error) {
+            console.error('自动跳转失败:', error);
+          }
+        }, 100);
       }, 3000);
     }, 2000);
   };
@@ -404,12 +412,17 @@ export function FriendLinksPage() {
               <Dialog
                 open={randomDialogOpen}
                 onOpenChange={(open) => {
-                  if (!randomLoading) {
-                    setRandomDialogOpen(open);
+                  if (!open) {
+                    // 用户关闭对话框时，清理所有状态和定时器
+                    resetRandomState();
                   }
                 }}
               >
                 <DialogContent className="max-w-md rounded-2xl border border-primary/30 bg-gradient-to-b from-background to-muted/50 text-center">
+                  <DialogHeader className="sr-only">
+                    <DialogTitle>随机友链</DialogTitle>
+                    <DialogDescription>随机抽取一个友情链接进行跳转</DialogDescription>
+                  </DialogHeader>
                   <div className="flex flex-col items-center gap-6">
                     <div className="flex items-center gap-2 text-primary font-semibold">
                       <Sparkles className="w-4 h-4" />
@@ -420,11 +433,13 @@ export function FriendLinksPage() {
                       <div className="absolute inset-6 rounded-full border border-dashed border-primary/30 animate-[spin_8s_linear_infinite]"></div>
                       <div className="relative flex flex-col items-center justify-center gap-3">
                         {randomDisplayLink?.icon ? (
-                          <img
-                            src={randomDisplayLink.icon}
-                            alt={randomDisplayLink.name}
-                            className="w-16 h-16 object-contain"
-                          />
+                          <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted/30 p-2 flex items-center justify-center">
+                            <img
+                              src={randomDisplayLink.icon}
+                              alt={randomDisplayLink.name}
+                              className="w-full h-full object-contain rounded-lg"
+                            />
+                          </div>
                         ) : (
                           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
                             {(randomDisplayLink?.name?.charAt(0) || '友').toUpperCase()}
@@ -439,11 +454,31 @@ export function FriendLinksPage() {
                       {randomResultLink
                         ? randomCountdown && randomCountdown > 0
                           ? `抽取完成，${randomCountdown}s 后自动跳转`
-                          : '正在跳转，请稍候...'
+                          : showJumpButton
+                            ? '点击下方按钮立即跳转'
+                            : '正在跳转，请稍候...'
                         : randomLoading
                           ? '抽选进行中，请稍候...'
                           : '准备开始抽选'}
                     </div>
+                    {showJumpButton && randomResultLink && (
+                      <Button
+                        onClick={() => {
+                          if (randomResultLink) {
+                            window.open(randomResultLink.url, '_blank', 'noopener,noreferrer');
+                            toast(`🎉 正在前往：${randomResultLink.name}`, {
+                              duration: 2000,
+                              position: 'top-center'
+                            });
+                            resetRandomState();
+                          }
+                        }}
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        立即跳转到 {randomResultLink.name}
+                      </Button>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -485,17 +520,17 @@ export function FriendLinksPage() {
                               src={link.icon}
                               alt={link.name}
                               className="w-8 h-8 object-contain rounded-lg"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const container = target.parentElement;
-                              if (container) {
-                                const fallback = document.createElement('div');
-                                fallback.className = 'w-6 h-6 text-muted-foreground';
-                                fallback.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>';
-                                container.appendChild(fallback);
-                              }
-                            }}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const container = target.parentElement;
+                                if (container) {
+                                  const fallback = document.createElement('div');
+                                  fallback.className = 'w-6 h-6 text-muted-foreground';
+                                  fallback.innerHTML = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>';
+                                  container.appendChild(fallback);
+                                }
+                              }}
                             />
                           </div>
                         ) : (
@@ -547,7 +582,7 @@ export function FriendLinksPage() {
                                         <img 
                                           src={link.icon} 
                                           alt={link.name}
-                                          className="w-4 h-4 object-contain rounded"
+                                          className="w-4 h-4 object-contain rounded-md"
                                         />
                                       </div>
                                     ) : (
